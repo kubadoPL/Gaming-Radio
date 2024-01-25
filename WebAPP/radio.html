@@ -9,7 +9,7 @@
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 
     <style>
-        /* Tu znajduje siê styl, mo¿esz nie kopiowaæ go ponownie, chyba ¿e chcesz wprowadziæ jakieœ zmiany */
+        /* Tu znajduje siï¿½ styl, moï¿½esz nie kopiowaï¿½ go ponownie, chyba ï¿½e chcesz wprowadziï¿½ jakieï¿½ zmiany */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -32,7 +32,7 @@
 
         a:hover {
             color: #7300ff;
-            /* Zmiana koloru tekstu podczas najechania mysz¹ */
+            /* Zmiana koloru tekstu podczas najechania myszï¿½ */
         }
 
         h1 {
@@ -158,16 +158,16 @@
             margin-top: 5px;
         }
         body::-webkit-scrollbar {
-        width: 1px; /* Szerokoœæ paska przewijania */
+        width: 1px; /* Szerokoï¿½ï¿½ paska przewijania */
     }
 
     body::-webkit-scrollbar-thumb {
         background-color: #7300ff; /* Kolor kciuka przewijania */
-        border-radius: 6px; /* Zaokr¹glenie kciuka przewijania */
+        border-radius: 6px; /* Zaokrï¿½glenie kciuka przewijania */
     }
 
     body::-webkit-scrollbar-track {
-        background-color: rgba(0, 0, 0, 0); /* Kolor t³a paska przewijania */
+        background-color: rgba(0, 0, 0, 0); /* Kolor tï¿½a paska przewijania */
     }
     </style>
 </head>
@@ -188,7 +188,7 @@
     <div id="radioPlayer">
         <audio id="audioPlayer" controls>
             <source src="https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA" type="audio/mpeg">
-            Twoja przegl¹darka nie obs³uguje odtwarzacza audio.
+            Twoja przeglï¿½darka nie obsï¿½uguje odtwarzacza audio.
         </audio>
         <div class="player-controls">
             <i id="playPauseIcon" class="fas fa-play" onclick="playPause()"></i>
@@ -212,7 +212,7 @@
     <div id="radioPlayer2">
         <audio id="audioPlayer2" controls>
             <source src="https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ" type="audio/mpeg">
-            Twoja przegl¹darka nie obs³uguje odtwarzacza audio.
+            Twoja przeglï¿½darka nie obsï¿½uguje odtwarzacza audio.
         </audio>
         <div class="player-controls">
             <i id="playPauseIcon2" class="fas fa-play" onclick="playPause2()"></i>
@@ -236,7 +236,7 @@
     <div id="radioPlayer3">
         <audio id="audioPlayer3" controls>
             <source src="https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw" type="audio/mpeg">
-            Twoja przegl¹darka nie obs³uguje odtwarzacza audio.
+            Twoja przeglï¿½darka nie obsï¿½uguje odtwarzacza audio.
         </audio>
         <div class="player-controls">
             <i id="playPauseIcon3" class="fas fa-play" onclick="playPause3()"></i>
@@ -282,12 +282,12 @@
                     streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
                 }
             } catch (error) {
-                console.error('B³¹d przetwarzania danych:', error);
+                console.error('Bï¿½ï¿½d przetwarzania danych:', error);
             }
         };
 
         eventSource.onerror = function (error) {
-            console.error('B³¹d po³¹czenia:', error);
+            console.error('Bï¿½ï¿½d poï¿½ï¿½czenia:', error);
             eventSource.close();
         };
 
@@ -323,12 +323,12 @@
                     streamTitleElement2.textContent = 'LIVE STREAM: ' + cleanedTitle2;
                 }
             } catch (error) {
-                console.error('B³¹d przetwarzania danych:', error);
+                console.error('Bï¿½ï¿½d przetwarzania danych:', error);
             }
         };
 
         eventSource2.onerror = function (error) {
-            console.error('B³¹d po³¹czenia:', error);
+            console.error('Bï¿½ï¿½d poï¿½ï¿½czenia:', error);
             eventSource2.close();
         };
 
@@ -364,12 +364,12 @@
                     streamTitleElement3.textContent = 'LIVE STREAM: ' + cleanedTitle3;
                 }
             } catch (error) {
-                console.error('B³¹d przetwarzania danych:', error);
+                console.error('Bï¿½ï¿½d przetwarzania danych:', error);
             }
         };
 
         eventSource3.onerror = function (error) {
-            console.error('B³¹d po³¹czenia:', error);
+            console.error('Bï¿½ï¿½d poï¿½ï¿½czenia:', error);
             eventSource3.close();
         };
 
@@ -416,58 +416,58 @@
         }
 
         function cleanTitle(title) {
-    // Usuñ ".mp3" z tytu³u
+    // Usuï¿½ ".mp3" z tytuï¿½u
     title = title.replace(/\.mp3/gi, '');
 
-    // Usuñ "(official music video)" z tytu³u
+    // Usuï¿½ "(official music video)" z tytuï¿½u
     title = title.replace(/\(official music video\)/gi, '');
 
-    // Usuñ "[SPOTIFY-DOWNLOADER.COM]" z tytu³u
+    // Usuï¿½ "[SPOTIFY-DOWNLOADER.COM]" z tytuï¿½u
     title = title.replace(/\[SPOTIFY-DOWNLOADER.COM\]/gi, '');
 
-    // Usuñ "[HD]" z tytu³u
+    // Usuï¿½ "[HD]" z tytuï¿½u
     title = title.replace(/\[HD\]/gi, '');
 
-    // Usuñ "[NEW SONG]" z tytu³u
+    // Usuï¿½ "[NEW SONG]" z tytuï¿½u
     title = title.replace(/\[NEW SONG\]/gi, '');
 
-    // Usuñ "(gotg3 song adam warlock intro)" z tytu³u
+    // Usuï¿½ "(gotg3 song adam warlock intro)" z tytuï¿½u
     title = title.replace(/\(gotg3 song adam warlock intro\)/gi, '');
 
-    // Usuñ "(Official song)" z tytu³u
+    // Usuï¿½ "(Official song)" z tytuï¿½u
     title = title.replace(/\(Official song\)/gi, '');
 
-    // Usuñ "(with Lyrics)" z tytu³u
+    // Usuï¿½ "(with Lyrics)" z tytuï¿½u
     title = title.replace(/\(with Lyrics\)/gi, '');
 
-    // Usuñ "(w?)" z tytu³u
+    // Usuï¿½ "(w?)" z tytuï¿½u
     title = title.replace(/\(w?\)/gi, '');
 
-    // Usuñ "Lyrics" z tytu³u
+    // Usuï¿½ "Lyrics" z tytuï¿½u
     title = title.replace(/Lyrics/gi, '');
 
-    // Usuñ "(Lyric Video)" z tytu³u
+    // Usuï¿½ "(Lyric Video)" z tytuï¿½u
     title = title.replace(/\(Lyric Video\)/gi, '');
 
     title = title.replace(/\(Official Audio\)/gi, '');
 
-   // Usuñ "(Official Video)" z tytu³u
+   // Usuï¿½ "(Official Video)" z tytuï¿½u
    title = title.replace(/\(Official Video\)/gi, '');
 
-// Usuñ "[Official Music Video]" z tytu³u
+// Usuï¿½ "[Official Music Video]" z tytuï¿½u
     title = title.replace(/\[Official Music Video\]/gi, '');
 
-     // Usuñ znaki zapytania
+     // Usuï¿½ znaki zapytania
      title = title.replace(/\?+/g, '');
 
 
-    // Dodaj trim, aby usun¹æ ewentualne spacje na pocz¹tku i koñcu
+    // Dodaj trim, aby usunï¿½ï¿½ ewentualne spacje na poczï¿½tku i koï¿½cu
     return title.trim();
 }
 
 
     </script>
-    <h2>BETA VERSION 1.7</h2>
+    <h2>BETA VERSION 2.0</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <footer>
