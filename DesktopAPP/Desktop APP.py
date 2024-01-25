@@ -12,7 +12,7 @@ RPC = Presence(client_id="1199866038569947217")
 RPC.connect()
 
 # Create the webview window
-window = webview.create_window('Radio Gaming', 'https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html')
+window = webview.create_window('Radio Gaming Desktop', 'https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html' , maximized=True)
 
 # Function to update Discord Rich Presence
 def update_rpc(stream_title, audio_playing):
