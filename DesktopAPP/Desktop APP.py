@@ -15,7 +15,7 @@ RPC.connect()
 window = webview.create_window('Radio Gaming Desktop', 'https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html' , maximized=True)
 
 # Function to update Discord Rich Presence
-def update_rpc(stream_title, audio_playing):
+def update_rpc(stream_title, audio_playing, playstateicon, statestring):
     # Remove "LIVE STREAM:" from the stream title
     cleaned_title = stream_title.replace("LIVE STREAM:", "").strip()
 
@@ -24,8 +24,11 @@ def update_rpc(stream_title, audio_playing):
         state=cleaned_title,
         large_image="gaminglogo",
         start=start_time,
-        buttons=[{"label": "Play Gaming Radio!", "url": "https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html"}],
+        buttons=[{"label": "Listen to Gaming Radio ALSO!", "url": "https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html"}],
         large_text=cleaned_title,
+        small_image=playstateicon,
+        small_text =statestring,
+        #join="test",
         instance=True
     )
 
@@ -35,7 +38,6 @@ def on_closed():
     # Disconnect Discord Rich Presence when the program exits
     RPC.close()
     # Optionally, perform additional cleanup or exit actions here
-    thread.Stop()
     sys.exit(0)
 
 # Call the update_rpc() function periodically
@@ -53,15 +55,15 @@ def update_rpc_periodically():
 
         # If none of the audio players is playing, update to "Idling"
         if not (audio_playing or audio_playing2 or audio_playing3):
-            update_rpc("Idling", "Nothing")
+            update_rpc("Idling", "Nothing", "pause", "Idling")
         else:
             # Update based on which audio player is currently playing
             if stream_title and audio_playing:
-                update_rpc(stream_title, "Radio GAMING")
+                update_rpc(stream_title, "Radio GAMING", "play", "Streaming")
             elif stream_title2 and audio_playing2:
-                update_rpc(stream_title2, "Radio GAMING DARK")
+                update_rpc(stream_title2, "Radio GAMING DARK", "play", "Streaming")
             elif stream_title3 and audio_playing3:
-                update_rpc(stream_title3, "Radio GAMING MARON FM")
+                update_rpc(stream_title3, "Radio GAMING MARON FM", "play", "Streaming")
 
         time.sleep(1)  # Adjust the interval as needed
 
