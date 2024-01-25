@@ -24,6 +24,8 @@ def update_rpc(stream_title, audio_playing):
         state=cleaned_title,
         large_image="gaminglogo",
         start=start_time,
+        buttons=[{"label": "Play Gaming Radio!", "url": "https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html"}],
+        large_text=cleaned_title,
         instance=True
     )
 
