@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miodzix Music Centre</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" href="faviconfolder/favicon.ico" type="image/x-icon">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="../pages/home.html">Home</a></li>
+                <li><a href="../pages/posts.html">Posty</a></li>
+                <li><a href="../pages/table.html">Tabela</a></li>
+                <li><a href="../pages/contact.html">Kontakt</a></li>
+                <li><a href="../pages/about.html">O Nas</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div class="background-overlay"></div>
+        <div class="content-container">
+        <div class="centered-content1">
+            <h1><center>Posty</center></h1>
+            <p2><center>Tu gostomienie sie obdywa.</center></p2>
+        </div>
+        <div class="centered-video-content">
+            <center><div class="video-player">
+            <video id="video" controls controlsList="nodownload" width="640" height="360">
+             Your browser does not support the video tag.
+            </video>
+           <button onclick="playRandomVideo()">Odtwórz Losowe Video</button>
+            </div></center>
+        </div>
+        </div>
+    </main>
+    <footer>
+        &copy; 2023 K5 Studio
+    </footer>
+    <script src="../static/script.js"></script>
+</body>
+
+</html>

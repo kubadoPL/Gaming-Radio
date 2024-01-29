@@ -1,0 +1,134 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 65vh;
+    background: url('https://unblast.com/wp-content/uploads/2021/01/Space-Background-Image-2.jpg') no-repeat center center/cover;
+    background-attachment: fixed;
+}
+
+header {
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px;
+    width: 100%;
+    z-index: 1;
+    position: fixed;
+    top: 0;
+}
+
+nav ul {
+    list-style-type: none;
+}
+
+nav ul li {
+    display: inline;
+    margin-right: 20px;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px 20px;
+    margin-top: 60px;
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.post {
+    max-width: 100%;
+    width: 80%;
+    box-sizing: border-box;
+    padding: 20px;
+    border: 2px solid white;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.post img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    margin-right: 20px;
+}
+
+.post-content {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+h1, h2, p, p2, p1 {
+    text-shadow: 0 0 10px white;
+}
+
+footer {
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    text-align: center;
+    padding: 10px;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+}
+h1.login-header {
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+fieldset {
+    border: 2px solid white;
+    border-radius: 10px; /* Add border-radius for square corners */
+    padding: 20px;
+
+    /* Animation properties */
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    background-color: rgba(255, 255, 255, 0.1); /* Transparent background */
+    color: white;
+    border: 1px solid white;
+    border-radius: 5px;
+}
+
+input[type="submit"] {
+    background-color: white;
+    color: black;
+    cursor: pointer;
+}
+
+input[type="submit"]:hover {
+    background-color: black;
+    color: white;
+}
+
+/* Animation keyframes */
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

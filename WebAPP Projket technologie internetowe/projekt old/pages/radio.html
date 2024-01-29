@@ -147,8 +147,7 @@
             margin-top: 60px;
             opacity: 0;
             transform: translateY(-50px);
-            animation: fadeInUp 0.5s ease-out forwards;
-        }
+            
 
         #timeDisplay,
         #timeDisplay2,
@@ -169,6 +168,13 @@
     body::-webkit-scrollbar-track {
         background-color: rgba(0, 0, 0, 0); /* Kolor t�a paska przewijania */
     }
+    /* Animation keyframes */
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
     </style>
 </head>
 
@@ -364,12 +370,12 @@
                     streamTitleElement3.textContent = 'LIVE STREAM: ' + cleanedTitle3;
                 }
             } catch (error) {
-                console.error('B��d przetwarzania danych:', error);
+                console.error('Blad przetwarzania danych:', error);
             }
         };
 
         eventSource3.onerror = function (error) {
-            console.error('B��d po��czenia:', error);
+            console.error('Blad polaczenia:', error);
             eventSource3.close();
         };
 
@@ -416,53 +422,59 @@
         }
 
         function cleanTitle(title) {
-    // Usu� ".mp3" z tytu�u
     title = title.replace(/\.mp3/gi, '');
-
-    // Usu� "(official music video)" z tytu�u
     title = title.replace(/\(official music video\)/gi, '');
-
-    // Usu� "[SPOTIFY-DOWNLOADER.COM]" z tytu�u
     title = title.replace(/\[SPOTIFY-DOWNLOADER.COM\]/gi, '');
-
-    // Usu� "[HD]" z tytu�u
     title = title.replace(/\[HD\]/gi, '');
-
-    // Usu� "[NEW SONG]" z tytu�u
     title = title.replace(/\[NEW SONG\]/gi, '');
-
-    // Usu� "(gotg3 song adam warlock intro)" z tytu�u
     title = title.replace(/\(gotg3 song adam warlock intro\)/gi, '');
-
-    // Usu� "(Official song)" z tytu�u
     title = title.replace(/\(Official song\)/gi, '');
-
-    // Usu� "(with Lyrics)" z tytu�u
     title = title.replace(/\(with Lyrics\)/gi, '');
-
-    // Usu� "(w?)" z tytu�u
     title = title.replace(/\(w?\)/gi, '');
-
-    // Usu� "Lyrics" z tytu�u
     title = title.replace(/Lyrics/gi, '');
-
-    // Usu� "(Lyric Video)" z tytu�u
     title = title.replace(/\(Lyric Video\)/gi, '');
-
     title = title.replace(/\(Official Audio\)/gi, '');
-
-   // Usu� "(Official Video)" z tytu�u
-   title = title.replace(/\(Official Video\)/gi, '');
-
-// Usu� "[Official Music Video]" z tytu�u
+    title = title.replace(/\(Official Video\)/gi, '');
     title = title.replace(/\[Official Music Video\]/gi, '');
-
-     // Usu� znaki zapytania
-     title = title.replace(/\?+/g, '');
+    title = title.replace(/\?+/g, '');
 
 
-    // Dodaj trim, aby usun�� ewentualne spacje na pocz�tku i ko�cu
+   
     return title.trim();
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+            // Retrieve the user information from localStorage
+            var storedUserData = JSON.parse(localStorage.getItem('user_data')) || {};
+
+            // Update the page content with the user data
+            if (storedUserData.username) {
+                var welcomeMessage = document.getElementById('welcome-message');
+                welcomeMessage.innerHTML = "<center>Witaj, " + storedUserData.username + "!</center>";
+            }
+            if (storedUserData.first_name || storedUserData.last_name) {
+                var fullName = (storedUserData.first_name || '') + ' ' + (storedUserData.last_name || '');
+                var fullNameElement = document.getElementById('full-name');
+                fullNameElement.innerHTML = "<center>Imię i Nazwisko: " + fullName + "</center>";
+            }
+            if (storedUserData.email) {
+                var emailElement = document.getElementById('user-email');
+                emailElement.innerHTML = "<center>Email: " + storedUserData.email + "</center>";
+            }
+            if (storedUserData.phone) {
+                var phoneElement = document.getElementById('user-phone');
+                phoneElement.innerHTML = "<center>Telefon: " + storedUserData.phone + "</center>";
+            }
+            if (storedUserData.photo) {
+                
+                var photoImg = document.getElementById('user-photo');
+                photoImg.src = storedUserData.photo;
+            }
+            if (storedUserData.bio) {
+                var bioElement = document.getElementById('user-bio');
+                bioElement.innerHTML = "<center>Krótka Notatka Bio: " + storedUserData.bio + "</center>";
+            }
+        });
 }
 
 
@@ -471,7 +483,7 @@
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <footer>
-        &copy; 2024 K5 Studio
+        &copy; 2024 Jakub Drużbiński
     </footer>
 </body>
 

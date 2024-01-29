@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moja Strona</title>
+    <link rel="stylesheet" href="https://www.manticore.uni.lodz.pl/~druzb5/static/styles.css">
+    <link rel="icon" href="faviconfolder/favicon.ico" type="image/x-icon"> 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Retrieve the user information from localStorage
+            var storedUserData = JSON.parse(localStorage.getItem('user_data')) || {};
+
+            // Update the page content with the user data
+            if (storedUserData.username) {
+                var welcomeMessage = document.getElementById('welcome-message');
+                welcomeMessage.innerHTML = "<center>Witaj, " + storedUserData.username + "!</center>";
+            }
+            if (storedUserData.first_name || storedUserData.last_name) {
+                var fullName = (storedUserData.first_name || '') + ' ' + (storedUserData.last_name || '');
+                var fullNameElement = document.getElementById('full-name');
+                fullNameElement.innerHTML = "<center>Imię i Nazwisko: " + fullName + "</center>";
+            }
+            if (storedUserData.email) {
+                var emailElement = document.getElementById('user-email');
+                emailElement.innerHTML = "<center>Email: " + storedUserData.email + "</center>";
+            }
+            if (storedUserData.phone) {
+                var phoneElement = document.getElementById('user-phone');
+                phoneElement.innerHTML = "<center>Telefon: " + storedUserData.phone + "</center>";
+            }
+            if (storedUserData.photo) {
+                
+                var photoImg = document.getElementById('user-photo');
+                photoImg.src = storedUserData.photo;
+            }
+            if (storedUserData.bio) {
+                var bioElement = document.getElementById('user-bio');
+                bioElement.innerHTML = "<center>Krótka Notatka Bio: " + storedUserData.bio + "</center>";
+            }
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="../pages/about.html">O Nas</a></li>
+                <li><a href="../pages/posts.html">Posty</a></li>
+                <li class="logout-link"><a href="../index.html">Wyloguj</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div class="center-content-home">
+           
+            <h1 id="welcome-message"><center>Witaj na Mojej stronie!</center></h1>
+            <p id="full-name"></p>
+            <p id="user-email"></p>
+            <p id="user-phone"></p>
+
+           
+
+            <p id="user-bio"></p>
+
+            <p><center><a href="../pages/edituser.html" class="edit-button">Edytuj Profil</a></center></p>
+        </div>
+    </main>
+    <footer>
+        &copy; 2023 K5 Studio
+    </footer>
+    <script src="../static/script.js"></script>
+</body>
+</html>
