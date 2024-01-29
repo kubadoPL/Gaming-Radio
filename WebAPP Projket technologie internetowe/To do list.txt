@@ -1,5 +1,5 @@
 DONE -posty z możliwością przejścia do edycji wybranego postu
--tabela
+DONE -tabela
 DONE -formularz kontaktowy
 DONE -stronę z listą użytkowników z możliwością przejścia do edycji wybranego użytkownika
--stronę ze statystykami serwisu
+DONE -stronę ze statystykami serwisu

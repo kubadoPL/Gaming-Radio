@@ -224,6 +224,26 @@ input[type="submit"]:hover {
 h1, p2, p1 {
     text-shadow: 0 0 10px white;
 }
+
+table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #ffffff; /* White border for cells */
+        color: #ffffff; /* White text color */
+    }
+
+    th {
+        background-color: #420092; /* Dark background color for header cells */
+    }
+
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -262,29 +282,34 @@ h1, p2, p1 {
     <main>
         <div class="center-content-home">
            
-            <h1 id="welcome-message"><center>Witaj na stronie projektowej mojego internetowego Radia!</center></h1>
-            <h2><center>Strone wykonał Jakub Drużbiński 
-
-                Informatyka Ekonomiczna, studia stacjonarne I stopnia 
-                
-                Rok II
-                
-                Wydział Ekonomiczno-Socjologiczny UŁ 
-                
-                Nr albumu: 406317. Strona była testowana w przeglądrace Google Chrome Wersja 114.0.5735.110 (Oficjalna wersja) (64-bitowa). Projekt zrobiony na Podstawy technologii internetowych.</center></h2>
-
-                
-                <h1>&nbsp;</h1>
-                <h2>View the Documentation of my project! Click the button to see it!!</h2>
-    <a href="https://1drv.ms/w/s!AhH9J-vA4KuajlcYMb3P1kfDSori?e=1bqxfx" target="_blank">
-        <img src="../img/view-documentation-button.png" alt="View Documentation Button" style="width: 225px; height: 70px;">
-    </a>
-
-    <h1>&nbsp;</h1>
-                <h2>View Statistics of the Page! Click the button to see it!!</h2>
-    <a href="statistics.html">
-        <img src="../img/statistics-button.png" alt="View statistics Button" style="width: 225px; height: 70px;">
-    </a>
+            <h1 id="welcome-message"><center>Website Statistics</center></h1>
+        <table border="1" cellpadding="10" style="margin-top: 20px; width: 80%; margin-left: auto; margin-right: auto;">
+            <tr>
+                <th>Category</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Total Visitors</td>
+                <td>456</td> 
+            </tr>
+            <tr>
+                <td>Unique Visitors</td>
+                <td>321</td> 
+            </tr>
+            <tr>
+                <td>Radio Gaming Current Streaming</td>
+                <td>16</td> 
+            </tr>
+            <tr>
+                <td>Radio Gaming Dark Current Streaming</td>
+                <td>32</td> 
+            </tr>
+            <tr>
+                <td>Radio Gaming Maron Current FM Streaming</td>
+                <td>21</td> 
+            </tr>
+        
+        </table>
     </main>
     <footer>
         &copy; 2024 Jakub Drużbiński
