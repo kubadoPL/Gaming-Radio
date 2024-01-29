@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edytuj Profil</title>
+    <title>Radio GAMING</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <link rel="icon" href="../faviconfolder/favicon.ico" type="image/x-icon"> 
 
@@ -227,6 +227,20 @@ h1, h2, p, p2, p1 {
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Retrieve the username from localStorage
+            var userData = JSON.parse(localStorage.getItem('user_data')) || {};
+            var username = userData.username;
+
+            // Display welcome message in the header
+            var welcomeMessageContainer = document.getElementById('welcomeMessage');
+            if (username) {
+                var welcomeMessage = document.createElement('p');
+                welcomeMessage.textContent = 'Welcome ' + username;
+                welcomeMessageContainer.appendChild(welcomeMessage);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
             // Retrieve the user information from localStorage
             var storedUserData = JSON.parse(localStorage.getItem('user_data')) || {};
 
@@ -303,25 +317,26 @@ h1, h2, p, p2, p1 {
                 <li><a href="radio.html">Home</a></li>
                 <li><a href="download.html">Download APP</a></li>
                 <li><a href="userinfo.html">My Profile</a></li>
-                <li class="logout-link"><a href="../index.html">Wyloguj</a></li>
+                <li class="logout-link"><a href="../index.html">Logout</a></li>
             </ul>
+            <div id="welcomeMessage"></div> <!-- div do welcome message -->
         </nav>
     </header>
     <main>
         <div class="center-content-profile">
-            <h1><center>Edytuj Profil</center></h1>
+            <h1><center>Edit Profile</center></h1>
             <form id="edit-form" action="#" method="post">
                 <fieldset>
                     <p>
-                        <label for="id_username">Nazwa Użytkownika</label>
+                        <label for="id_username">Login</label>
                         <input type="text" name="username" id="id_username" placeholder="Nazwa użytkownika" required="">
                     </p>
                     <p>
-                        <label for="id_first_name">Imię</label>
+                        <label for="id_first_name">Name</label>
                         <input type="text" name="first_name" id="id_first_name" placeholder="Imię">
                     </p>
                     <p>
-                        <label for="id_last_name">Nazwisko</label>
+                        <label for="id_last_name">Surname</label>
                         <input type="text" name="last_name" id="id_last_name" placeholder="Nazwisko">
                     </p>
                     <p>
@@ -329,22 +344,22 @@ h1, h2, p, p2, p1 {
                         <input type="email" name="email" id="id_email" placeholder="Email">
                     </p>
                     <p>
-                        <label for="id_phone">Telefon</label>
+                        <label for="id_phone">Phone number</label>
                         <input type="tel" name="phone" id="id_phone" placeholder="Telefon">
                     </p>
                     <p>
-                        <label for="id_photo">Zdjęcie</label>
+                        <label for="id_photo">Photo</label>
                         <input type="file" name="photo" id="id_photo" accept="image/*">
                         
                         
                     </p>
                     <p>
-                        <label for="id_bio">Krótka Notatka Bio</label>
+                        <label for="id_bio">Description</label>
                         <textarea name="bio" id="id_bio" placeholder="Krótka notatka bio"></textarea>
                     </p>
                     <p>
                         <input type="submit" value="Zapisz zmiany">
-                        <a href="radio.html">Anuluj</a>
+                        <a href="radio.html">Cancel</a>
                     </p>
                 </fieldset>
             </form>

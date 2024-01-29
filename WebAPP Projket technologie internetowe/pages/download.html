@@ -153,6 +153,21 @@
     }
 }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Retrieve the username from localStorage
+            var userData = JSON.parse(localStorage.getItem('user_data')) || {};
+            var username = userData.username;
+
+            // Display welcome message in the header
+            var welcomeMessageContainer = document.getElementById('welcomeMessage');
+            if (username) {
+                var welcomeMessage = document.createElement('p');
+                welcomeMessage.textContent = 'Welcome ' + username;
+                welcomeMessageContainer.appendChild(welcomeMessage);
+            }
+        });
+        </script>
 </head>
 <body>
     <header>
@@ -161,12 +176,13 @@
                 <li><a href="radio.html">Home</a></li>
                 <li><a href="download.html">Download APP</a></li>
                 <li><a href="userinfo.html">My Profile</a></li>
-                <li class="logout-link"><a href="../index.html">Wyloguj</a></li>
+                <li class="logout-link"><a href="../index.html">Logout</a></li>
             </ul>
+            <div id="welcomeMessage"></div> <!-- div do welcome message -->
         </nav>
     </header>
     <h1>&nbsp;</h1>
-    
+    <h1>&nbsp;</h1>
     <h1>Radio GAMING</h1>
 
     <h2>Download our apk for android! Click the button to start downloading!!</h2>

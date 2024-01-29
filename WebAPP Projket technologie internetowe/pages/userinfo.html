@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edytuj Profil</title>
+    <title>Radio GAMING</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <link rel="icon" href="../faviconfolder/favicon.ico" type="image/x-icon"> 
 
@@ -227,6 +227,20 @@ h1, h2, p, p2, p1 {
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Retrieve the username from localStorage
+            var userData = JSON.parse(localStorage.getItem('user_data')) || {};
+            var username = userData.username;
+
+            // Display welcome message in the header
+            var welcomeMessageContainer = document.getElementById('welcomeMessage');
+            if (username) {
+                var welcomeMessage = document.createElement('p');
+                welcomeMessage.textContent = 'Welcome ' + username;
+                welcomeMessageContainer.appendChild(welcomeMessage);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
             // Retrieve the user information from localStorage
             var storedUserData = JSON.parse(localStorage.getItem('user_data')) || {};
 
@@ -267,8 +281,9 @@ h1, h2, p, p2, p1 {
                 <li><a href="radio.html">Home</a></li>
                 <li><a href="download.html">Download APP</a></li>
                 <li><a href="edituser.html">Edit Profile</a></li>
-                <li class="logout-link"><a href="../index.html">Wyloguj</a></li>
+                <li class="logout-link"><a href="../index.html">Logout</a></li>
             </ul>
+            <div id="welcomeMessage"></div> <!-- div do welcome message -->
         </nav>
     </header>
     <main>
