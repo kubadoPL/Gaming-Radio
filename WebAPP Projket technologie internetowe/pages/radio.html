@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radio GAMING</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" href="../faviconfolder/favicon.ico" type="image/x-icon"> 
 
     <style>
         /* Tu znajduje si� styl, mo�esz nie kopiowa� go ponownie, chyba �e chcesz wprowadzi� jakie� zmiany */
@@ -37,6 +37,10 @@
 
         h1 {
             color: #ffffff;
+              /* Animation properties */
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
         }
 
         h2 {
@@ -53,6 +57,11 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             overflow: hidden;
+
+              /* Animation properties */
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
         }
 
         audio {
@@ -147,7 +156,9 @@
             margin-top: 60px;
             opacity: 0;
             transform: translateY(-50px);
+
             
+        }
 
         #timeDisplay,
         #timeDisplay2,
@@ -183,7 +194,9 @@
         <nav>
             <ul>
                 <li><a href="radio.html">Home</a></li>
-                <li><a href="../inne/pages/download.html">Download APP</a></li>
+                <li><a href="download.html">Download APP</a></li>
+                <li><a href="edituser.html">Edit Profile</a></li>
+                <li class="logout-link"><a href="../index.html">Wyloguj</a></li>
             </ul>
         </nav>
     </header>

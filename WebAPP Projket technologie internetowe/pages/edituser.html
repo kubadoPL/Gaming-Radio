@@ -4,8 +4,228 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edytuj Profil</title>
-    <link rel="stylesheet" href="https://www.manticore.uni.lodz.pl/~druzb5/static/styles.css">
-    <link rel="icon" href="faviconfolder/favicon.ico" type="image/x-icon"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <link rel="icon" href="../faviconfolder/favicon.ico" type="image/x-icon"> 
+
+    <style>
+        /* Tu znajduje si� styl, mo�esz nie kopiowa� go ponownie, chyba �e chcesz wprowadzi� jakie� zmiany */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            
+            background: url('https://unblast.com/wp-content/uploads/2021/01/Space-Background-Image-2.jpg') fixed;
+            background-size: cover;
+            color: #333;
+            text-align: center;
+        }
+
+
+
+        
+        
+        a {
+            text-decoration: none;
+            color: #ffffff;
+        }
+
+        a:hover {
+            color: #7300ff;
+            /* Zmiana koloru tekstu podczas najechania mysz� */
+        }
+
+        h1 {
+            color: #ffffff;
+        }
+
+        h2 {
+            font-size: 10px;
+            /* Adjust the value as needed */
+            color: #ffffff;
+        }
+
+        #radioPlayer,
+        #radioPlayer2,
+        #radioPlayer3 {
+            width: 300px;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        audio {
+            width: 100%;
+            border: none;
+            outline: none;
+            margin-top: 0px;
+        }
+
+        .player-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #420092;
+            color: #fff;
+            border-radius: 12px;
+        }
+
+        .player-controls i {
+            cursor: pointer;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            margin-left: 10px;
+        }
+
+        .volume-icon {
+            margin-right: 5px;
+        }
+
+        .volume-slider {
+            width: 80px;
+        }
+
+        #streamTitle,
+        #streamTitle2,
+        #streamTitle3 {
+            color: #fff;
+            margin-top: 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 5px;
+        }
+
+        audio::-webkit-media-controls-panel {
+            height: 0;
+        }
+
+        audio::-webkit-media-controls {
+            display: none !important;
+        }
+
+        footer {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            transform: translatex(-16px);
+        }
+
+        header {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            width: 100%;
+            z-index: 1;
+            position: fixed;
+            top: 0;
+            transform: translatex(-16px);
+        }
+
+        nav ul {
+            list-style-type: none;
+        }
+
+        nav ul li {
+            display: inline;
+            margin-right: 20px;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px 20px;
+            margin-top: 60px;
+            opacity: 0;
+            transform: translateY(-50px);
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        #timeDisplay,
+        #timeDisplay2,
+        #timeDisplay3 {
+            color: #fff;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        body::-webkit-scrollbar {
+        width: 1px; /* Szeroko�� paska przewijania */
+    }
+
+    body::-webkit-scrollbar-thumb {
+        background-color: #7300ff; /* Kolor kciuka przewijania */
+        border-radius: 6px; /* Zaokr�glenie kciuka przewijania */
+    }
+
+    body::-webkit-scrollbar-track {
+        background-color: rgba(0, 0, 0, 0); /* Kolor t�a paska przewijania */
+    }
+
+
+h1.login-header {
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+fieldset {
+    border: 2px solid white;
+    border-radius: 10px; /* Add border-radius for square corners */
+    padding: 20px;
+
+    /* Animation properties */
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    background-color: rgba(255, 255, 255, 0.1); /* Transparent background */
+    color: white;
+    border: 1px solid white;
+    border-radius: 5px;
+}
+
+input[type="submit"] {
+    background-color: white;
+    color: black;
+    cursor: pointer;
+}
+
+input[type="submit"]:hover {
+    background-color: black;
+    color: white;
+}
+
+/* Animation keyframes */
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+h1, h2, p, p2, p1 {
+    text-shadow: 0 0 10px white;
+}
+    </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Retrieve the user information from localStorage
@@ -72,7 +292,7 @@
                 localStorage.setItem('user_data', JSON.stringify(updatedUserData));
 
                
-                window.location.href = '../pages/home.html';
+                window.location.href = 'radio.html';
             });
         });
     </script>
@@ -81,6 +301,8 @@
     <header>
         <nav>
             <ul>
+                <li><a href="radio.html">Home</a></li>
+                <li><a href="download.html">Download APP</a></li>
                 <li class="logout-link"><a href="../index.html">Wyloguj</a></li>
             </ul>
         </nav>
@@ -122,7 +344,7 @@
                     </p>
                     <p>
                         <input type="submit" value="Zapisz zmiany">
-                        <a href="../pages/home.html">Anuluj</a>
+                        <a href="../pages/radio.html">Anuluj</a>
                     </p>
                 </fieldset>
             </form>
@@ -131,6 +353,6 @@
     <footer>
         &copy; 2023 K5 Studio
     </footer>
-    <script src="../static/script.js"></script>
+    
 </body>
 </html>
