@@ -1,0 +1,5 @@
+-posty z możliwością przejścia do edycji wybranego postu
+-tabela
+-formularz kontaktowy
+-stronę z listą użytkowników z możliwością przejścia do edycji wybranego użytkownika
+-stronę ze statystykami serwisu
