@@ -228,6 +228,21 @@ input[type="submit"]:hover {
 h1, h2, p2, p1 {
     text-shadow: 0 0 10px white;
 }
+
+#editProfileButton {
+        background-color: #420092;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+
+    #editProfileButton:hover {
+        background-color: #7300ff;
+    }
+
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -284,6 +299,8 @@ h1, h2, p2, p1 {
             <ul>
                 <li><a href="radio.html">Home</a></li>
                 <li><a href="download.html">Download APP</a></li>
+                <li><a href="posts.html">Posts</a></li>
+                <li><a href="users.html">Users</a></li>
                 <li><a href="info.html">Info</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="edituser.html">Edit Profile</a></li>
@@ -295,14 +312,13 @@ h1, h2, p2, p1 {
     <main>
         <div class="center-content-home">
            
-            <h1 id="welcome-message"><center>Witaj na Mojej stronie!</center></h1>
+            <h1 id="welcome-message"><center>Welcome!</center></h1>
             <p id="full-name"></p>
             <p id="user-email"></p>
             <p id="user-phone"></p>
-
-           
-
             <p id="user-bio"></p>
+
+            <button id="editProfileButton" onclick="window.location.href='edituser.html'">Edit Profile</button>
     </main>
     <footer>
         &copy; 2024 Jakub Drużbiński

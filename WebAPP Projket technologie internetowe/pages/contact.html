@@ -244,6 +244,20 @@ form {
     max-width: 300px; 
     margin: 0 auto;
 }
+
+button {
+        background-color: #420092;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+
+    button:hover {
+        background-color: #7300ff;
+    }
     </style>
     <script>
        document.addEventListener('DOMContentLoaded', function () {
@@ -252,36 +266,36 @@ form {
         var goBackButton = document.getElementById('goBackButton');
         var emailInput = document.getElementById('email');
 
-        // Function to hide the contact form and display thank you message
+        
         function submitForm() {
             contactForm.style.display = 'none';
             thankYouMessage.style.display = 'block';
         }
 
-        // Function to go back home
+        
         function goBackHome() {
             window.location.href = 'radio.html';
         }
 
-        // Add event listener to the submit button
+      
         document.getElementById('submitButton').addEventListener('click', function (event) {
-            event.preventDefault(); // Prevent the form from submitting
+            event.preventDefault(); 
             submitForm();
         });
 
-        // Add event listener to the "Go Back Home" button
+        
         goBackButton.addEventListener('click', goBackHome);
 
-        // Retrieve the email from localStorage
+       
         var userData = JSON.parse(localStorage.getItem('user_data')) || {};
         var email = userData.email;
 
-        // Autofill the email input field
+       
         if (email) {
             emailInput.value = email;
         }
 
-        // Display welcome message in the header
+     
         var welcomeMessageContainer = document.getElementById('welcomeMessage');
         if (userData.username) {
             var welcomeMessage = document.createElement('p');
@@ -299,6 +313,8 @@ form {
             <ul>
                 <li><a href="radio.html">Home</a></li>
                 <li><a href="download.html">Download APP</a></li>
+                <li><a href="posts.html">Posts</a></li>
+                <li><a href="users.html">Users</a></li>
                 <li><a href="info.html">Info</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="userinfo.html">My Profile</a></li>

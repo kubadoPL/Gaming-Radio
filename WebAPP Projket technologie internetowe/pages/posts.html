@@ -18,6 +18,10 @@
             color: #333;
             text-align: center;
         }
+
+
+
+        
         
         a {
             text-decoration: none;
@@ -38,7 +42,7 @@
         }
 
         h2 {
-            font-size: 14px;
+            font-size: 10px;
           
             color: #ffffff;
         }
@@ -177,7 +181,7 @@ h1.login-header {
 
 fieldset {
     border: 2px solid white;
-    border-radius: 10px; /* Add border-radius for square corners */
+    border-radius: 10px; 
     padding: 20px;
 
     /* Animation properties */
@@ -197,7 +201,7 @@ input {
     padding: 10px;
     margin-bottom: 10px;
     box-sizing: border-box;
-    background-color: rgba(255, 255, 255, 0.1); /* Transparent background */
+    background-color: rgba(255, 255, 255, 0.1);
     color: white;
     border: 1px solid white;
     border-radius: 5px;
@@ -224,14 +228,66 @@ input[type="submit"]:hover {
 h1, p2, p1 {
     text-shadow: 0 0 10px white;
 }
+
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    background-color: rgba(255, 255, 255, 0.5); 
+    color: white;
+    border: 1px solid white; 
+    border-radius: 5px;
+}
+form {
+    max-width: 300px; 
+    margin: 0 auto;
+}
+
+.post {
+            max-width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
+            padding: 20px;
+            border: 2px solid white;
+            margin-bottom: 20px;
+        }
+
+        .post img {
+            width: 500px; 
+            height: auto; 
+            object-fit: fit; 
+           
+        }
+
+        .post-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .edit-button {
+        background-color: #420092;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+
+    .edit-button:hover {
+        background-color: #7300ff;
+    }
+
     </style>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Retrieve the username from localStorage
+         document.addEventListener('DOMContentLoaded', function () {
+          
             var userData = JSON.parse(localStorage.getItem('user_data')) || {};
             var username = userData.username;
 
-            // Display welcome message in the header
+            
             var welcomeMessageContainer = document.getElementById('welcomeMessage');
             if (username) {
                 var welcomeMessage = document.createElement('p');
@@ -239,7 +295,12 @@ h1, p2, p1 {
                 welcomeMessageContainer.appendChild(welcomeMessage);
             }
         });
-
+        function editPost(postId) {
+       
+        var editUrl = 'editpost.html?id=' + postId;
+        window.location.href = editUrl;
+    }
+        
         
     </script>
 </head>
@@ -257,28 +318,45 @@ h1, p2, p1 {
                 <li class="logout-link"><a href="../index.html">Logout</a></li>
             </ul>
             <div id="welcomeMessage"></div> <!-- div do welcome message -->
+            
         </nav>
     </header>
     <main>
         <div class="center-content-home">
-           
-            <h1 id="welcome-message"><center>Witaj na stronie projektowej mojego internetowego Radia!</center></h1>
-            <h2><center>Strone wykonał Jakub Drużbiński 
+            <h1 id="welcome-message"><center>Posts</center></h1>
+            <h1>&nbsp;</h1>
+            
+            <div class="post">
+                <img src="../img/postsimages/gamingserverbackground.jpg" alt="photo 1">
+                <div class="post-content">
+                    <h1>Added new Station!</h1>
+                    <p>New Radio station Radio GAMING MARON FM is avaliable right now! Go check and check it out!!!</p>
+                    <p>Date: 29.01.2024</p>
+                    <button class="edit-button" onclick="editPost(1)">Edit</button>
+                </div>
+            </div>
 
-                Informatyka Ekonomiczna, studia stacjonarne I stopnia 
-                
-                Rok II
-                
-                Wydział Ekonomiczno-Socjologiczny UŁ 
-                
-                Nr albumu: 406317. Strona była testowana w przeglądrace Google Chrome Wersja 114.0.5735.110 (Oficjalna wersja) (64-bitowa). Projekt zrobiony na Podstawy technologii internetowych.</center></h2>
+            <div class="post">
+                <img src="../img/postsimages/gamingserverbackground.jpg" alt="photo2">
+                <div class="post-content">
+                    <h1>Radio Gaming Dark NEW PLAYLIST!</h1>
+                    <p>Thats Right new music is going to Radio Gaming DARK!!! </p>
+                    <p>Date: 24.01.2024</p>
+                    <button class="edit-button" onclick="editPost(2)">Edit</button>
+                </div>
+            </div>
 
-                <h1>&nbsp;</h1>
-                <h1>&nbsp;</h1>
-                <h2>View the Documentation of my project! Click the button to see it!!</h2>
-    <a href="https://1drv.ms/w/s!AhH9J-vA4KuajlcYMb3P1kfDSori?e=1bqxfx" target="_blank">
-        <img src="../img/view-documentation-button.png" alt="View Documentation Button" style="width: 225px; height: 70px;">
-    </a>
+            <div class="post">
+                <img src="../img/postsimages/gamingserverbackground.jpg" alt="photo3">
+                <div class="post-content">
+                    <h1>Fixed AutoDJ!!</h1>
+                    <p>AutoDj Should Play now correct music on specific radio stations!</p>
+                    <p>Date: 23.01.2024</p>
+                    <button class="edit-button" onclick="editPost(3)">Edit</button>
+                </div>
+            </div>
+            
+        </div>
     </main>
     <footer>
         &copy; 2024 Jakub Drużbiński
