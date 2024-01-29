@@ -244,38 +244,7 @@ h1, h2, p, p2, p1 {
             }
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
-            // Retrieve the user information from localStorage
-            var storedUserData = JSON.parse(localStorage.getItem('user_data')) || {};
-
-            // Update the page content with the user data
-            if (storedUserData.username) {
-                var welcomeMessage = document.getElementById('welcome-message');
-                welcomeMessage.innerHTML = "<center>Profile: " + storedUserData.username + "!</center>";
-            }
-            if (storedUserData.first_name || storedUserData.last_name) {
-                var fullName = (storedUserData.first_name || '') + ' ' + (storedUserData.last_name || '');
-                var fullNameElement = document.getElementById('full-name');
-                fullNameElement.innerHTML = "<center>Name and Surname: " + fullName + "</center>";
-            }
-            if (storedUserData.email) {
-                var emailElement = document.getElementById('user-email');
-                emailElement.innerHTML = "<center>Email: " + storedUserData.email + "</center>";
-            }
-            if (storedUserData.phone) {
-                var phoneElement = document.getElementById('user-phone');
-                phoneElement.innerHTML = "<center>Phone Number: " + storedUserData.phone + "</center>";
-            }
-            if (storedUserData.photo) {
-                
-                var photoImg = document.getElementById('user-photo');
-                photoImg.src = storedUserData.photo;
-            }
-            if (storedUserData.bio) {
-                var bioElement = document.getElementById('user-bio');
-                bioElement.innerHTML = "<center>Description: " + storedUserData.bio + "</center>";
-            }
-        });
+        
     </script>
 </head>
 <body>
@@ -294,14 +263,16 @@ h1, h2, p, p2, p1 {
     <main>
         <div class="center-content-home">
            
-            <h1 id="welcome-message"><center>Witaj na Mojej stronie!</center></h1>
-            <p id="full-name"></p>
-            <p id="user-email"></p>
-            <p id="user-phone"></p>
+            <h1 id="welcome-message"><center>Witaj na stronie mojego internetowego Radia!</center></h1>
+            <h2><center>Strone wykonał Jakub Drużbiński 
 
-           
-
-            <p id="user-bio"></p>
+                Informatyka Ekonomiczna, studia stacjonarne I stopnia 
+                
+                Rok II
+                
+                Wydział Ekonomiczno-Socjologiczny UŁ 
+                
+                Nr albumu: 406317. Strona była testowana w przeglądrace Google Chrome Wersja 114.0.5735.110 (Oficjalna wersja) (64-bitowa).</center></h2>
     </main>
     <footer>
         &copy; 2024 Jakub Drużbiński

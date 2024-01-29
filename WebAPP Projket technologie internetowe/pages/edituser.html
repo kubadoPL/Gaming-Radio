@@ -227,15 +227,15 @@ h1, h2, p, p2, p1 {
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Retrieve the username from localStorage
+           
             var userData = JSON.parse(localStorage.getItem('user_data')) || {};
             var username = userData.username;
 
-            // Display welcome message in the header
+            
             var welcomeMessageContainer = document.getElementById('welcomeMessage');
             if (username) {
                 var welcomeMessage = document.createElement('p');
-                welcomeMessage.textContent = 'Welcome ' + username;
+                welcomeMessage.textContent = 'Welcome ' + username + '!';
                 welcomeMessageContainer.appendChild(welcomeMessage);
             }
         });
@@ -305,7 +305,7 @@ h1, h2, p, p2, p1 {
                 localStorage.setItem('user_data', JSON.stringify(updatedUserData));
 
                
-                window.location.href = 'radio.html';
+                window.location.href = 'userinfo.html';
             });
         });
     </script>
@@ -316,6 +316,7 @@ h1, h2, p, p2, p1 {
             <ul>
                 <li><a href="radio.html">Home</a></li>
                 <li><a href="download.html">Download APP</a></li>
+                <li><a href="info.html">Info</a></li>
                 <li><a href="userinfo.html">My Profile</a></li>
                 <li class="logout-link"><a href="../index.html">Logout</a></li>
             </ul>
@@ -359,7 +360,7 @@ h1, h2, p, p2, p1 {
                     </p>
                     <p>
                         <input type="submit" value="Zapisz zmiany">
-                        <a href="radio.html">Cancel</a>
+                        <a href="userinfo.html">Cancel</a>
                     </p>
                 </fieldset>
             </form>

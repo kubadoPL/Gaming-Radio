@@ -189,6 +189,7 @@
             <ul>
                 <li><a href="radio.html">Home</a></li>
                 <li><a href="download.html">Download APP</a></li>
+                <li><a href="info.html">Info</a></li>
                 <li><a href="userinfo.html">My Profile</a></li>
                 <li class="logout-link"><a href="../index.html">Logout</a></li>
             </ul>
@@ -277,7 +278,7 @@
             var welcomeMessageContainer = document.getElementById('welcomeMessage');
             if (username) {
                 var welcomeMessage = document.createElement('p');
-                welcomeMessage.textContent = 'Welcome ' + username;
+                welcomeMessage.textContent = 'Welcome ' + username + '!';
                 welcomeMessageContainer.appendChild(welcomeMessage);
             }
         });
