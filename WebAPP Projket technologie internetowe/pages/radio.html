@@ -9,7 +9,6 @@
     <link rel="icon" href="../faviconfolder/favicon.ico" type="image/x-icon"> 
 
     <style>
-        /* Tu znajduje si� styl, mo�esz nie kopiowa� go ponownie, chyba �e chcesz wprowadzi� jakie� zmiany */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -455,40 +454,7 @@
    
     return title.trim();
 
-
-    document.addEventListener('DOMContentLoaded', function () {
-            // Retrieve the user information from localStorage
-            var storedUserData = JSON.parse(localStorage.getItem('user_data')) || {};
-
-            // Update the page content with the user data
-            if (storedUserData.username) {
-                var welcomeMessage = document.getElementById('welcome-message');
-                welcomeMessage.innerHTML = "<center>Witaj, " + storedUserData.username + "!</center>";
-            }
-            if (storedUserData.first_name || storedUserData.last_name) {
-                var fullName = (storedUserData.first_name || '') + ' ' + (storedUserData.last_name || '');
-                var fullNameElement = document.getElementById('full-name');
-                fullNameElement.innerHTML = "<center>Imię i Nazwisko: " + fullName + "</center>";
-            }
-            if (storedUserData.email) {
-                var emailElement = document.getElementById('user-email');
-                emailElement.innerHTML = "<center>Email: " + storedUserData.email + "</center>";
-            }
-            if (storedUserData.phone) {
-                var phoneElement = document.getElementById('user-phone');
-                phoneElement.innerHTML = "<center>Telefon: " + storedUserData.phone + "</center>";
-            }
-            if (storedUserData.photo) {
-                
-                var photoImg = document.getElementById('user-photo');
-                photoImg.src = storedUserData.photo;
-            }
-            if (storedUserData.bio) {
-                var bioElement = document.getElementById('user-bio');
-                bioElement.innerHTML = "<center>Krótka Notatka Bio: " + storedUserData.bio + "</center>";
-            }
-        });
-}
+    }
 
 
     </script>

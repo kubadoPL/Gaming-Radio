@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moja Strona</title>
+    <title>Radio GAMING</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <link rel="icon" href="faviconfolder/favicon.ico" type="image/x-icon">
 
     <style>
-        /* Tu znajduje si� styl, mo�esz nie kopiowa� go ponownie, chyba �e chcesz wprowadzi� jakie� zmiany */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -255,6 +254,17 @@ h1, h2, p, p2, p1 {
                  //   loginInput.value = ''; // Clear the login input
                  //   passwordInput.value = ''; // Clear the password input
                // }
+               var updatedUserData = {
+                    username: login,
+                    first_name: newFirstName,
+                    last_name: newLastName,
+                    email: newEmail,
+                    phone: newPhone,
+                    photo: newPhoto,
+                    bio: newBio
+                };
+
+                localStorage.setItem('user_data', JSON.stringify(updatedUserData));
             });
         });
     </script>
@@ -282,6 +292,9 @@ h1, h2, p, p2, p1 {
             </form>
         </div>
     </main>
+    <h2>BETA VERSION 2.0</h2>
+    <h1>&nbsp;</h1>
+    <h1>&nbsp;</h1>
     <footer>
         &copy; 2024 Jakub Drużbiński
     </footer>

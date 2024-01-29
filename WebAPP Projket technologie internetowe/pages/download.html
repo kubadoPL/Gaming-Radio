@@ -8,7 +8,6 @@
     <link rel="icon" href="../faviconfolder/favicon.ico" type="image/x-icon"> 
 
     <style>
-        /* Tu znajduje si� styl, mo�esz nie kopiowa� go ponownie, chyba �e chcesz wprowadzi� jakie� zmiany */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -23,18 +22,34 @@
        a {
             text-decoration: none;
             color: #ffffff;
+            
         }
 
         a:hover {
             color: #7300ff; /* Zmiana koloru tekstu podczas najechania mysz� */
         }
 
+
+        img{
+             /* Animation properties */
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
+        }
         h1 {
             color: #ffffff;
+             /* Animation properties */
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
         }
         h2 {
             font-size: 10px; /* Adjust the value as needed */
             color: #ffffff;
+             /* Animation properties */
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
         }
 
         #radioPlayer, #radioPlayer2 {
@@ -123,13 +138,20 @@
             margin-top: 60px;
             opacity: 0;
             transform: translateY(-50px);
-            animation: fadeInUp 0.5s ease-out forwards;
+            
         }
         #timeDisplay, #timeDisplay2 {
             color: #fff;
             font-size: 12px;
             margin-top: 5px;
         }
+            /* Animation keyframes */
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
     </style>
 </head>
 <body>
@@ -149,17 +171,17 @@
 
     <h2>Download our apk for android! Click the button to start downloading!!</h2>
     <a href="https://onedrive.live.com/download?resid=9AABE0C0EB27FD11%211870&authkey=!ALXkLO6qTVbtkMU" target="_blank">
-        <img src="android-apk-button.png" alt="Android APK Button" style="width: 215px; height: 70px;">
+        <img src="../img/android-apk-button.png" alt="Android APK Button" style="width: 215px; height: 70px;">
     </a>
     <h1>&nbsp;</h1>
     <h2>Download our Desktop application for Windows 10! Click the button to start downloading!!</h2>
     <a href="https://onedrive.live.com/download?resid=9AABE0C0EB27FD11%211873&authkey=!AOJAoKeShKzLX7I" target="_blank">
-        <img src="winappbutton.png" alt="Windows EXE Button" style="width: 220px; height: 80px;">
+        <img src="../img/winappbutton.png" alt="Windows EXE Button" style="width: 220px; height: 80px;">
     </a>
 
     <h2>BETA VERSION 2.0</h2>
     <footer>
-        &copy; 2024 K5 Studio
+        &copy; 2024 Jakub Drużbiński
     </footer>
 </body>
 </html>
