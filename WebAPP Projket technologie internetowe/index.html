@@ -30,7 +30,7 @@
 
         a:hover {
             color: #7300ff;
-            /* Zmiana koloru tekstu podczas najechania mysz� */
+            
         }
 
         h1 {
@@ -156,16 +156,16 @@
             margin-top: 5px;
         }
         body::-webkit-scrollbar {
-        width: 1px; /* Szeroko�� paska przewijania */
+        width: 1px; 
     }
 
     body::-webkit-scrollbar-thumb {
-        background-color: #7300ff; /* Kolor kciuka przewijania */
-        border-radius: 6px; /* Zaokr�glenie kciuka przewijania */
+        background-color: #7300ff; 
+        border-radius: 6px; 
     }
 
     body::-webkit-scrollbar-track {
-        background-color: rgba(0, 0, 0, 0); /* Kolor t�a paska przewijania */
+        background-color: rgba(0, 0, 0, 0); 
     }
 
 
@@ -228,45 +228,33 @@ h1, h2, p, p2, p1 {
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var loginForm = document.getElementById('login-form');
+    var loginForm = document.getElementById('login-form');
 
-            // Add event listener to the form submission
-            loginForm.addEventListener('submit', function (event) {
-                event.preventDefault(); // Prevent the form from submitting normally
+    loginForm.addEventListener('submit', function (event) {
+        event.preventDefault();
 
-                // Get values from the form
-                var loginInput = document.getElementById('id_login');
-                var passwordInput = document.getElementById('id_password');
+        var loginInput = document.getElementById('id_login');
+        var passwordInput = document.getElementById('id_password');
 
-                var login = loginInput.value;
-                var password = passwordInput.value;
+        var login = loginInput.value;
+        var password = passwordInput.value;
 
-                // Check if login is successful (you should replace this with your actual login logic)
-                //if (login === 'admin' && password === '123') {
-                    // Store login information in localStorage
-                    localStorage.setItem('username', login);
+        // Check if login is successful
+        // Assuming your logic here...
 
-                    // Redirect to the home page or any other page after successful login
-                    window.location.href = 'pages/radio.html';
-              //  } else {
-                    // Handle unsuccessful login (display error message, reset form, etc.)
-                 //   alert('Login failed. Please check your credentials.');
-                 //   loginInput.value = ''; // Clear the login input
-                 //   passwordInput.value = ''; // Clear the password input
-               // }
-               var updatedUserData = {
-                    username: login,
-                    first_name: newFirstName,
-                    last_name: newLastName,
-                    email: newEmail,
-                    phone: newPhone,
-                    photo: newPhoto,
-                    bio: newBio
-                };
+        // Retrieve existing user data from localStorage
+        var existingUserData = JSON.parse(localStorage.getItem('user_data')) || {};
 
-                localStorage.setItem('user_data', JSON.stringify(updatedUserData));
-            });
-        });
+        // Update the username field
+        existingUserData.username = login;
+
+        // Store the updated user data in localStorage
+        localStorage.setItem('user_data', JSON.stringify(existingUserData));
+
+        // Redirect to the home page or any other page after successful login
+        window.location.href = 'pages/radio.html';
+    });
+});
     </script>
 </head>
 <body>

@@ -20,10 +20,6 @@
             text-align: center;
         }
 
-
-
-        
-        
         a {
             text-decoration: none;
             color: #ffffff;
@@ -31,12 +27,11 @@
 
         a:hover {
             color: #7300ff;
-            /* Zmiana koloru tekstu podczas najechania mysz� */
         }
 
         h1 {
             color: #ffffff;
-              /* Animation properties */
+    /* Animation properties */
     opacity: 0;
     transform: translateY(-50px);
     animation: fadeInUp 0.5s ease-out forwards;
@@ -44,7 +39,7 @@
 
         h2 {
             font-size: 10px;
-            /* Adjust the value as needed */
+       
             color: #ffffff;
         }
 
@@ -167,16 +162,16 @@
             margin-top: 5px;
         }
         body::-webkit-scrollbar {
-        width: 1px; /* Szeroko�� paska przewijania */
+        width: 1px;
     }
 
     body::-webkit-scrollbar-thumb {
-        background-color: #7300ff; /* Kolor kciuka przewijania */
-        border-radius: 6px; /* Zaokr�glenie kciuka przewijania */
+        background-color: #7300ff; 
+        border-radius: 6px; 
     }
 
     body::-webkit-scrollbar-track {
-        background-color: rgba(0, 0, 0, 0); /* Kolor t�a paska przewijania */
+        background-color: rgba(0, 0, 0, 0); 
     }
     /* Animation keyframes */
 @keyframes fadeInUp {
@@ -197,16 +192,17 @@
                 <li><a href="edituser.html">Edit Profile</a></li>
                 <li class="logout-link"><a href="../index.html">Wyloguj</a></li>
             </ul>
+            <div id="welcomeMessage"></div> <!-- div do welcome message -->
         </nav>
     </header>
     <h1>&nbsp;</h1>
-
+    <h1>&nbsp;</h1>
     <h1>Radio GAMING</h1>
 
     <div id="radioPlayer">
         <audio id="audioPlayer" controls>
             <source src="https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA" type="audio/mpeg">
-            Twoja przegl�darka nie obs�uguje odtwarzacza audio.
+            Twoja przegladarka nie obsluguje odtwarzacza audio.
         </audio>
         <div class="player-controls">
             <i id="playPauseIcon" class="fas fa-play" onclick="playPause()"></i>
@@ -230,7 +226,7 @@
     <div id="radioPlayer2">
         <audio id="audioPlayer2" controls>
             <source src="https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ" type="audio/mpeg">
-            Twoja przegl�darka nie obs�uguje odtwarzacza audio.
+            Twoja przegladarka nie obsluguje odtwarzacza audio.
         </audio>
         <div class="player-controls">
             <i id="playPauseIcon2" class="fas fa-play" onclick="playPause2()"></i>
@@ -254,7 +250,7 @@
     <div id="radioPlayer3">
         <audio id="audioPlayer3" controls>
             <source src="https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw" type="audio/mpeg">
-            Twoja przegl�darka nie obs�uguje odtwarzacza audio.
+            Twoja przegladarka nie obsluguje odtwarzacza audio.
         </audio>
         <div class="player-controls">
             <i id="playPauseIcon3" class="fas fa-play" onclick="playPause3()"></i>
@@ -272,6 +268,20 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Retrieve the username from localStorage
+            var userData = JSON.parse(localStorage.getItem('user_data')) || {};
+            var username = userData.username;
+
+            // Display welcome message in the header
+            var welcomeMessageContainer = document.getElementById('welcomeMessage');
+            if (username) {
+                var welcomeMessage = document.createElement('p');
+                welcomeMessage.textContent = 'Welcome ' + username;
+                welcomeMessageContainer.appendChild(welcomeMessage);
+            }
+        });
+
         var audio = document.getElementById('audioPlayer');
         var streamTitleElement = document.getElementById('streamTitle');
         var playPauseIcon = document.getElementById('playPauseIcon');
@@ -300,12 +310,12 @@
                     streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
                 }
             } catch (error) {
-                console.error('B��d przetwarzania danych:', error);
+                console.error('Blad przetwarzania danych:', error);
             }
         };
 
         eventSource.onerror = function (error) {
-            console.error('B��d po��czenia:', error);
+            console.error('Blad polaczenia:', error);
             eventSource.close();
         };
 
@@ -341,12 +351,12 @@
                     streamTitleElement2.textContent = 'LIVE STREAM: ' + cleanedTitle2;
                 }
             } catch (error) {
-                console.error('B��d przetwarzania danych:', error);
+                console.error('Blad przetwarzania danych:', error);
             }
         };
 
         eventSource2.onerror = function (error) {
-            console.error('B��d po��czenia:', error);
+            console.error('Blad polaczenia:', error);
             eventSource2.close();
         };
 
