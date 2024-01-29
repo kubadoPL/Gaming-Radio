@@ -37,6 +37,10 @@
             color: #ffffff;
         }
 
+        p {
+            color: #ffffff;
+        }
+
         h2 {
             font-size: 10px;
           
@@ -177,7 +181,7 @@ h1.login-header {
 
 fieldset {
     border: 2px solid white;
-    border-radius: 10px; /* Add border-radius for square corners */
+    border-radius: 10px; 
     padding: 20px;
 
     /* Animation properties */
@@ -197,7 +201,7 @@ input {
     padding: 10px;
     margin-bottom: 10px;
     box-sizing: border-box;
-    background-color: rgba(255, 255, 255, 0.1); /* Transparent background */
+    background-color: rgba(255, 255, 255, 0.1);
     color: white;
     border: 1px solid white;
     border-radius: 5px;
@@ -225,101 +229,68 @@ h1, p2, p1 {
     text-shadow: 0 0 10px white;
 }
 
+
 textarea {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
     box-sizing: border-box;
-    background-color: rgba(255, 255, 255, 0.5); /* Półprzezroczysty tło */
+    background-color: rgba(255, 255, 255, 0.5); 
     color: white;
-    border: 1px solid white; /* Biała ramka */
+    border: 1px solid white; 
     border-radius: 5px;
 }
-
+form {
+    max-width: 300px; 
+    margin: 0 auto;
+}
     </style>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-           
-            var userData = JSON.parse(localStorage.getItem('user_data')) || {};
-            var username = userData.username;
+       document.addEventListener('DOMContentLoaded', function () {
+        var contactForm = document.getElementById('contactForm');
+        var thankYouMessage = document.getElementById('thankYouMessage');
+        var goBackButton = document.getElementById('goBackButton');
+        var emailInput = document.getElementById('email');
 
-            
-            var welcomeMessageContainer = document.getElementById('welcomeMessage');
-            if (username) {
-                var welcomeMessage = document.createElement('p');
-                welcomeMessage.textContent = 'Welcome ' + username + '!';
-                welcomeMessageContainer.appendChild(welcomeMessage);
-            }
+        // Function to hide the contact form and display thank you message
+        function submitForm() {
+            contactForm.style.display = 'none';
+            thankYouMessage.style.display = 'block';
+        }
+
+        // Function to go back home
+        function goBackHome() {
+            window.location.href = 'radio.html';
+        }
+
+        // Add event listener to the submit button
+        document.getElementById('submitButton').addEventListener('click', function (event) {
+            event.preventDefault(); // Prevent the form from submitting
+            submitForm();
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
-            // Retrieve the user information from localStorage
-            var storedUserData = JSON.parse(localStorage.getItem('user_data')) || {};
+        // Add event listener to the "Go Back Home" button
+        goBackButton.addEventListener('click', goBackHome);
 
-            // Update the form with the stored user data
-            if (storedUserData.username) {
-                var usernameInput = document.getElementById('id_username');
-                usernameInput.value = storedUserData.username;
-            }
-            if (storedUserData.first_name) {
-                var firstNameInput = document.getElementById('id_first_name');
-                firstNameInput.value = storedUserData.first_name;
-            }
-            if (storedUserData.last_name) {
-                var lastNameInput = document.getElementById('id_last_name');
-                lastNameInput.value = storedUserData.last_name;
-            }
-            if (storedUserData.email) {
-                var emailInput = document.getElementById('id_email');
-                emailInput.value = storedUserData.email;
-            }
-            if (storedUserData.phone) {
-                var phoneInput = document.getElementById('id_phone');
-                phoneInput.value = storedUserData.phone;
-            }
-            if (storedUserData.photo) {
-                // Display the base64-encoded photo
-                var photoImg = document.getElementById('id_photo_display');
-               
-            }
-            if (storedUserData.bio) {
-                var bioInput = document.getElementById('id_bio');
-                bioInput.value = storedUserData.bio;
-            }
+        // Retrieve the email from localStorage
+        var userData = JSON.parse(localStorage.getItem('user_data')) || {};
+        var email = userData.email;
 
-            // Add event listener to the form submission
-            var editForm = document.getElementById('edit-form');
-            editForm.addEventListener('submit', function (event) {
-                event.preventDefault(); // Prevent the form from submitting normally
+        // Autofill the email input field
+        if (email) {
+            emailInput.value = email;
+        }
 
-                // Get values from the form
-                var newUsername = document.getElementById('id_username').value;
-                var newFirstName = document.getElementById('id_first_name').value;
-                var newLastName = document.getElementById('id_last_name').value;
-                var newEmail = document.getElementById('id_email').value;
-                var newPhone = document.getElementById('id_phone').value;
-                var newPhoto = document.getElementById('id_photo').value;
-                var newBio = document.getElementById('id_bio').value;
+        // Display welcome message in the header
+        var welcomeMessageContainer = document.getElementById('welcomeMessage');
+        if (userData.username) {
+            var welcomeMessage = document.createElement('p');
+            welcomeMessage.textContent = 'Welcome ' + userData.username + '!';
+            welcomeMessageContainer.appendChild(welcomeMessage);
+        }
 
-             
-
-                // Update user information in localStorage
-                var updatedUserData = {
-                    username: newUsername,
-                    first_name: newFirstName,
-                    last_name: newLastName,
-                    email: newEmail,
-                    phone: newPhone,
-                    photo: newPhoto,
-                    bio: newBio
-                };
-
-                localStorage.setItem('user_data', JSON.stringify(updatedUserData));
-
-               
-                window.location.href = 'userinfo.html';
-            });
-        });
+    });
+        
     </script>
 </head>
 <body>
@@ -334,49 +305,36 @@ textarea {
                 <li class="logout-link"><a href="../index.html">Logout</a></li>
             </ul>
             <div id="welcomeMessage"></div> <!-- div do welcome message -->
+            
         </nav>
     </header>
     <main>
-        <div class="center-content-profile">
-            <h1><center>Edit Profile</center></h1>
-            <form id="edit-form" action="#" method="post">
+        <div class="center-content-home">
+            <h1 id="welcome-message"><center>Contact me here!</center></h1>
+            <h1>&nbsp;</h1>
+            <!-- Formularz kontaktowy -->
+            <form id="contactForm" action="#" method="post">
                 <fieldset>
-                    <p>
-                        <label for="id_username">Login</label>
-                        <input type="text" name="username" id="id_username" placeholder="Nazwa użytkownika" required="">
-                    </p>
-                    <p>
-                        <label for="id_first_name">Name</label>
-                        <input type="text" name="first_name" id="id_first_name" placeholder="Imię">
-                    </p>
-                    <p>
-                        <label for="id_last_name">Surname</label>
-                        <input type="text" name="last_name" id="id_last_name" placeholder="Nazwisko">
-                    </p>
-                    <p>
-                        <label for="id_email">Email</label>
-                        <input type="email" name="email" id="id_email" placeholder="Email">
-                    </p>
-                    <p>
-                        <label for="id_phone">Phone number</label>
-                        <input type="tel" name="phone" id="id_phone" placeholder="Telefon">
-                    </p>
-                    <p>
-                        <label for="id_photo">Photo</label>
-                        <input type="file" name="photo" id="id_photo" accept="image/*">
-                        
-                        
-                    </p>
-                    <p>
-                        <label for="id_bio">Description</label>
-                        <textarea name="bio" id="id_bio" placeholder="Krótka notatka bio"></textarea>
-                    </p>
-                    <p>
-                        <input type="submit" value="Zapisz zmiany">
-                        <a href="userinfo.html">Cancel</a>
-                    </p>
+                   
+
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+
+                    <label for="subject">Subject:</label>
+                    <input type="text" id="subject" name="subject" required>
+
+                    <label for="message">Message:</label>
+                    <textarea id="message" name="message" rows="4" required></textarea>
+
+                    <input type="submit" id="submitButton" value="Submit">
                 </fieldset>
             </form>
+
+            <!-- Wiadomosc po zlozeniu formularza -->
+            <div id="thankYouMessage" style="display: none;">
+                <p>Thanks for contacting me!</p>
+                <button id="goBackButton">Go Back Home</button>
+            </div>
         </div>
     </main>
     <footer>
