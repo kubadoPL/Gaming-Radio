@@ -286,6 +286,7 @@ form {
           
             var userData = JSON.parse(localStorage.getItem('user_data')) || {};
             var username = userData.username;
+            var bio = userData.bio
 
             
             var welcomeMessageContainer = document.getElementById('welcomeMessage');
@@ -294,12 +295,39 @@ form {
                 welcomeMessage.textContent = 'Welcome ' + username + '!';
                 welcomeMessageContainer.appendChild(welcomeMessage);
             }
+            var logincontainer = document.getElementById('loginmyuser');
+            if (username) {
+                var login = document.createElement('p');
+                login.textContent = username;
+                logincontainer.appendChild(login);
+            }
+
+            var biocontainer = document.getElementById('biomyuser');
+            if (bio) {
+                var biomessage = document.createElement('p');
+                biomessage.textContent = bio;
+                biocontainer.appendChild(biomessage);
+            }
+
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('pl-PL'); // Change 'pl-PL' to your desired locale
+            document.getElementById('todayDate').textContent = 'Member Since: ' + formattedDate;
+
         });
+
         function editPost(postId) {
        
-        var editUrl = 'edituser.html?id=' + postId;
+        var editUrl = 'editotheruser.html?id=' + postId;
         window.location.href = editUrl;
     }
+
+    function editPostmy() {
+       
+       var editUrl = 'edituser.html';
+       window.location.href = editUrl;
+   }
+
+   
         
         
     </script>
@@ -323,9 +351,17 @@ form {
     </header>
     <main>
         <div class="center-content-home">
-            <h1 id="welcome-message"><center>Other Users</center></h1>
+            <h1 id="welcome-message"><center>All Radio Users</center></h1>
             <h1>&nbsp;</h1>
-            
+            <div class="post">
+                <img src="../img/userprofileimages/user.png" alt="Zdjecie profilowe">
+                <div class="post-content">
+                    <h1 id="loginmyuser"></h1>
+                    <p id="biomyuser"></p>
+                    <p id="todayDate"></p>
+                    <button class="edit-button" onclick="editPostmy()">Edit</button>
+                </div>
+            </div>
             <div class="post">
                 <img src="../img/userprofileimages/user.png" alt="Zdjecie profilowe">
                 <div class="post-content">
