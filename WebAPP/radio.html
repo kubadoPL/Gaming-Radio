@@ -68,6 +68,7 @@
             background-color: #420092;
             color: #fff;
             border-radius: 12px;
+            
         }
 
         .player-controls i {
@@ -140,7 +141,7 @@
             align-items: center;
             justify-content: center;
             padding: 60px 20px 20px;
-            margin-top: 60px;
+            margin-top: 80px;
             opacity: 0;
             transform: translateY(-50px);
             animation: fadeInUp 0.5s ease-out forwards;
@@ -223,15 +224,61 @@
         box-shadow: 0 0 20px rgba(164, 0, 252, 0.8), 0 0 40px rgba(164, 0, 252, 0.6), 0 0 60px rgba(164, 0, 252, 0.4);
       }
     }
+
+    #betaVersion {
+    color: #ffffff;
+    opacity: 0;
+    transform: translateY(-50px);
+    animation: fadeInUp 0.5s ease-out forwards;
+    animation-delay: 0.5s; /* Delay the animation */
+}
+
+#notificationPopup {
+    position: fixed;
+    bottom: 60px;
+    left: 20px;
+    background-color: rgba(99, 0, 132, 0.275);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards, fadeOut 0.5s ease forwards 5s;
+    
+    z-index: 9999;
+    color: white; /* Changed text color to white */
+    
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
     </style>
 </head>
 
 <body>
+    <div id="notificationPopup">Latest News: [Your news here]</div>
     <header>
         <nav>
             <ul>
                 <li><a href="radio.html">Home</a></li>
                 <li><a href="../inne/pages/download.html">Download APP</a></li>
+                <li><a href="../inne/pages/info.html">Info</a></li>
             </ul>
         </nav>
     </header>
@@ -267,7 +314,7 @@
             <div class="player-controls">
                 <i id="playPauseIcon" class="fas fa-play" onclick="playPause()"></i>
                 <div id="timeDisplay">
-                    <span id="currentTime">0:00</span> / <span>🟣LIVE</span>
+                    <span id="currentTime">00:00</span> / <span>🟣LIVE</span>
                 </div>
                 <div class="volume-control">
                     <i class="fas fa-volume-down volume-icon"></i>
@@ -372,7 +419,7 @@ function formatTime(time) {
         formattedTime += (hours < 10 ? '0' + hours : hours) + ':';
     }
     
-    formattedTime += (minutes < 10 ?  minutes : minutes) + ':' +
+    formattedTime += (minutes < 10 ? '0' + minutes : minutes) + ':' +
                      (seconds < 10 ? '0' + seconds : seconds);
     
     return formattedTime;
@@ -417,7 +464,8 @@ function formatTime(time) {
 
    // Usuń "(Official Video)" z tytułu
    title = title.replace(/\(Official Video\)/gi, '');
-
+   title = title.replace(/\((1)\)/gi, '');
+   title = title.replace(/\(Official\)/gi, '');
 // Usuń "[Official Music Video]" z tytułu
     title = title.replace(/\[Official Music Video\]/gi, '');
 
@@ -428,8 +476,24 @@ function formatTime(time) {
     // Dodaj trim, aby usunąć ewentualne spacje na początku i końcu
     return title.trim();
         }
+
+        // JavaScript code to display the notification
+function showNotification(message) {
+    var notificationPopup = document.getElementById('notificationPopup');
+    notificationPopup.textContent = "Latest Radio News: " + message;
+    notificationPopup.style.display = 'block';
+}
+
+// Call showNotification with your news message
+showNotification("New Radio UI and improvements!");
+
+// JavaScript code to automatically hide the notification after a certain duration (in milliseconds)
+setTimeout(function() {
+    var notificationPopup = document.getElementById('notificationPopup');
+    notificationPopup.style.display = 'none';
+}, 8000); // 8000 milliseconds (adjust as needed)
     </script>
-    <h2>BETA VERSION 3.0</h2>
+    <h2 id="betaVersion">BETA VERSION 3.1</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <footer>
