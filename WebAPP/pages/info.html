@@ -225,23 +225,7 @@ h1, p2, p1 {
     text-shadow: 0 0 1px white;
 }
     </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Retrieve the username from localStorage
-            var userData = JSON.parse(localStorage.getItem('user_data')) || {};
-            var username = userData.username;
-
-            // Display welcome message in the header
-            var welcomeMessageContainer = document.getElementById('welcomeMessage');
-            if (username) {
-                var welcomeMessage = document.createElement('p');
-                welcomeMessage.textContent = 'Welcome ' + username + '!';
-                welcomeMessageContainer.appendChild(welcomeMessage);
-            }
-        });
-
-        
-    </script>
+    
 </head>
 <body>
     <header>
