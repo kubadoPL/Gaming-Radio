@@ -72,7 +72,7 @@ def update_rpc_periodically():
         else:
             # Update based on which audio player is currently playing
             if stream_title and audio_playing:
-                update_rpc(stream_title, "Radio GAMING", "play", "Streaming")
+                update_rpc(stream_title, station_name, "play", "Streaming")
 
         time.sleep(1)  # Adjust the interval as needed
 
