@@ -34,6 +34,7 @@
             opacity: 0;
             transform: translateY(-50px);
             animation: fadeInUp 0.5s ease-out forwards;
+            
         }
 
         h2 {
@@ -148,7 +149,7 @@
         #timeDisplay {
             color: #fff;
             font-size: 12px;
-            margin-top: 5px;
+            margin-top: 0px;
         }
 
         .station-selector {
@@ -156,6 +157,8 @@
             justify-content: center;
             margin-bottom: 20px;
             animation: fadeInUp 0.5s ease-out forwards;
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
+            transition: transform 0.5s ease !important;
         }
 
         .station-photo {
@@ -164,20 +167,30 @@
             border-radius: 50%;
             margin: 0 10px;
             cursor: pointer;
-            animation: fadeInUp 0.5s ease-out forwards;
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
+            transition: transform 0.5s ease !important;
+            
         }
+
+        .station-photo:hover {
+            transform: scale(1.1) !important; /* Scale the photo to 110% on hover */
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
+            transition: transform 0.5s ease !important;
+        }
+
 
         .station-photo img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             border-radius: 50%;
-            animation: fadeInUp 0.5s ease-out forwards;
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
         }
 
         .station-photo.active {
             border: 2px solid #7300ff;
             animation: glow 1s infinite alternate;
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
             
         }
 
@@ -204,6 +217,7 @@
         @keyframes glow {
       from {
         box-shadow: 0 0 10px rgba(200, 117, 244, 0.8), 0 0 20px rgba(200, 117, 244, 0.6), 0 0 30px rgba(200, 117, 244, 0.4);
+        
       }
       to {
         box-shadow: 0 0 20px rgba(164, 0, 252, 0.8), 0 0 40px rgba(164, 0, 252, 0.6), 0 0 60px rgba(164, 0, 252, 0.4);
@@ -222,26 +236,26 @@
         </nav>
     </header>
     <main>
-        <h1>Radio GAMING</h1>
+        <h1 id="StationNameInh1">Radio GAMING</h1>
 
         <div class="station-selector">
             <div class="station-photo active"
-                onclick="changeStation('https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA', 'Radio Gaming', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
+                onclick="changeStation('https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
                 <img
                     src="https://zeno.fm/_next/image/?url=https%3A%2F%2Fimages.zeno.fm%2FkqxMZUL2jgGFnWvyFmvEbmTuB_IQUN3B0AcV13la8tc%2Frs%3Afit%3A240%3A240%2Fg%3Ace%3A0%3A0%2FaHR0cHM6Ly9zdHJlYW0tdG9vbHMuemVub21lZGlhLmNvbS9jb250ZW50L3N0YXRpb25zLzA2YmMwOTJmLTI0OGMtNGJmOC1iODA1LWZhNGYwNTAyM2FlNC9pbWFnZS8_dXBkYXRlZD0xNzA1OTc1OTU0MDAw.webp&w=1920&q=100"
-                    alt="Radio Gaming">
+                    alt="Radio GAMING">
             </div>
             <div class="station-photo"
-                onclick="changeStation('https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ', 'Radio Gaming Dark', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
+                onclick="changeStation('https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
                 <img
                     src="https://images.zeno.fm/onV9r5Lic7hY9qEDlEncEcFTPaoC5sI_cLKeOCD3KRc/rs:fit:170:170/g:ce:0:0/aHR0cHM6Ly9zdHJlYW0tdG9vbHMuemVub21lZGlhLmNvbS9jb250ZW50L3N0YXRpb25zLzUwY2Y1NDFhLTlkYWYtNDhmMy1iOTU4LWNmYjZkZThmYjUxOS9pbWFnZS8.webp?u=Tue%20Jan%2023%2014:49:54%20UTC+0000%202024"
-                    alt="Radio Gaming Dark">
+                    alt="Radio GAMING DARK">
             </div>
             <div class="station-photo"
-                onclick="changeStation('https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw', 'Radio Gaming Maron FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
+                onclick="changeStation('https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
                 <img
                     src="https://images.zeno.fm/B6KhkopOwbcjxpns5X3sV3TJVKzfaXuBGaNUWftExAg/rs:fit:170:170/g:ce:0:0/aHR0cHM6Ly9zdHJlYW0tdG9vbHMuemVub21lZGlhLmNvbS9jb250ZW50L3N0YXRpb25zL2NhYWQzNDIyLWY0YjEtNGY2MC04MTA2LTViNTRlYjUzYjEwZC9pbWFnZS8.webp?u=Wed%20Jan%2024%2020:46:59%20UTC+0000%202024"
-                    alt="Radio Gaming Maron FM">
+                    alt="Radio GAMING MARON FM">
             </div>
         </div>
 
@@ -253,7 +267,7 @@
             <div class="player-controls">
                 <i id="playPauseIcon" class="fas fa-play" onclick="playPause()"></i>
                 <div id="timeDisplay">
-                    <span id="currentTime">0:00</span> / <span>LIVE</span>
+                    <span id="currentTime">0:00</span> / <span>🟣LIVE</span>
                 </div>
                 <div class="volume-control">
                     <i class="fas fa-volume-down volume-icon"></i>
@@ -342,17 +356,28 @@
         };
 
         var currentTimeElement = document.getElementById('currentTime');
-        audio.addEventListener('timeupdate', function () {
-            var currentTime = formatTime(audio.currentTime);
-            currentTimeElement.textContent = currentTime;
-        });
+audio.addEventListener('timeupdate', function () {
+    var currentTime = formatTime(audio.currentTime);
+    currentTimeElement.textContent = currentTime;
+});
 
-        function formatTime(time) {
-            var minutes = Math.floor(time / 60);
-            var seconds = Math.floor(time % 60);
-            seconds = seconds < 10 ? '0' + seconds : seconds;
-            return minutes + ':' + seconds;
-        }
+function formatTime(time) {
+    var hours = Math.floor(time / 3600);
+    var minutes = Math.floor((time % 3600) / 60);
+    var seconds = Math.floor(time % 60);
+    
+    var formattedTime = '';
+    
+    if (hours > 0) {
+        formattedTime += (hours < 10 ? '0' + hours : hours) + ':';
+    }
+    
+    formattedTime += (minutes < 10 ?  minutes : minutes) + ':' +
+                     (seconds < 10 ? '0' + seconds : seconds);
+    
+    return formattedTime;
+}
+
 
         function cleanTitle(title) {
     // Usuń ".mp3" z tytułu
@@ -404,7 +429,7 @@
     return title.trim();
         }
     </script>
-    <h2>BETA VERSION 2.0</h2>
+    <h2>BETA VERSION 3.0</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <footer>

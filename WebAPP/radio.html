@@ -14,17 +14,12 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            
             background: url('https://unblast.com/wp-content/uploads/2021/01/Space-Background-Image-2.jpg') fixed;
             background-size: cover;
             color: #333;
             text-align: center;
         }
 
-
-
-        
-        
         a {
             text-decoration: none;
             color: #ffffff;
@@ -32,35 +27,30 @@
 
         a:hover {
             color: #7300ff;
-            /* Zmiana koloru tekstu podczas najechania myszą */
         }
 
         h1 {
             color: #ffffff;
-/* Animation properties */
-    opacity: 0;
-    transform: translateY(-50px);
-    animation: fadeInUp 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(-50px);
+            animation: fadeInUp 0.5s ease-out forwards;
+            
         }
 
         h2 {
             font-size: 10px;
-            /* Adjust the value as needed */
             color: #ffffff;
         }
 
-        #radioPlayer,
-        #radioPlayer2,
-        #radioPlayer3 {
+        .audio-player {
             width: 300px;
             margin: 20px auto;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-/* Animation properties */
-    opacity: 0;
-    transform: translateY(-50px);
-    animation: fadeInUp 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(-50px);
+            animation: fadeInUp 0.5s ease-out forwards;
         }
 
         audio {
@@ -98,9 +88,7 @@
             width: 80px;
         }
 
-        #streamTitle,
-        #streamTitle2,
-        #streamTitle3 {
+        #streamTitle {
             color: #fff;
             margin-top: 10px;
             background-color: rgba(255, 255, 255, 0.5);
@@ -158,32 +146,83 @@
             animation: fadeInUp 0.5s ease-out forwards;
         }
 
-        #timeDisplay,
-        #timeDisplay2,
-        #timeDisplay3 {
+        #timeDisplay {
             color: #fff;
             font-size: 12px;
-            margin-top: 5px;
+            margin-top: 0px;
         }
+
+        .station-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.5s ease-out forwards;
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
+            transition: transform 0.5s ease !important;
+        }
+
+        .station-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin: 0 10px;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
+            transition: transform 0.5s ease !important;
+            
+        }
+
+        .station-photo:hover {
+            transform: scale(1.1) !important; /* Scale the photo to 110% on hover */
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
+            transition: transform 0.5s ease !important;
+        }
+
+
+        .station-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
+        }
+
+        .station-photo.active {
+            border: 2px solid #7300ff;
+            animation: glow 1s infinite alternate;
+            transition: all 0.3s ease-in-out !important; /* Added transition for smooth animation */
+            
+        }
+
         body::-webkit-scrollbar {
-        width: 1px; /* Szerokość paska przewijania */
-    }
+            width: 1px;
+        }
 
-    body::-webkit-scrollbar-thumb {
-        background-color: #7300ff; /* Kolor kciuka przewijania */
-        border-radius: 6px; /* Zaokrąglenie kciuka przewijania */
-    }
+        body::-webkit-scrollbar-thumb {
+            background-color: #7300ff;
+            border-radius: 6px;
+        }
 
-    body::-webkit-scrollbar-track {
-        background-color: rgba(0, 0, 0, 0); /* Kolor tła paska przewijania */
+        body::-webkit-scrollbar-track {
+            background-color: rgba(0, 0, 0, 0);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes glow {
+      from {
+        box-shadow: 0 0 10px rgba(200, 117, 244, 0.8), 0 0 20px rgba(200, 117, 244, 0.6), 0 0 30px rgba(200, 117, 244, 0.4);
+        
+      }
+      to {
+        box-shadow: 0 0 20px rgba(164, 0, 252, 0.8), 0 0 40px rgba(164, 0, 252, 0.6), 0 0 60px rgba(164, 0, 252, 0.4);
+      }
     }
-    /* Animation keyframes */
-@keyframes fadeInUp {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
     </style>
 </head>
 
@@ -196,82 +235,56 @@
             </ul>
         </nav>
     </header>
-    <h1>&nbsp;</h1>
+    <main>
+        <h1 id="StationNameInh1">Radio GAMING</h1>
 
-    <h1>Radio GAMING</h1>
-
-    <div id="radioPlayer">
-        <audio id="audioPlayer" controls>
-            <source src="https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA" type="audio/mpeg">
-            Twoja przeglądarka nie obsługuje odtwarzacza audio.
-        </audio>
-        <div class="player-controls">
-            <i id="playPauseIcon" class="fas fa-play" onclick="playPause()"></i>
-            <div id="timeDisplay">
-                <span id="currentTime">0:00</span> / <span>LIVE</span>
+        <div class="station-selector">
+            <div class="station-photo active"
+                onclick="changeStation('https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
+                <img
+                    src="https://zeno.fm/_next/image/?url=https%3A%2F%2Fimages.zeno.fm%2FkqxMZUL2jgGFnWvyFmvEbmTuB_IQUN3B0AcV13la8tc%2Frs%3Afit%3A240%3A240%2Fg%3Ace%3A0%3A0%2FaHR0cHM6Ly9zdHJlYW0tdG9vbHMuemVub21lZGlhLmNvbS9jb250ZW50L3N0YXRpb25zLzA2YmMwOTJmLTI0OGMtNGJmOC1iODA1LWZhNGYwNTAyM2FlNC9pbWFnZS8_dXBkYXRlZD0xNzA1OTc1OTU0MDAw.webp&w=1920&q=100"
+                    alt="Radio GAMING">
             </div>
-            <div class="volume-control">
-                <i class="fas fa-volume-down volume-icon"></i>
-                <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1"
-                    onchange="changeVolume(this.value)">
-                <i class="fas fa-volume-up volume-icon"></i>
+            <div class="station-photo"
+                onclick="changeStation('https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
+                <img
+                    src="https://images.zeno.fm/onV9r5Lic7hY9qEDlEncEcFTPaoC5sI_cLKeOCD3KRc/rs:fit:170:170/g:ce:0:0/aHR0cHM6Ly9zdHJlYW0tdG9vbHMuemVub21lZGlhLmNvbS9jb250ZW50L3N0YXRpb25zLzUwY2Y1NDFhLTlkYWYtNDhmMy1iOTU4LWNmYjZkZThmYjUxOS9pbWFnZS8.webp?u=Tue%20Jan%2023%2014:49:54%20UTC+0000%202024"
+                    alt="Radio GAMING DARK">
             </div>
-        </div>
-        <div id="streamTitle"></div>
-    </div>
-
-    <h1>&nbsp;</h1>
-
-    <h1>Radio GAMING DARK</h1>
-
-    <div id="radioPlayer2">
-        <audio id="audioPlayer2" controls>
-            <source src="https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ" type="audio/mpeg">
-            Twoja przeglądarka nie obsługuje odtwarzacza audio.
-        </audio>
-        <div class="player-controls">
-            <i id="playPauseIcon2" class="fas fa-play" onclick="playPause2()"></i>
-            <div id="timeDisplay2">
-                <span id="currentTime2">0:00</span> / <span>LIVE</span>
-            </div>
-            <div class="volume-control">
-                <i class="fas fa-volume-down volume-icon"></i>
-                <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1"
-                    onchange="changeVolume2(this.value)">
-                <i class="fas fa-volume-up volume-icon"></i>
+            <div class="station-photo"
+                onclick="changeStation('https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
+                <img
+                    src="https://images.zeno.fm/B6KhkopOwbcjxpns5X3sV3TJVKzfaXuBGaNUWftExAg/rs:fit:170:170/g:ce:0:0/aHR0cHM6Ly9zdHJlYW0tdG9vbHMuemVub21lZGlhLmNvbS9jb250ZW50L3N0YXRpb25zL2NhYWQzNDIyLWY0YjEtNGY2MC04MTA2LTViNTRlYjUzYjEwZC9pbWFnZS8.webp?u=Wed%20Jan%2024%2020:46:59%20UTC+0000%202024"
+                    alt="Radio GAMING MARON FM">
             </div>
         </div>
-        <div id="streamTitle2"></div>
-    </div>
 
-    <h1>&nbsp;</h1>
-
-    <h1>Radio GAMING MARON FM</h1>
-
-    <div id="radioPlayer3">
-        <audio id="audioPlayer3" controls>
-            <source src="https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw" type="audio/mpeg">
-            Twoja przeglądarka nie obsługuje odtwarzacza audio.
-        </audio>
-        <div class="player-controls">
-            <i id="playPauseIcon3" class="fas fa-play" onclick="playPause3()"></i>
-            <div id="timeDisplay3">
-                <span id="currentTime3">0:00</span> / <span>LIVE</span>
+        <div class="audio-player" id="radioPlayer">
+            <audio id="audioPlayer" controls>
+                <source src="https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA" type="audio/mpeg">
+                Twoja przeglądarka nie obsługuje odtwarzacza audio.
+            </audio>
+            <div class="player-controls">
+                <i id="playPauseIcon" class="fas fa-play" onclick="playPause()"></i>
+                <div id="timeDisplay">
+                    <span id="currentTime">0:00</span> / <span>🟣LIVE</span>
+                </div>
+                <div class="volume-control">
+                    <i class="fas fa-volume-down volume-icon"></i>
+                    <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1"
+                        onchange="changeVolume(this.value)">
+                    <i class="fas fa-volume-up volume-icon"></i>
+                </div>
             </div>
-            <div class="volume-control">
-                <i class="fas fa-volume-down volume-icon"></i>
-                <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1"
-                    onchange="changeVolume3(this.value)">
-                <i class="fas fa-volume-up volume-icon"></i>
-            </div>
+            <div id="streamTitle"></div>
         </div>
-        <div id="streamTitle3"></div>
-    </div>
-
+    </main>
     <script>
         var audio = document.getElementById('audioPlayer');
         var streamTitleElement = document.getElementById('streamTitle');
         var playPauseIcon = document.getElementById('playPauseIcon');
+        var stationName = document.querySelector('h1');
+        var eventSource = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
 
         function playPause() {
             if (audio.paused) {
@@ -288,7 +301,39 @@
             audio.volume = value;
         }
 
-        var eventSource = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
+        function changeStation(source, name, metadataURL) {
+            audio.src = source;
+            audio.load();
+            audio.play();
+            playPauseIcon.className = 'fas fa-pause';
+            stationName.textContent = name; // Update the station name in the <h1>
+
+            // Highlight active station photo
+            var stationPhotos = document.querySelectorAll('.station-photo');
+            stationPhotos.forEach(function (photo) {
+                if (photo.getAttribute('onclick').includes(source)) {
+                    photo.classList.add('active');
+                } else {
+                    photo.classList.remove('active');
+                }
+            });
+
+            // Update event source URL based on the selected station
+            eventSource.close(); // Close the previous connection
+            eventSource = new EventSource(metadataURL);
+            eventSource.onmessage = function (event) {
+                try {
+                    var jsonData = JSON.parse(event.data);
+                    if (jsonData.streamTitle) {
+                        var cleanedTitle = cleanTitle(jsonData.streamTitle);
+                        streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
+                    }
+                } catch (error) {
+                    console.error('Error processing data:', error);
+                }
+            };
+        }
+
         eventSource.onmessage = function (event) {
             try {
                 var jsonData = JSON.parse(event.data);
@@ -297,138 +342,42 @@
                     streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
                 }
             } catch (error) {
-                console.error('Błąd przetwarzania danych:', error);
+                console.error('Error processing data:', error);
             }
         };
 
         eventSource.onerror = function (error) {
-            console.error('Błąd połączenia:', error);
+            console.error('Connection error:', error);
             eventSource.close();
         };
 
         window.onbeforeunload = function () {
             eventSource.close();
-        };
-
-        var audio2 = document.getElementById('audioPlayer2');
-        var streamTitleElement2 = document.getElementById('streamTitle2');
-        var playPauseIcon2 = document.getElementById('playPauseIcon2');
-
-        function playPause2() {
-            if (audio2.paused) {
-                audio2.load();
-                audio2.play();
-                playPauseIcon2.className = 'fas fa-pause';
-            } else {
-                audio2.pause();
-                playPauseIcon2.className = 'fas fa-play';
-            }
-        }
-
-        function changeVolume2(value) {
-            audio2.volume = value;
-        }
-
-        var eventSource2 = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv');
-        eventSource2.onmessage = function (event) {
-            try {
-                var jsonData2 = JSON.parse(event.data);
-                if (jsonData2.streamTitle) {
-                    var cleanedTitle2 = cleanTitle(jsonData2.streamTitle);
-                    streamTitleElement2.textContent = 'LIVE STREAM: ' + cleanedTitle2;
-                }
-            } catch (error) {
-                console.error('Błąd przetwarzania danych:', error);
-            }
-        };
-
-        eventSource2.onerror = function (error) {
-            console.error('Błąd połączenia:', error);
-            eventSource2.close();
-        };
-
-        window.onbeforeunload = function () {
-            eventSource2.close();
-        };
-
-        var audio3 = document.getElementById('audioPlayer3');
-        var streamTitleElement3 = document.getElementById('streamTitle3');
-        var playPauseIcon3 = document.getElementById('playPauseIcon3');
-
-        function playPause3() {
-            if (audio3.paused) {
-                audio3.load();
-                audio3.play();
-                playPauseIcon3.className = 'fas fa-pause';
-            } else {
-                audio3.pause();
-                playPauseIcon3.className = 'fas fa-play';
-            }
-        }
-
-        function changeVolume3(value) {
-            audio3.volume = value;
-        }
-
-        var eventSource3 = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv');
-        eventSource3.onmessage = function (event) {
-            try {
-                var jsonData3 = JSON.parse(event.data);
-                if (jsonData3.streamTitle) {
-                    var cleanedTitle3 = cleanTitle(jsonData3.streamTitle);
-                    streamTitleElement3.textContent = 'LIVE STREAM: ' + cleanedTitle3;
-                }
-            } catch (error) {
-                console.error('Błąd przetwarzania danych:', error);
-            }
-        };
-
-        eventSource3.onerror = function (error) {
-            console.error('Błąd połączenia:', error);
-            eventSource3.close();
-        };
-
-        window.onbeforeunload = function () {
-            eventSource3.close();
         };
 
         var currentTimeElement = document.getElementById('currentTime');
-        var durationElement = document.getElementById('duration');
-        var currentTimeElement2 = document.getElementById('currentTime2');
-        var durationElement2 = document.getElementById('duration2');
-        var currentTimeElement3 = document.getElementById('currentTime3');
-        var durationElement3 = document.getElementById('duration3');
+audio.addEventListener('timeupdate', function () {
+    var currentTime = formatTime(audio.currentTime);
+    currentTimeElement.textContent = currentTime;
+});
 
-        audio.addEventListener('timeupdate', function () {
-            var currentTime = formatTime(audio.currentTime);
-            var duration = formatTime(audio.duration);
+function formatTime(time) {
+    var hours = Math.floor(time / 3600);
+    var minutes = Math.floor((time % 3600) / 60);
+    var seconds = Math.floor(time % 60);
+    
+    var formattedTime = '';
+    
+    if (hours > 0) {
+        formattedTime += (hours < 10 ? '0' + hours : hours) + ':';
+    }
+    
+    formattedTime += (minutes < 10 ?  minutes : minutes) + ':' +
+                     (seconds < 10 ? '0' + seconds : seconds);
+    
+    return formattedTime;
+}
 
-            currentTimeElement.textContent = currentTime;
-            durationElement.textContent = duration;
-        });
-
-        audio2.addEventListener('timeupdate', function () {
-            var currentTime2 = formatTime(audio2.currentTime);
-            var duration2 = formatTime(audio2.duration);
-
-            currentTimeElement2.textContent = currentTime2;
-            durationElement2.textContent = duration2;
-        });
-
-        audio3.addEventListener('timeupdate', function () {
-            var currentTime3 = formatTime(audio3.currentTime);
-            var duration3 = formatTime(audio3.duration);
-
-            currentTimeElement3.textContent = currentTime3;
-            durationElement3.textContent = duration3;
-        });
-
-        function formatTime(time) {
-            var minutes = Math.floor(time / 60);
-            var seconds = Math.floor(time % 60);
-            seconds = seconds < 10 ? '0' + seconds : seconds;
-            return minutes + ':' + seconds;
-        }
 
         function cleanTitle(title) {
     // Usuń ".mp3" z tytułu
@@ -478,11 +427,9 @@
 
     // Dodaj trim, aby usunąć ewentualne spacje na początku i końcu
     return title.trim();
-}
-
-
+        }
     </script>
-    <h2>BETA VERSION 2.0</h2>
+    <h2>BETA VERSION 3.0</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <footer>
