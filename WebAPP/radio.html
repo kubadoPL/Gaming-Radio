@@ -14,7 +14,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background: url('https://unblast.com/wp-content/uploads/2021/01/Space-Background-Image-2.jpg') fixed;
+            background: url('https://www.manticore.uni.lodz.pl/~druzb5/inne/static/spacebackgroundradiogamingupscaled.jpg') fixed;
             background-size: cover;
             color: #333;
             text-align: center;
@@ -215,15 +215,47 @@
             }
         }
 
-        @keyframes glow {
-      from {
+        /* First station */
+.station-photo:nth-child(1).active {
+    animation: glow-first 1s infinite alternate;
+}
+
+@keyframes glow-first {
+    from {
         box-shadow: 0 0 10px rgba(200, 117, 244, 0.8), 0 0 20px rgba(200, 117, 244, 0.6), 0 0 30px rgba(200, 117, 244, 0.4);
-        
-      }
-      to {
-        box-shadow: 0 0 20px rgba(164, 0, 252, 0.8), 0 0 40px rgba(164, 0, 252, 0.6), 0 0 60px rgba(164, 0, 252, 0.4);
-      }
     }
+    to {
+        box-shadow: 0 0 20px rgba(164, 0, 252, 0.8), 0 0 40px rgba(164, 0, 252, 0.6), 0 0 60px rgba(164, 0, 252, 0.4);
+    }
+}
+
+/* Second station */
+.station-photo:nth-child(2).active {
+    animation: glow-second 1s infinite alternate;
+}
+
+@keyframes glow-second {
+    from {
+        box-shadow: 0 0 10px rgba(117, 151, 244, 0.8), 0 0 20px rgba(117, 151, 244, 0.6), 0 0 30px rgba(117, 151, 244, 0.4);
+    }
+    to {
+        box-shadow: 0 0 20px rgba(0, 59, 252, 0.8), 0 0 40px rgba(0, 59, 252, 0.6), 0 0 60px rgba(0, 59, 252, 0.4);
+    }
+}
+
+/* Third station */
+.station-photo:nth-child(3).active {
+    animation: glow-third 1s infinite alternate;
+}
+
+@keyframes glow-third {
+    from {
+        box-shadow: 0 0 10px rgba(244, 117, 117, 0.8), 0 0 20px rgba(244, 117, 117, 0.6), 0 0 30px rgba(244, 117, 117, 0.4);
+    }
+    to {
+        box-shadow: 0 0 20px rgba(252, 0, 0, 0.8), 0 0 40px rgba(252, 0, 0, 0.6), 0 0 60px rgba(252, 0, 0, 0.4);
+    }
+}
 
     #betaVersion {
     color: #ffffff;
@@ -268,10 +300,85 @@
         opacity: 0;
     }
 }
+
+.loading-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgb(56, 55, 55);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-screen .lds-ripple {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .loading-screen .lds-ripple div {
+            position: absolute;
+            border: 4px solid #fff;
+            opacity: 1;
+            border-radius: 50%;
+            animation: lds-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+        }
+
+        .loading-screen .lds-ripple div:nth-child(2) {
+            animation-delay: -0.5s;
+        }
+
+        @keyframes lds-ripple {
+            0% {
+                top: 36px;
+                left: 36px;
+                width: 0;
+                height: 0;
+                opacity: 0;
+            }
+            4.9% {
+                top: 36px;
+                left: 36px;
+                width: 0;
+                height: 0;
+                opacity: 0;
+            }
+            5% {
+                top: 36px;
+                left: 36px;
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            100% {
+                top: 0px;
+                left: 0px;
+                width: 72px;
+                height: 72px;
+                opacity: 0;
+            }
+        }
+        .loading-screen {
+    display: none;
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb-color);
+}
     </style>
 </head>
 
 <body>
+    <!-- Loading screen -->
+    <div class="loading-screen">
+        <div class="lds-ripple"><div></div><div></div></div>
+    </div>
     <div id="notificationPopup">Latest News: [Your news here]</div>
     <header>
         <nav>
@@ -301,7 +408,7 @@
             <div class="station-photo"
                 onclick="changeStation('https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
                 <img
-                    src="https://images.zeno.fm/B6KhkopOwbcjxpns5X3sV3TJVKzfaXuBGaNUWftExAg/rs:fit:170:170/g:ce:0:0/aHR0cHM6Ly9zdHJlYW0tdG9vbHMuemVub21lZGlhLmNvbS9jb250ZW50L3N0YXRpb25zL2NhYWQzNDIyLWY0YjEtNGY2MC04MTA2LTViNTRlYjUzYjEwZC9pbWFnZS8.webp?u=Wed%20Jan%2024%2020:46:59%20UTC+0000%202024"
+                    src="https://i.ibb.co/2jrBKVM/Radio-Gaming-Maron-FM.png"
                     alt="Radio GAMING MARON FM">
             </div>
         </div>
@@ -314,7 +421,7 @@
             <div class="player-controls">
                 <i id="playPauseIcon" class="fas fa-play" onclick="playPause()"></i>
                 <div id="timeDisplay">
-                    <span id="currentTime">00:00</span> / <span>🟣LIVE</span>
+                    <span id="currentTime">00:00</span> / <span id="liveIndicator">🟣LIVE</span>
                 </div>
                 <div class="volume-control">
                     <i class="fas fa-volume-down volume-icon"></i>
@@ -332,7 +439,9 @@
         var playPauseIcon = document.getElementById('playPauseIcon');
         var stationName = document.querySelector('h1');
         var eventSource = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
+        var currentEventSource = eventSource;
 
+        document.documentElement.style.setProperty('--scrollbar-thumb-color', '#7300ff');
         function playPause() {
             if (audio.paused) {
                 audio.load();
@@ -349,37 +458,100 @@
         }
 
         function changeStation(source, name, metadataURL) {
-            audio.src = source;
-            audio.load();
-            audio.play();
-            playPauseIcon.className = 'fas fa-pause';
-            stationName.textContent = name; // Update the station name in the <h1>
+    var audio = document.getElementById('audioPlayer');
+    var stationName = document.querySelector('h1');
+    var streamTitleElement = document.getElementById('streamTitle');
+    var playPauseIcon = document.getElementById('playPauseIcon');
+    var liveIndicator = document.getElementById('liveIndicator');
 
-            // Highlight active station photo
-            var stationPhotos = document.querySelectorAll('.station-photo');
-            stationPhotos.forEach(function (photo) {
-                if (photo.getAttribute('onclick').includes(source)) {
-                    photo.classList.add('active');
-                } else {
-                    photo.classList.remove('active');
-                }
-            });
-
-            // Update event source URL based on the selected station
-            eventSource.close(); // Close the previous connection
-            eventSource = new EventSource(metadataURL);
-            eventSource.onmessage = function (event) {
-                try {
-                    var jsonData = JSON.parse(event.data);
-                    if (jsonData.streamTitle) {
-                        var cleanedTitle = cleanTitle(jsonData.streamTitle);
-                        streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
-                    }
-                } catch (error) {
-                    console.error('Error processing data:', error);
-                }
-            };
+    // Define the CSS properties and live indicator emoji for each station
+    var stationDetails = {
+        "https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA": {
+            backgroundImage: "url('https://www.manticore.uni.lodz.pl/~druzb5/inne/static/spacebackgroundradiogamingupscaled.jpg')",
+            playerControlsBackgroundColor: "#420092",
+            borderColor: "#7300ff",
+            loadingBackgroundColor: "#7300ff",
+            liveEmoji: "🟣LIVE",
+            streamTitleColor: "#ffffff"
+        },
+        "https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ": {
+            backgroundImage: "url('https://i.ibb.co/3zJKYMK/Radio-Gaming-Dark-no-text.png')",
+            playerControlsBackgroundColor: "#423eff",
+            borderColor: "#293cca",
+            loadingBackgroundColor: "#293cca",
+            liveEmoji: "🔵LIVE",
+            streamTitleColor: "#0039ff"
+        },
+        "https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw": {
+            backgroundImage: "url('https://i.ibb.co/HhbyPZB/spacebackgroundradiogamingupscaled-maron2-2.png')",
+            playerControlsBackgroundColor: "#920000",
+            borderColor: "#8f172e",
+            loadingBackgroundColor: "#8f172e",
+            liveEmoji: "🔴LIVE",
+            streamTitleColor: "#ffffff"
         }
+    };
+     
+    // Show loading screen
+    var loadingBackgroundColor = stationDetails[source].loadingBackgroundColor;
+    document.querySelector('.loading-screen').style.backgroundColor = loadingBackgroundColor;
+    document.querySelector('.loading-screen').style.display = 'flex';
+    // Update notification color
+    document.getElementById('notificationPopup').style.backgroundColor = loadingBackgroundColor;
+    // Update CSS properties based on the selected station
+    document.body.style.backgroundImage = stationDetails[source].backgroundImage;
+    document.querySelector('.player-controls').style.backgroundColor = stationDetails[source].playerControlsBackgroundColor;
+    document.querySelectorAll('.station-photo').forEach(function (photo) {
+        if (photo.getAttribute('onclick').includes(source)) {
+            photo.classList.add('active');
+        } else {
+            photo.classList.remove('active');
+        }
+    });
+    document.querySelectorAll('.station-photo.active').forEach(function (photo) {
+        photo.style.borderColor = stationDetails[source].borderColor;
+    });
+
+    // Update live indicator emoji
+    liveIndicator.textContent = stationDetails[source].liveEmoji;
+
+    // Change stream title color
+    streamTitleElement.style.color = stationDetails[source].streamTitleColor;
+// Change scrollbar thumb color
+    document.documentElement.style.setProperty('--scrollbar-thumb-color', stationDetails[source].loadingBackgroundColor);
+
+    // Change station details
+    audio.src = source;
+    audio.load();
+    audio.play();
+    playPauseIcon.className = 'fas fa-pause';
+    stationName.textContent = name;
+    // Update event source URL
+    if (currentEventSource) {
+        currentEventSource.close();
+    }
+    var eventSource = new EventSource(metadataURL);
+    currentEventSource = eventSource;
+
+
+
+    eventSource.onmessage = function (event) {
+        try {
+            var jsonData = JSON.parse(event.data);
+            if (jsonData.streamTitle) {
+                var cleanedTitle = cleanTitle(jsonData.streamTitle);
+                streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
+            }
+        } catch (error) {
+            console.error('Error processing data:', error);
+        }
+    };
+
+    setTimeout(function() {
+        document.querySelector('.loading-screen').style.display = 'none';
+    }, 1000); // Adjust the timeout value according to your needs
+}
+
 
         eventSource.onmessage = function (event) {
             try {
@@ -493,7 +665,7 @@ setTimeout(function() {
     notificationPopup.style.display = 'none';
 }, 8000); // 8000 milliseconds (adjust as needed)
     </script>
-    <h2 id="betaVersion">BETA VERSION 3.1</h2>
+    <h2 id="betaVersion">BETA VERSION 4.0</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <footer>
