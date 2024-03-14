@@ -1,5 +1,4 @@
-Witam
-
+Witam Projekt Gaming Radio to prosty odtwarzacz radia internetowego z obsługą wielu stacji.
 
 
 
