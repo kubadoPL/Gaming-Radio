@@ -28,7 +28,7 @@ else:
     RPC = None
 
 # Create the webview window
-window = webview.create_window('Radio Gaming Desktop', 'https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html', maximized=True)
+window = webview.create_window('Radio Gaming Desktop', 'http://radio-gaming.stream/', maximized=True)
 
 # Function to update Discord Rich Presence
 def update_rpc(stream_title, audio_playing, playstateicon, statestring):
@@ -41,7 +41,7 @@ def update_rpc(stream_title, audio_playing, playstateicon, statestring):
             state=cleaned_title,
             large_image= currentrpcminiature,
             start=start_time,
-            buttons=[{"label": "Listen to Radio Gaming ALSO!", "url": "https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html"}],
+            buttons=[{"label": "Listen to Radio Gaming ALSO!", "url": "http://radio-gaming.stream/"}],
             large_text=cleaned_title,
             small_image=playstateicon,
             small_text=statestring,
