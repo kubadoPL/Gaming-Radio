@@ -41,7 +41,7 @@ def update_rpc(stream_title, audio_playing, playstateicon, statestring):
             state=cleaned_title,
             large_image= currentrpcminiature,
             start=start_time,
-            buttons=[{"label": "Listen ONLINE!", "url": "https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html"},{"label": "Download Radio", "url": "https://www.manticore.uni.lodz.pl/~druzb5/inne/pages/download.html"}],
+            buttons=[{"label": "Listen to Radio Gaming ALSO!", "url": "https://www.manticore.uni.lodz.pl/~druzb5/inne/radio.html"}],
             large_text=cleaned_title,
             small_image=playstateicon,
             small_text=statestring,
