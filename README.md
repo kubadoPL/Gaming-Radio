@@ -7,7 +7,7 @@ You can check out currently hosted version here: https://www.manticore.uni.lodz.
 ![ezgif com-crop](https://github.com/kubadoPL/Gaming-Radio/assets/63493345/3037818b-3c4f-40e1-8668-acd4c2001e98)
 
 The project supports an ICECAST MP3 stream and simple json metadata.
-Made in HTML, CSS, JAVASCRIPT and an external ICECAST Zeno FM server.
+Made in HTML, CSS, JAVASCRIPT, Python and an external ICECAST Zeno FM server.
 
 You can download Desktop or Android here: https://www.manticore.uni.lodz.pl/~druzb5/inne/pages/download.html or from repository.
 
