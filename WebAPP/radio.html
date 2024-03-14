@@ -14,7 +14,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background: url('https://www.manticore.uni.lodz.pl/~druzb5/inne/static/spacebackgroundradiogamingupscaled.jpg') fixed;
+            background: url('https://i.ibb.co/w7wDYjK/spacebackgroundradiogamingupscaled-with-miodzix-musicplanet.png') fixed;
             background-size: cover;
             color: #333;
             text-align: center;
@@ -250,10 +250,10 @@
 
 @keyframes glow-third {
     from {
-        box-shadow: 0 0 10px rgba(244, 117, 117, 0.8), 0 0 20px rgba(244, 117, 117, 0.6), 0 0 30px rgba(244, 117, 117, 0.4);
+        box-shadow: 0 0 10px rgba(128, 117, 244, 0.8), 0 0 20px rgba(128, 117, 244, 0.6), 0 0 30px rgba(128, 117, 244, 0.4);
     }
     to {
-        box-shadow: 0 0 20px rgba(252, 0, 0, 0.8), 0 0 40px rgba(252, 0, 0, 0.6), 0 0 60px rgba(252, 0, 0, 0.4);
+        box-shadow: 0 0 20px rgba(54, 37, 241, 0.8), 0 0 40px rgba(54, 37, 241, 0.6), 0 0 60px rgba(54, 37, 241, 0.4);
     }
 }
 
@@ -396,19 +396,19 @@ body::-webkit-scrollbar-thumb {
             <div class="station-photo active"
                 onclick="changeStation('https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
                 <img
-                    src="https://zeno.fm/_next/image/?url=https%3A%2F%2Fimages.zeno.fm%2FkqxMZUL2jgGFnWvyFmvEbmTuB_IQUN3B0AcV13la8tc%2Frs%3Afit%3A240%3A240%2Fg%3Ace%3A0%3A0%2FaHR0cHM6Ly9zdHJlYW0tdG9vbHMuemVub21lZGlhLmNvbS9jb250ZW50L3N0YXRpb25zLzA2YmMwOTJmLTI0OGMtNGJmOC1iODA1LWZhNGYwNTAyM2FlNC9pbWFnZS8_dXBkYXRlZD0xNzA1OTc1OTU0MDAw.webp&w=1920&q=100"
+                    src="https://i.ibb.co/FWPNZMh/spacebackgroundradiogamingupscaled-with-miodzix-musicplanet-no-planet.png"
                     alt="Radio GAMING">
             </div>
             <div class="station-photo"
                 onclick="changeStation('https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
                 <img
-                    src="https://i.ibb.co/FYwgzJr/Radio-Gaming-Dark.png"
+                    src="https://i.ibb.co/dMqNf8W/Radio-Gaming-dark-logo.png"
                     alt="Radio GAMING DARK">
             </div>
             <div class="station-photo"
                 onclick="changeStation('https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
                 <img
-                    src="https://i.ibb.co/2jrBKVM/Radio-Gaming-Maron-FM.png"
+                    src="https://i.ibb.co/jJwZDvq/Radio-Gaming-Maron-fm-logo.png"
                     alt="Radio GAMING MARON FM">
             </div>
         </div>
@@ -467,7 +467,7 @@ body::-webkit-scrollbar-thumb {
     // Define the CSS properties and live indicator emoji for each station
     var stationDetails = {
         "https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA": {
-            backgroundImage: "url('https://www.manticore.uni.lodz.pl/~druzb5/inne/static/spacebackgroundradiogamingupscaled.jpg')",
+            backgroundImage: "url('https://i.ibb.co/w7wDYjK/spacebackgroundradiogamingupscaled-with-miodzix-musicplanet.png')",
             playerControlsBackgroundColor: "#420092",
             borderColor: "#7300ff",
             loadingBackgroundColor: "#7300ff",
@@ -483,12 +483,12 @@ body::-webkit-scrollbar-thumb {
             streamTitleColor: "#0039ff"
         },
         "https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw": {
-            backgroundImage: "url('https://i.ibb.co/HhbyPZB/spacebackgroundradiogamingupscaled-maron2-2.png')",
-            playerControlsBackgroundColor: "#920000",
-            borderColor: "#8f172e",
-            loadingBackgroundColor: "#8f172e",
-            liveEmoji: "🔴LIVE",
-            streamTitleColor: "#ffffff"
+            backgroundImage: "url('https://i.ibb.co/G2mJYmd/spacebackgroundradiogamingupscaled-maron2-3.png')",
+            playerControlsBackgroundColor: "#272956",
+            borderColor: "#220071",
+            loadingBackgroundColor: "#220071",
+            liveEmoji: "🟣LIVE",
+            streamTitleColor: "#220071"
         }
     };
      
@@ -550,6 +550,7 @@ body::-webkit-scrollbar-thumb {
     setTimeout(function() {
         document.querySelector('.loading-screen').style.display = 'none';
     }, 1000); // Adjust the timeout value according to your needs
+
 }
 
 
