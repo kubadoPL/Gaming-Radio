@@ -1,0 +1,11 @@
+/* Button: Cancel */
+"button-cancel" = "취소";
+
+/* Button: OK */
+"button-ok" = "확인";
+
+/* Button: View */
+"button-view" = "보기";
+
+/* Button: Menu */
+"button-menu" = "메뉴";

@@ -1,0 +1,14 @@
+{
+  "name": "gonative-ios",
+  "version": "1.0.2",
+  "description": "",
+  "scripts": {
+    "release": "./scripts/release.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "(https://github.com/gonativeio/gonative-ios.git"
+  },
+  "author": "GoNative.io LLC",
+  "license": "https://gonative.io/pricing"
+}

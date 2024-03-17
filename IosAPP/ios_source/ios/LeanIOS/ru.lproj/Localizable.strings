@@ -1,0 +1,11 @@
+/* Button: Cancel */
+"button-cancel" = "Отменить";
+
+/* Button: OK */
+"button-ok" = "ОК";
+
+/* Button: View */
+"button-view" = "Узнать больше";
+
+/* Button: Menu */
+"button-menu" = "Меню";

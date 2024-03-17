@@ -1,0 +1,28 @@
+#!/usr/bin/ruby
+
+require 'json'
+
+system("open `xcode-select -p`/Applications/Simulator.app")
+booted_udid = `xcrun simctl list | awk -F'[()]' '/(Booted)/ { print $2 }'`
+
+if booted_udid.nil?
+    simctl_response = JSON.parse(`xcrun simctl list --json`)
+    ios_versions = simctl_response['runtimes'].filter{|runtime| runtime['platform'] == 'iOS'}.map{ |runtime| runtime["version"] }
+    ios_versions.map!{ |version| version.gsub('.', '-') }
+    available_runtimes = simctl_response["devices"].keys.filter{ |key| ios_versions.detect { |version| key.include?(version) }}
+    best_runtime = available_runtimes.sort.reverse.first
+    device = simctl_response["devices"][best_runtime].filter{|device| device["isAvailable"]}.filter{ |device| device["name"].include?("iPhone")}.last
+
+    system("xcrun simctl boot #{device['udid']}")
+end
+
+project = Dir["./*.xcodeproj"].first
+workspace = Dir["./*.xcworkspace"].first
+scheme = File.basename(workspace, '.xcworkspace')
+app_config = JSON.parse(File.read('LeanIOS/appConfig.json'))
+
+system("xcodebuild -workspace #{workspace} -scheme #{scheme} -sdk iphonesimulator -configuration Release -derivedDataPath build")
+system("xcrun simctl install booted build/Build/Products/Release-iphonesimulator/#{scheme}.app")
+system("xcrun simctl launch booted #{app_config["general"]["iosBundleId"]}")
+
+system("`xcrun simctl spawn booted log stream --predicate 'eventMessage contains \"#{app_config["general"]["iosBundleId"]}\"'> test.log&`; open test.log;")

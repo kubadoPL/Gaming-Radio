@@ -1,0 +1,8 @@
+Median.co Instructions to Open iOS Source Code
+==============================================
+
+Please open the xcworkspace in Xcode to load the complete iOS project with all plugins. 
+You will NOT need to use the xcodeproj file.
+
+For complete instructions to build your app:
+https://median.co/docs/build-ios-from-source

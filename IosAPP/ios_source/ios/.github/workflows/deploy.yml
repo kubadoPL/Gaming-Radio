@@ -1,0 +1,82 @@
+# This is a basic workflow to help you get started with Actions
+
+name: deploy-prod
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    tags:        
+      - prod-v*
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  deploy-prod:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # - uses: actions/checkout@v2
+      - name: Extract tag name
+        shell: bash
+        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
+        id: extract_tag
+      - name: Deploy to build servers
+        env:
+          SSH_PRIVATE_KEY: ${{secrets.SSH_PRIVATE_KEY}}
+          SSH_KNOWN_HOSTS: ${{secrets.SSH_KNOWN_HOSTS}}
+          SSH_KEY_PATH: ${{ github.workspace }}/../private.key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "$SSH_PRIVATE_KEY" > $SSH_KEY_PATH
+          sudo chmod 600 $SSH_KEY_PATH
+          echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          echo "SSH_KEY_PATH: $SSH_KEY_PATH"
+          echo "Deploying build4.gonative.io"
+
+          cat > deploy.sh << 'END'
+            #!/bin/bash
+            set -e
+            
+            cd ~/prod/build2
+            git checkout -- .
+            git fetch
+            echo "Checking out ${{ steps.extract_tag.outputs.tag }}"
+            git checkout ${{ steps.extract_tag.outputs.tag }}
+            npm install
+
+            echo "Stopping builder"
+            forever stopall
+
+            echo "Starting builder"
+            ./prod-forever.sh 2
+            
+            echo "Deployed prod"
+          END
+
+          scp -i $SSH_KEY_PATH deploy.sh builder@build4.gonative.io:deploy.sh
+          ssh -i $SSH_KEY_PATH builder@build4.gonative.io bash --login ./deploy.sh
+
+          # echo "Deploying build5.gonative.io"
+          # ssh -i $SSH_KEY_PATH -o "StrictHostKeyChecking=no" builder@build5.gonative.io << 'ENDSSH'
+          #   echo "Stopping builder"
+          #   forever stopall
+            
+          #   cd ~/prod/build2
+          #   git checkout -- .
+          #   git fetch
+          #   echo "Checking out ${{ steps.extract_tag.outputs.tag }}"
+          #   git checkout ${{ steps.extract_tag.outputs.tag }}
+          #   npm install
+
+          #   echo "Starting builder"
+          #   ./prod-forever.sh 2
+            
+          #   echo "Deployed prod"
+          # ENDSSH
+

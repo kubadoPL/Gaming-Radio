@@ -1,0 +1,27 @@
+PODS:
+  - GoNativeCore (1.6.28):
+    - GoNativeCore/Binary (= 1.6.28)
+  - GoNativeCore/Binary (1.6.28)
+  - MedianIcons (1.0.8)
+  - zipzap (8.1.1)
+
+DEPENDENCIES:
+  - GoNativeCore
+  - MedianIcons
+  - zipzap
+
+SPEC REPOS:
+  "git@github.com:gonativeio/gonative-specs.git":
+    - GoNativeCore
+    - MedianIcons
+  trunk:
+    - zipzap
+
+SPEC CHECKSUMS:
+  GoNativeCore: 6909d79e6634de84fb571c3c36eb685ce88663e6
+  MedianIcons: 3c9cd1c257123922fbb67997d33499ec68e08123
+  zipzap: 940162d9c9c60472c2eab341385e4214da0fdf1c
+
+PODFILE CHECKSUM: 9fed6c50cc00bbaa10216c871012072afb3c82c0
+
+COCOAPODS: 1.15.2

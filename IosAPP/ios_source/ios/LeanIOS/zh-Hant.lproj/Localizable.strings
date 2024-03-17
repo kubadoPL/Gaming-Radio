@@ -1,0 +1,11 @@
+/* iOS Button: Cancel */
+"button-cancel" = "取消";
+
+/* iOS Button: OK */
+"button-ok" = "好的";
+
+/* iOS Button: View */
+"button-view" = "查看";
+
+/* iOS Button: Menu */
+"button-menu" = "菜單";
