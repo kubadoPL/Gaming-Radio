@@ -50,12 +50,14 @@ def on_closed():
     print('pywebview window is closed')
     if RPC:
         RPC.close()
-
+        print("RPC Close")
+        time.sleep(1)
     for proc in psutil.process_iter():
         # check whether the process name matches
         if proc.name() == 'Radio Gaming Desktop.exe' or proc.name() == 'Radio Gaming Desktop' or proc.name() == 'python.exe' or proc.name() == 'python' or proc.name() == 'python3.9.exe' or proc.name() == 'python3.9':
-            proc.kill()
             print(proc.name() + " killed")
+            proc.kill()
+            
     sys.exit(0)
 
 # Call the update_rpc() function periodically
@@ -79,6 +81,10 @@ def update_rpc_periodically(stop_event):
 # Function to toggle fullscreen
 def toggle_fullscreen():
     window.toggle_fullscreen()
+    #time.sleep(5)
+    #if window.is_minimized():
+     #   window.maximize()
+  
 
 # Start the webview
 stop_event = threading.Event()
