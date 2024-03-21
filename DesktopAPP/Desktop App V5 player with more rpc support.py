@@ -3,7 +3,7 @@ import time
 import webview
 import threading
 import psutil  
-import keyboard  # Import the keyboard library
+import keyboard  
 
 # Function to check if Discord is running
 def is_discord_running():
@@ -50,11 +50,17 @@ def on_closed():
     print('pywebview window is closed')
     if RPC:
         RPC.close()
+
+    for proc in psutil.process_iter():
+        # check whether the process name matches
+        if proc.name() == 'Radio Gaming Desktop.exe' or proc.name() == 'Radio Gaming Desktop' or proc.name() == 'python.exe' or proc.name() == 'python' or proc.name() == 'python3.9.exe' or proc.name() == 'python3.9':
+            proc.kill()
+            print(proc.name() + " killed")
     sys.exit(0)
 
 # Call the update_rpc() function periodically
-def update_rpc_periodically():
-    while True:
+def update_rpc_periodically(stop_event):
+    while not stop_event.is_set():
         try:
             station_name = window.evaluate_js('document.getElementById("StationNameInh1").textContent')
             stream_title = window.evaluate_js('document.getElementById("streamTitle").textContent')
@@ -75,17 +81,21 @@ def toggle_fullscreen():
     window.toggle_fullscreen()
 
 # Start the webview
-window.events.closed += on_closed
-thread = threading.Thread(target=update_rpc_periodically)
+stop_event = threading.Event()
+thread = threading.Thread(target=update_rpc_periodically, args=(stop_event,))
 
 try:
     thread.start()
     keyboard.add_hotkey('f11', toggle_fullscreen)  # Add F11 as a hotkey to toggle fullscreen
+    window.events.closed += on_closed  # Attach the on_closed function to the closing event of the window
     webview.start()
 except KeyboardInterrupt:
+    stop_event.set()  # Set the stop event to terminate the update_rpc_periodically thread
     sys.exit(0)
 except SystemExit:
+    stop_event.set()  # Set the stop event to terminate the update_rpc_periodically thread
     sys.exit(0)
 except Exception as e:
     print(f"An error occurred: {e}")
+    stop_event.set()  # Set the stop event to terminate the update_rpc_periodically thread
     sys.exit(1)
