@@ -556,7 +556,13 @@ body::-webkit-scrollbar-thumb {
         var eventSource = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
         var currentEventSource = eventSource;
 
+            // Show loading screen
+          
+            document.querySelector('.loading-screen').style.backgroundColor = "#7300ff";
+            document.querySelector('.loading-screen').style.display = 'flex';
+
         document.documentElement.style.setProperty('--scrollbar-thumb-color', '#7300ff');
+
         function playPause() {
             if (audio.paused) {
                 audio.load();
@@ -573,101 +579,107 @@ body::-webkit-scrollbar-thumb {
         }
 
         function changeStation(source, name, metadataURL) {
-    var audio = document.getElementById('audioPlayer');
-    var stationName = document.querySelector('h1');
-    var streamTitleElement = document.getElementById('streamTitle');
-    var playPauseIcon = document.getElementById('playPauseIcon');
-    var liveIndicator = document.getElementById('liveIndicator');
+            var audio = document.getElementById('audioPlayer');
+            var stationName = document.querySelector('h1');
+            var streamTitleElement = document.getElementById('streamTitle');
+            var playPauseIcon = document.getElementById('playPauseIcon');
+            var liveIndicator = document.getElementById('liveIndicator');
 
-    // Define the CSS properties and live indicator emoji for each station
-    var stationDetails = {
-        "https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA": {
-            backgroundImage: "url('https://i.ibb.co/w7wDYjK/spacebackgroundradiogamingupscaled-with-miodzix-musicplanet.png')",
-            playerControlsBackgroundColor: "#420092",
-            borderColor: "#7300ff",
-            loadingBackgroundColor: "#7300ff",
-            liveEmoji: "🟣LIVE",
-            streamTitleColor: "#ffffff"
-        },
-        "https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ": {
-            backgroundImage: "url('https://i.ibb.co/3zJKYMK/Radio-Gaming-Dark-no-text.png')",
-            playerControlsBackgroundColor: "#423eff",
-            borderColor: "#293cca",
-            loadingBackgroundColor: "#293cca",
-            liveEmoji: "🔵LIVE",
-            streamTitleColor: "#0039ff"
-        },
-        "https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw": {
-            backgroundImage: "url('https://i.ibb.co/Jmy8fDZ/Radio-Gaming-Maron-FM-background-Polished.png')",
-            playerControlsBackgroundColor: "#272956",
-            borderColor: "#220071",
-            loadingBackgroundColor: "#220071",
-            liveEmoji: "🟣LIVE",
-            streamTitleColor: "#220071"
-        }
-    };
-     
-    // Show loading screen
-    var loadingBackgroundColor = stationDetails[source].loadingBackgroundColor;
-    document.querySelector('.loading-screen').style.backgroundColor = loadingBackgroundColor;
-    document.querySelector('.loading-screen').style.display = 'flex';
-    // Update notification color
-    document.getElementById('notificationPopup').style.backgroundColor = loadingBackgroundColor;
-    // Update CSS properties based on the selected station
-    document.body.style.backgroundImage = stationDetails[source].backgroundImage;
-    document.querySelector('.player-controls').style.backgroundColor = stationDetails[source].playerControlsBackgroundColor;
-    document.querySelectorAll('.station-photo').forEach(function (photo) {
-        if (photo.getAttribute('onclick').includes(source)) {
-            photo.classList.add('active');
-        } else {
-            photo.classList.remove('active');
-        }
-    });
-    document.querySelectorAll('.station-photo.active').forEach(function (photo) {
-        photo.style.borderColor = stationDetails[source].borderColor;
-    });
+            var stationDetails = {
+                "https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA": {
+                    backgroundImage: "url('https://i.ibb.co/w7wDYjK/spacebackgroundradiogamingupscaled-with-miodzix-musicplanet.png')",
+                    playerControlsBackgroundColor: "#420092",
+                    borderColor: "#7300ff",
+                    loadingBackgroundColor: "#7300ff",
+                    liveEmoji: "🟣LIVE",
+                    streamTitleColor: "#ffffff"
+                },
+                "https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ": {
+                    backgroundImage: "url('https://i.ibb.co/3zJKYMK/Radio-Gaming-Dark-no-text.png')",
+                    playerControlsBackgroundColor: "#423eff",
+                    borderColor: "#293cca",
+                    loadingBackgroundColor: "#293cca",
+                    liveEmoji: "🔵LIVE",
+                    streamTitleColor: "#0039ff"
+                },
+                "https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw": {
+                    backgroundImage: "url('https://i.ibb.co/Jmy8fDZ/Radio-Gaming-Maron-FM-background-Polished.png')",
+                    playerControlsBackgroundColor: "#272956",
+                    borderColor: "#220071",
+                    loadingBackgroundColor: "#220071",
+                    liveEmoji: "🟣LIVE",
+                    streamTitleColor: "#220071"
+                }
+            };
 
-    // Update live indicator emoji
-    liveIndicator.textContent = stationDetails[source].liveEmoji;
+            // Show loading screen
+            var loadingBackgroundColor = stationDetails[source].loadingBackgroundColor;
+            document.querySelector('.loading-screen').style.backgroundColor = loadingBackgroundColor;
+            document.querySelector('.loading-screen').style.display = 'flex';
 
-    // Change stream title color
-    streamTitleElement.style.color = stationDetails[source].streamTitleColor;
-// Change scrollbar thumb color
-    document.documentElement.style.setProperty('--scrollbar-thumb-color', stationDetails[source].loadingBackgroundColor);
+            // Update notification color
+            document.getElementById('notificationPopup').style.backgroundColor = loadingBackgroundColor;
 
-    // Change station details
-    audio.src = source;
-    audio.load();
-    audio.play();
-    playPauseIcon.className = 'fas fa-pause';
-    stationName.textContent = name;
-    // Update event source URL
-    if (currentEventSource) {
-        currentEventSource.close();
-    }
-    var eventSource = new EventSource(metadataURL);
-    currentEventSource = eventSource;
+            // Update CSS properties based on the selected station
+            var backgroundImage = stationDetails[source].backgroundImage;
+            document.body.style.backgroundImage = backgroundImage;
+            document.querySelector('.player-controls').style.backgroundColor = stationDetails[source].playerControlsBackgroundColor;
+            document.querySelectorAll('.station-photo').forEach(function (photo) {
+                if (photo.getAttribute('onclick').includes(source)) {
+                    photo.classList.add('active');
+                } else {
+                    photo.classList.remove('active');
+                }
+            });
 
+            document.querySelectorAll('.station-photo.active').forEach(function (photo) {
+                photo.style.borderColor = stationDetails[source].borderColor;
+            });
 
+            // Update live indicator emoji
+            liveIndicator.textContent = stationDetails[source].liveEmoji;
 
-    eventSource.onmessage = function (event) {
-        try {
-            var jsonData = JSON.parse(event.data);
-            if (jsonData.streamTitle) {
-                var cleanedTitle = cleanTitle(jsonData.streamTitle);
-                streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
+            // Change stream title color
+            streamTitleElement.style.color = stationDetails[source].streamTitleColor;
+
+            // Change scrollbar thumb color
+            document.documentElement.style.setProperty('--scrollbar-thumb-color', stationDetails[source].loadingBackgroundColor);
+
+            // Change station details
+            audio.src = source;
+            audio.load();
+            audio.play();
+            playPauseIcon.className = 'fas fa-pause';
+            stationName.textContent = name;
+
+            // Update event source URL
+            if (currentEventSource) {
+                currentEventSource.close();
             }
-        } catch (error) {
-            console.error('Error processing data:', error);
-        }
-    };
+            var eventSource = new EventSource(metadataURL);
+            currentEventSource = eventSource;
 
-    setTimeout(function() {
+            eventSource.onmessage = function (event) {
+                try {
+                    var jsonData = JSON.parse(event.data);
+                    if (jsonData.streamTitle) {
+                        var cleanedTitle = cleanTitle(jsonData.streamTitle);
+                        streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
+                    }
+                } catch (error) {
+                    console.error('Error processing data:', error);
+                }
+            };
+
+            // Wait for the background image to load
+            var backgroundImg = new Image();
+            backgroundImg.src = backgroundImage.slice(5, -2); // Remove 'url(' and ')' from the backgroundImage string
+            backgroundImg.onload = function () {
+                setTimeout(function() {
         document.querySelector('.loading-screen').style.display = 'none';
-    }, 1000); // Adjust the timeout value according to your needs
-
-}
-
+    }, 1000); // 1000 milliseconds = 1 second
+            };
+        }
 
         eventSource.onmessage = function (event) {
             try {
@@ -691,97 +703,75 @@ body::-webkit-scrollbar-thumb {
         };
 
         var currentTimeElement = document.getElementById('currentTime');
-audio.addEventListener('timeupdate', function () {
-    var currentTime = formatTime(audio.currentTime);
-    currentTimeElement.textContent = currentTime;
-});
+        audio.addEventListener('timeupdate', function () {
+            var currentTime = formatTime(audio.currentTime);
+            currentTimeElement.textContent = currentTime;
+        });
 
-function formatTime(time) {
-    var hours = Math.floor(time / 3600);
-    var minutes = Math.floor((time % 3600) / 60);
-    var seconds = Math.floor(time % 60);
-    
-    var formattedTime = '';
-    
-    if (hours > 0) {
-        formattedTime += (hours < 10 ? '0' + hours : hours) + ':';
-    }
-    
-    formattedTime += (minutes < 10 ? '0' + minutes : minutes) + ':' +
-                     (seconds < 10 ? '0' + seconds : seconds);
-    
-    return formattedTime;
-}
+        function formatTime(time) {
+            var hours = Math.floor(time / 3600);
+            var minutes = Math.floor((time % 3600) / 60);
+            var seconds = Math.floor(time % 60);
 
+            var formattedTime = '';
 
-        function cleanTitle(title) {
-    // Usuń ".mp3" z tytułu
-    title = title.replace(/\.mp3/gi, '');
+            if (hours > 0) {
+                formattedTime += (hours < 10 ? '0' + hours : hours) + ':';
+            }
 
-    // Usuń "(official music video)" z tytułu
-    title = title.replace(/\(official music video\)/gi, '');
+            formattedTime += (minutes < 10 ? '0' + minutes : minutes) + ':' +
+                (seconds < 10 ? '0' + seconds : seconds);
 
-    // Usuń "[SPOTIFY-DOWNLOADER.COM]" z tytułu
-    title = title.replace(/\[SPOTIFY-DOWNLOADER.COM\]/gi, '');
-
-    // Usuń "[HD]" z tytułu
-    title = title.replace(/\[HD\]/gi, '');
-
-    // Usuń "[NEW SONG]" z tytułu
-    title = title.replace(/\[NEW SONG\]/gi, '');
-
-    // Usuń "(gotg3 song adam warlock intro)" z tytułu
-    title = title.replace(/\(gotg3 song adam warlock intro\)/gi, '');
-
-    // Usuń "(Official song)" z tytułu
-    title = title.replace(/\(Official song\)/gi, '');
-
-    // Usuń "(with Lyrics)" z tytułu
-    title = title.replace(/\(with Lyrics\)/gi, '');
-
-    // Usuń "(w?)" z tytułu
-    title = title.replace(/\(w?\)/gi, '');
-
-    // Usuń "Lyrics" z tytułu
-    title = title.replace(/Lyrics/gi, '');
-
-    // Usuń "(Lyric Video)" z tytułu
-    title = title.replace(/\(Lyric Video\)/gi, '');
-
-    title = title.replace(/\(Official Audio\)/gi, '');
-
-   // Usuń "(Official Video)" z tytułu
-   title = title.replace(/\(Official Video\)/gi, '');
-   title = title.replace(/\((1)\)/gi, '');
-   title = title.replace(/\(Official\)/gi, '');
-// Usuń "[Official Music Video]" z tytułu
-    title = title.replace(/\[Official Music Video\]/gi, '');
-
-     // Usuń znaki zapytania
-     title = title.replace(/\?+/g, '');
-
-
-    // Dodaj trim, aby usunąć ewentualne spacje na początku i końcu
-    return title.trim();
+            return formattedTime;
         }
 
-        // JavaScript code to display the notification
-function showNotification(message) {
-    var notificationPopup = document.getElementById('notificationPopup');
-    notificationPopup.textContent = "Latest Radio News: " + message;
-    notificationPopup.style.display = 'block';
-}
+        function cleanTitle(title) {
+            title = title.replace(/\.mp3/gi, '')
+                .replace(/\(official music video\)/gi, '')
+                .replace(/\[SPOTIFY-DOWNLOADER.COM\]/gi, '')
+                .replace(/\[HD\]/gi, '')
+                .replace(/\[NEW SONG\]/gi, '')
+                .replace(/\(gotg3 song adam warlock intro\)/gi, '')
+                .replace(/\(Official song\)/gi, '')
+                .replace(/\(with Lyrics\)/gi, '')
+                .replace(/\(w?\)/gi, '')
+                .replace(/Lyrics/gi, '')
+                .replace(/\(Lyric Video\)/gi, '')
+                .replace(/\(Official Audio\)/gi, '')
+                .replace(/\(Official Video\)/gi, '')
+                .replace(/\((1)\)/gi, '')
+                .replace(/\(Official\)/gi, '')
+                .replace(/\[Official Music Video\]/gi, '')
+                .replace(/\?+/g, '');
 
-// Call showNotification with your news message
-showNotification("New Radio UI and improvements!");
+            return title.trim();
+        }
 
-// JavaScript code to automatically hide the notification after a certain duration (in milliseconds)
-setTimeout(function() {
-    var notificationPopup = document.getElementById('notificationPopup');
-    notificationPopup.style.display = 'none';
-}, 8000); // 8000 milliseconds (adjust as needed)
+        function showNotification(message) {
+            var notificationPopup = document.getElementById('notificationPopup');
+            notificationPopup.textContent = "Latest Radio News: " + message;
+            notificationPopup.style.display = 'block';
+        }
+
+        showNotification("Fixed loading screen!");
+
+        setTimeout(function () {
+            var notificationPopup = document.getElementById('notificationPopup');
+            notificationPopup.style.display = 'none';
+        }, 8000);
+
+        // Initial loading screen logic
+        window.onload = function () {
+            var backgroundImg = new Image();
+            backgroundImg.src = getComputedStyle(document.body).backgroundImage.slice(5, -2); // Remove 'url(' and ')' from the backgroundImage string
+            backgroundImg.onload = function () {
+                setTimeout(function() {
+        document.querySelector('.loading-screen').style.display = 'none';
+    }, 1000); // 1000 milliseconds = 1 second
+            };
+        };
     </script>
-    <h2 id="betaVersion">BETA VERSION 4.1</h2>
+    <h2 id="betaVersion">BETA VERSION 4.2</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <div class="animation-wrapper">
