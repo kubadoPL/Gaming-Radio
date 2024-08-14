@@ -614,52 +614,56 @@ body::-webkit-scrollbar-thumb {
 
 
       async function getSpotifyAccessToken() {
-        const tokenUrl = 'https://accounts.spotify.com/api/token';
+    const tokenUrl = 'https://accounts.spotify.com/api/token';
+
+    const response = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+        },
+        body: new URLSearchParams({
+            'grant_type': 'client_credentials'
+        })
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+        return data.access_token;
+    } else {
+        throw new Error('Failed to fetch access token: ' + data.error_description);
+    }
+}
+
+async function fetchSpotifyCover(query) {
+    const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+    
+    try {
+        const accessToken = await getSpotifyAccessToken();
         
-        const response = await fetch(tokenUrl, {
-            method: 'POST',
+        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&include_external=audio`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
-            },
-            body: new URLSearchParams({
-                'grant_type': 'client_credentials'
-            })
+                'Authorization': 'Bearer ' + accessToken
+            }
         });
 
         const data = await response.json();
-        if (response.ok) {
-            return data.access_token;
+        if (data.tracks && data.tracks.items.length > 0) {
+            const track = data.tracks.items[0];
+            const albumCover = track.album.images[0].url;
+            document.getElementById('albumCover').src = albumCover;
         } else {
-            throw new Error('Failed to fetch access token: ' + data.error_description);
+            console.log('No cover found for: ' + query);
+            document.getElementById('albumCover').src = fallbackCover;
         }
+    } catch (error) {
+        console.error('Error fetching Spotify cover:', error);
+        document.getElementById('albumCover').src = fallbackCover;
     }
-
-    async function fetchSpotifyCover(query) {
-        try {
-            const accessToken = await getSpotifyAccessToken();
-            
-            const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&include_external=audio`;
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + accessToken
-                }
-            });
-
-            const data = await response.json();
-            if (data.tracks && data.tracks.items.length > 0) {
-                const track = data.tracks.items[0];
-                const albumCover = track.album.images[0].url;
-                document.getElementById('albumCover').src = albumCover;
-            } else {
-                console.log('No cover found for: ' + query);
-            }
-        } catch (error) {
-            console.error('Error fetching Spotify cover:', error);
-        }
-    }
+}
 
 
 
