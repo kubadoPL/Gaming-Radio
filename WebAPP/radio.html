@@ -71,6 +71,7 @@ audio {
     height: 120px;
     border-radius: 10px;
     margin-right: 10px;
+    border: 3px solid #420092;
 }
 
 #streamTitle {
@@ -767,6 +768,7 @@ document.getElementById('volume-up').addEventListener('click', function() {
             var backgroundImage = stationDetails[source].backgroundImage;
             document.body.style.backgroundImage = backgroundImage;
             document.querySelector('.player-controls').style.backgroundColor = stationDetails[source].playerControlsBackgroundColor;
+            document.querySelector('.album-cover').style.borderColor = stationDetails[source].playerControlsBackgroundColor;
             document.querySelectorAll('.station-photo').forEach(function (photo) {
                 if (photo.getAttribute('onclick').includes(source)) {
                     photo.classList.add('active');
