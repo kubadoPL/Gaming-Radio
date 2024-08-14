@@ -4,7 +4,7 @@ Hello, Project Gaming Radio is a simple internet radio player with support for m
 
 You can check out currently hosted version here: https://radio-gaming.stream/
 
-![Radio Gaming Showcase Gif](https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/Assets/Ads/Radio%20Showcase.gif)
+![Radio Gaming Showcase Gif](https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/Assets/Ads/Radio%20Showcase%20new.gif)
 
 The project supports an ICECAST MP3 stream and simple json metadata.
 Made in HTML, CSS, JAVASCRIPT, Python and an external ICECAST Zeno FM server.
