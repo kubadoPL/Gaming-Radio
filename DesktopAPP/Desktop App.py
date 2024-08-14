@@ -39,9 +39,9 @@ def update_rpc(stream_title, audio_playing, playstateicon, statestring):
             large_image= currentrpcminiature,
             start=start_time,
             buttons=[{"label": "Listen to Radio Gaming ALSO!", "url": "https://radio-gaming.stream/"}],
-            large_text=cleaned_title,
+            large_text=statestring + ": 🎵 " + audio_playing,
             small_image=playstateicon,
-            small_text=statestring,
+            small_text=cleaned_title,
             instance=True
         )
 
@@ -67,12 +67,12 @@ def update_rpc_periodically(stop_event):
             station_name = window.evaluate_js('document.getElementById("StationNameInh1").textContent')
             stream_title = window.evaluate_js('document.getElementById("streamTitle").textContent')
             audio_playing = not window.evaluate_js('document.getElementById("audioPlayer").paused')
-
+            album_cover = window.evaluate_js('document.getElementById("albumCover").getAttribute("src")')
             if not (audio_playing):
                 update_rpc("Idling", "Radio Gaming", "pause", "Idling")
             else:
                 if stream_title and audio_playing:
-                    update_rpc(stream_title, station_name, "play", "Streaming")
+                    update_rpc(stream_title, station_name, album_cover, "Streaming")
         except Exception as e:
             print(f"An error occurred while updating RPC: {e}")
 
