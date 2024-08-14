@@ -15,4 +15,4 @@ Simple Project Documentation can be found here: https://1drv.ms/b/s!AhH9J-vA4Kua
 
 Radio GAMING - Powering Your Gaming Experience.
 
-<img src="https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/Assets/Ads/Radio%20Gaming%20ad.png" width="100" height="100">
+<img src="https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/Assets/Ads/Radio%20Gaming%20ad.png" width="400" height="auto">
