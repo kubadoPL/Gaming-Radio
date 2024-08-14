@@ -511,19 +511,19 @@ body::-webkit-scrollbar-thumb {
             <div class="station-photo active"
                 onclick="changeStation('https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
                 <img
-                    src="https://i.ibb.co/FWPNZMh/spacebackgroundradiogamingupscaled-with-miodzix-musicplanet-no-planet.png"
+                    src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp"
                     alt="Radio GAMING">
             </div>
             <div class="station-photo"
                 onclick="changeStation('https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
                 <img
-                    src="https://i.ibb.co/dMqNf8W/Radio-Gaming-dark-logo.png"
+                    src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp"
                     alt="Radio GAMING DARK">
             </div>
             <div class="station-photo"
                 onclick="changeStation('https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
                 <img
-                    src="https://i.ibb.co/jJwZDvq/Radio-Gaming-Maron-fm-logo.png"
+                    src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp"
                     alt="Radio GAMING MARON FM">
             </div>
         </div>
@@ -539,10 +539,10 @@ body::-webkit-scrollbar-thumb {
                     <span id="currentTime">00:00</span> / <span id="liveIndicator">🟣LIVE</span>
                 </div>
                 <div class="volume-control">
-                    <i class="fas fa-volume-down volume-icon"></i>
+                    <i id="volume-down" class="fas fa-volume-down volume-icon"></i>
                     <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1"
                         onchange="changeVolume(this.value)">
-                    <i class="fas fa-volume-up volume-icon"></i>
+                    <i id="volume-up" class="fas fa-volume-up volume-icon"></i>
                 </div>
             </div>
             <div id="streamTitle"></div>
@@ -600,9 +600,25 @@ function showNotification(message) {
             }
         }
 
-        function changeVolume(value) {
-            audio.volume = value;
-        }
+        let previousVolume = 1; 
+
+function changeVolume(value) {
+    audio.volume = value;
+    previousVolume = value; 
+}
+
+// Mute volume when clicking the volume-down icon
+document.getElementById('volume-down').addEventListener('click', function() {
+    previousVolume = audio.volume; 
+    audio.volume = 0;
+    document.querySelector('.volume-slider').value = 0; 
+});
+
+// Restore volume when clicking the volume-up icon
+document.getElementById('volume-up').addEventListener('click', function() {
+    audio.volume = previousVolume; 
+    document.querySelector('.volume-slider').value = previousVolume; 
+});
 
         function changeStation(source, name, metadataURL) {
             var audio = document.getElementById('audioPlayer');
