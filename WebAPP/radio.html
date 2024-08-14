@@ -9,7 +9,7 @@
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 
     <style>
-        /* Tu znajduje się styl, możesz nie kopiować go ponownie, chyba że chcesz wprowadzić jakieś zmiany */
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -43,59 +43,97 @@
         }
 
         .audio-player {
-            width: 300px;
-            margin: 20px auto;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0);
-            overflow: hidden;
-            opacity: 0;
-            transform: translateY(-50px);
-            animation: fadeInUp 0.5s ease-out forwards;
-        }
+    width: 360px;
+    background: #ffffff52;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-        audio {
-            width: 100%;
-            border: none;
-            outline: none;
-            margin-top: 0px;
-        }
+audio {
+    display: none;
+}
 
-        .player-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background-color: #420092;
-            color: #fff;
-            border-radius: 12px;
-            
-        }
+.album-cover-and-title {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 10px;
+}
 
-        .player-controls i {
-            cursor: pointer;
-        }
+.album-cover {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    margin-right: 10px;
+}
 
-        .volume-control {
-            display: flex;
-            align-items: center;
-            margin-left: 10px;
-        }
+#streamTitle {
+    font-size: 14px;
+    font-weight: bold;
+    color: #e3f2fd;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
 
-        .volume-icon {
-            margin-right: 5px;
-        }
+.player-controls {
+    width: 90%;
+    background-color: #420092;
+    border-radius: 10px;
+    padding: 8px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-        .volume-slider {
-            width: 80px;
-        }
+#playPauseIcon {
+    font-size: 20px;
+    cursor: pointer;
+}
 
-        #streamTitle {
-            color: #fff;
-            margin-top: 10px;
-            background-color: rgba(255, 255, 255, 0.5);
-            padding: 5px;
-        }
+#volume-down {
+    cursor: pointer; 
+}
 
+#volume-up {
+    cursor: pointer; 
+}
+
+#timeDisplay {
+    font-size: 12px;
+    color: #e3f2fd;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+}
+
+.volume-icon {
+    font-size: 18px;
+}
+
+.volume-slider {
+    width: 80px;
+    background-color: #7c7c7c;
+    cursor: pointer;
+    -webkit-appearance: none;
+    border-radius: 10px;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+}
         audio::-webkit-media-controls-panel {
             height: 0;
         }
@@ -531,8 +569,12 @@ body::-webkit-scrollbar-thumb {
         <div class="audio-player" id="radioPlayer">
             <audio id="audioPlayer" controls>
                 <source src="https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA" type="audio/mpeg">
-                Twoja przeglądarka nie obsługuje odtwarzacza audio.
+                Your browser does not support the audio element.
             </audio>
+            <div class="album-cover-and-title">
+                <img id="albumCover" src="https://via.placeholder.com/150" alt="Album Cover" class="album-cover">
+                <div id="streamTitle">LIVE STREAM: Melancholy Angel</div>
+            </div>
             <div class="player-controls">
                 <i id="playPauseIcon" class="fas fa-play" onclick="playPause()"></i>
                 <div id="timeDisplay">
@@ -540,15 +582,17 @@ body::-webkit-scrollbar-thumb {
                 </div>
                 <div class="volume-control">
                     <i id="volume-down" class="fas fa-volume-down volume-icon"></i>
-                    <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1"
-                        onchange="changeVolume(this.value)">
+                    <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1" onchange="changeVolume(this.value)">
                     <i id="volume-up" class="fas fa-volume-up volume-icon"></i>
                 </div>
             </div>
-            <div id="streamTitle"></div>
         </div>
+        
     </main>
     <script>
+        var clientId = '438fde52eca7404ab4da139d81fbb0c5'; //Spotify
+        var clientSecret = 'f72fc7db0e834b23a71e6ebb6eadad9a'; 
+
         var audio = document.getElementById('audioPlayer');
         var streamTitleElement = document.getElementById('streamTitle');
         var playPauseIcon = document.getElementById('playPauseIcon');
@@ -566,7 +610,58 @@ body::-webkit-scrollbar-thumb {
         
 
       // Declare notificationTimeout outside of the function to maintain its scope
-      var notificationTimeout; // Assuming this is already defined globally
+      var notificationTimeout; 
+
+
+      async function getSpotifyAccessToken() {
+        const tokenUrl = 'https://accounts.spotify.com/api/token';
+        
+        const response = await fetch(tokenUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+            },
+            body: new URLSearchParams({
+                'grant_type': 'client_credentials'
+            })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            return data.access_token;
+        } else {
+            throw new Error('Failed to fetch access token: ' + data.error_description);
+        }
+    }
+
+    async function fetchSpotifyCover(query) {
+        try {
+            const accessToken = await getSpotifyAccessToken();
+            
+            const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&include_external=audio`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            });
+
+            const data = await response.json();
+            if (data.tracks && data.tracks.items.length > 0) {
+                const track = data.tracks.items[0];
+                const albumCover = track.album.images[0].url;
+                document.getElementById('albumCover').src = albumCover;
+            } else {
+                console.log('No cover found for: ' + query);
+            }
+        } catch (error) {
+            console.error('Error fetching Spotify cover:', error);
+        }
+    }
+
+
 
 function showNotification(message) {
     var notificationPopup = document.getElementById('notificationPopup');
@@ -709,6 +804,7 @@ document.getElementById('volume-up').addEventListener('click', function() {
                     if (jsonData.streamTitle) {
                         var cleanedTitle = cleanTitle(jsonData.streamTitle);
                         streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
+                        fetchSpotifyCover(cleanedTitle); // Fetch and display the Spotify cover
                     }
                 } catch (error) {
                     console.error('Error processing data:', error);
@@ -731,6 +827,7 @@ document.getElementById('volume-up').addEventListener('click', function() {
                 if (jsonData.streamTitle) {
                     var cleanedTitle = cleanTitle(jsonData.streamTitle);
                     streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
+                    fetchSpotifyCover(cleanedTitle); // Fetch and display the Spotify cover
                 }
             } catch (error) {
                 console.error('Error processing data:', error);
@@ -805,7 +902,7 @@ document.getElementById('volume-up').addEventListener('click', function() {
             };
         };
     </script>
-    <h2 id="betaVersion">BETA VERSION 4.3</h2>
+    <h2 id="betaVersion">BETA VERSION 5.0</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <div class="animation-wrapper">
