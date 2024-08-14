@@ -14,7 +14,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background: url('https://i.ibb.co/w7wDYjK/spacebackgroundradiogamingupscaled-with-miodzix-musicplanet.png') fixed;
+            background: url('https://radio-gaming.stream/Images/Radio-Gaming-Background.webp') fixed;
             background-size: cover;
             color: #333;
             text-align: center;
@@ -494,7 +494,7 @@ body::-webkit-scrollbar-thumb {
     <div class="loading-screen">
         <div class="lds-ripple"><div></div><div></div></div>
     </div>
-    <div id="notificationPopup">Latest News: [Your news here]</div>
+    <div id="notificationPopup"></div>
     <header>
         <nav>
             <ul>
@@ -563,14 +563,40 @@ body::-webkit-scrollbar-thumb {
 
         document.documentElement.style.setProperty('--scrollbar-thumb-color', '#7300ff');
 
+        
+
+      // Declare notificationTimeout outside of the function to maintain its scope
+      var notificationTimeout; // Assuming this is already defined globally
+
+function showNotification(message) {
+    var notificationPopup = document.getElementById('notificationPopup');
+    if (!notificationPopup) {
+        console.error("Element with id 'notificationPopup' not found!");
+        return;
+    }
+
+    console.log("Showing notification:", message);
+    notificationPopup.textContent = message;
+    notificationPopup.style.display = 'block';
+    notificationPopup.style.animation = 'none';
+    notificationPopup.offsetHeight; // Trigger reflow to reset the animation
+
+    // Apply the fadeIn and fadeOut animations
+    notificationPopup.style.animation = 'fadeIn 0.5s ease forwards, fadeOut 0.5s ease forwards 5s';
+    
+}
+        showNotification("Latest Radio News: Fixed loading screen!");
+
         function playPause() {
             if (audio.paused) {
                 audio.load();
                 audio.play();
                 playPauseIcon.className = 'fas fa-pause';
+                showNotification("Now Playing!");
             } else {
                 audio.pause();
                 playPauseIcon.className = 'fas fa-play';
+                showNotification("Paused!");
             }
         }
 
@@ -587,7 +613,7 @@ body::-webkit-scrollbar-thumb {
 
             var stationDetails = {
                 "https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA": {
-                    backgroundImage: "url('https://i.ibb.co/w7wDYjK/spacebackgroundradiogamingupscaled-with-miodzix-musicplanet.png')",
+                    backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Background.webp')",
                     playerControlsBackgroundColor: "#420092",
                     borderColor: "#7300ff",
                     loadingBackgroundColor: "#7300ff",
@@ -595,7 +621,7 @@ body::-webkit-scrollbar-thumb {
                     streamTitleColor: "#ffffff"
                 },
                 "https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ": {
-                    backgroundImage: "url('https://i.ibb.co/3zJKYMK/Radio-Gaming-Dark-no-text.png')",
+                    backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Dark-background.webp')",
                     playerControlsBackgroundColor: "#423eff",
                     borderColor: "#293cca",
                     loadingBackgroundColor: "#293cca",
@@ -603,7 +629,7 @@ body::-webkit-scrollbar-thumb {
                     streamTitleColor: "#0039ff"
                 },
                 "https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw": {
-                    backgroundImage: "url('https://i.ibb.co/Jmy8fDZ/Radio-Gaming-Maron-FM-background-Polished.png')",
+                    backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Maron-FM-background-Polished.webp')",
                     playerControlsBackgroundColor: "#272956",
                     borderColor: "#220071",
                     loadingBackgroundColor: "#220071",
@@ -651,7 +677,7 @@ body::-webkit-scrollbar-thumb {
             audio.play();
             playPauseIcon.className = 'fas fa-pause';
             stationName.textContent = name;
-
+            showNotification("Changing station to: " + name)
             // Update event source URL
             if (currentEventSource) {
                 currentEventSource.close();
@@ -747,18 +773,8 @@ body::-webkit-scrollbar-thumb {
             return title.trim();
         }
 
-        function showNotification(message) {
-            var notificationPopup = document.getElementById('notificationPopup');
-            notificationPopup.textContent = "Latest Radio News: " + message;
-            notificationPopup.style.display = 'block';
-        }
 
-        showNotification("Fixed loading screen!");
-
-        setTimeout(function () {
-            var notificationPopup = document.getElementById('notificationPopup');
-            notificationPopup.style.display = 'none';
-        }, 8000);
+        
 
         // Initial loading screen logic
         window.onload = function () {
@@ -771,7 +787,7 @@ body::-webkit-scrollbar-thumb {
             };
         };
     </script>
-    <h2 id="betaVersion">BETA VERSION 4.2</h2>
+    <h2 id="betaVersion">BETA VERSION 4.3</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <div class="animation-wrapper">
