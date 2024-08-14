@@ -585,7 +585,7 @@ function showNotification(message) {
     notificationPopup.style.animation = 'fadeIn 0.5s ease forwards, fadeOut 0.5s ease forwards 5s';
     
 }
-        showNotification("Latest Radio News: Fixed loading screen!");
+        showNotification("Latest Radio News: Fixed Image Loading and Notifications!");
 
         function playPause() {
             if (audio.paused) {
@@ -612,12 +612,14 @@ document.getElementById('volume-down').addEventListener('click', function() {
     previousVolume = audio.volume; 
     audio.volume = 0;
     document.querySelector('.volume-slider').value = 0; 
+    showNotification("Muting volume!");
 });
 
 // Restore volume when clicking the volume-up icon
 document.getElementById('volume-up').addEventListener('click', function() {
     audio.volume = previousVolume; 
     document.querySelector('.volume-slider').value = previousVolume; 
+    showNotification("Restoring volume!");
 });
 
         function changeStation(source, name, metadataURL) {
@@ -647,10 +649,10 @@ document.getElementById('volume-up').addEventListener('click', function() {
                 "https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw": {
                     backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Maron-FM-background-Polished.webp')",
                     playerControlsBackgroundColor: "#272956",
-                    borderColor: "#220071",
-                    loadingBackgroundColor: "#220071",
+                    borderColor: "#272956",
+                    loadingBackgroundColor: "#272956",
                     liveEmoji: "🟣LIVE",
-                    streamTitleColor: "#220071"
+                    streamTitleColor: "#272956"
                 }
             };
 
