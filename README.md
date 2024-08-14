@@ -14,4 +14,5 @@ You can download Desktop or Android here: https://radio-gaming.stream/inne/pages
 Simple Project Documentation can be found here: https://1drv.ms/b/s!AhH9J-vA4KuajyRDGO1d6U0FONRR?e=Qb31ZK or in repository.
 
 Radio GAMING - Powering Your Gaming Experience.
-![Radio gaming Ad](https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/Assets/Ads/Radio%20Gaming%20ad.png)
+
+<img src="https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/Assets/Ads/Radio%20Gaming%20ad.png" width="100" height="100">
