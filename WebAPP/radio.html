@@ -529,6 +529,70 @@ body::-webkit-scrollbar-thumb {
     transform: translateY(-2560px);
   }
 }
+
+
+/* For larger screens */
+@media only screen and (min-width: 601px) {
+    .tooltip {
+    position: fixed;
+    top: -33%; /* Change this to move tooltip up/down */
+    left: 17%; /* Position it to the right of the station photo */
+    transform: translateY(-50%);
+    width: 100px;
+    padding: 10px;
+    background-color: black;
+    color: #fff;
+    border-radius: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    z-index: 9998;
+    text-align: center;
+    font-size: 9px;
+    pointer-events: none; /* Ensure tooltip doesn't block clicks */
+}
+}
+
+/* For phones */
+@media only screen and (max-width: 600px) {
+    .tooltip {
+    position: fixed;
+    top: -40%; /* Change this to move tooltip up/down */
+    left: -10%; /* Position it to the right of the station photo */
+    transform: translateY(-50%);
+    width: 100px;
+    padding: 10px;
+    background-color: black;
+    color: #fff;
+    border-radius: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+    z-index: 9998;
+    text-align: center;
+    font-size: 9px;
+    pointer-events: none; /* Ensure tooltip doesn't block clicks */
+}
+}
+
+.tooltip-cover {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.station-photo:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tooltip img {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        margin-bottom: 5px;
+        transition: opacity 0.3s ease;
+    }
   </style>
 
 </head>
@@ -557,18 +621,31 @@ body::-webkit-scrollbar-thumb {
                 <img
                     src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp"
                     alt="Radio GAMING">
+                    <div class="tooltip">
+                        <img src="" alt="Album Cover" class="tooltip-cover" />
+                        <div class="tooltip-track">Loading...</div>
+                    </div>
             </div>
+            
             <div class="station-photo"
                 onclick="changeStation('https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
                 <img
                     src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp"
                     alt="Radio GAMING DARK">
+                    <div class="tooltip">
+                        <img src="" alt="Album Cover" class="tooltip-cover" />
+                        <div class="tooltip-track">Loading...</div>
+                    </div>
             </div>
             <div class="station-photo"
                 onclick="changeStation('https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
                 <img
                     src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp"
                     alt="Radio GAMING MARON FM">
+                    <div class="tooltip">
+                        <img src="" alt="Album Cover" class="tooltip-cover" />
+                        <div class="tooltip-track">Loading...</div>
+                    </div>
             </div>
         </div>
 
@@ -945,8 +1022,112 @@ window.onload = function () {
     };
 };
 
+// Function to fetch Spotify album cover and update tooltip
+async function fetchSpotifyCovertooltip(query, tooltipElement) {
+    const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+
+    if (!query) {
+        tooltipElement.querySelector('.tooltip-cover').src = fallbackCover;
+        tooltipElement.querySelector('.tooltip-track').textContent = 'Track not found';
+        return;
+    }
+
+    try {
+        const accessToken = await getSpotifyAccessToken();
+        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&include_external=audio`;
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + accessToken
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.tracks && data.tracks.items.length > 0) {
+            const track = data.tracks.items[0];
+            const albumCover = track.album.images[0].url;
+
+            tooltipElement.querySelector('.tooltip-cover').src = albumCover;
+            
+        } else {
+            tooltipElement.querySelector('.tooltip-cover').src = fallbackCover;
+            tooltipElement.querySelector('.tooltip-track').textContent = 'Track not found';
+        }
+    } catch (error) {
+        console.error('Error fetching Spotify cover:', error);
+        tooltipElement.querySelector('.tooltip-cover').src = fallbackCover;
+        tooltipElement.querySelector('.tooltip-track').textContent = 'Error loading track';
+    }
+}
+
+// Function to handle EventSource and update tooltip
+function handleEventSource(metadataUrl, tooltipElement) {
+    const eventSource = new EventSource(metadataUrl);
+
+    eventSource.onmessage = async function (event) {
+        try {
+            const jsonData = JSON.parse(event.data);
+            if (jsonData.streamTitle) {
+                const cleanedTitle = cleanTitle(jsonData.streamTitle);
+
+                // Update the tooltip with stream title
+                tooltipElement.querySelector('.tooltip-track').textContent = 'LIVE STREAM: ' + cleanedTitle;
+
+                // Fetch Spotify cover and update tooltip
+                await fetchSpotifyCovertooltip(cleanedTitle, tooltipElement);
+            }
+        } catch (error) {
+            console.error('Error processing data:', error);
+        }
+    };
+
+    eventSource.onerror = function (error) {
+        console.error('Connection error:', error);
+        eventSource.close();
+    };
+
+    return eventSource;
+}
+
+// Manage EventSource instances
+const eventSources = new Map();
+
+// Event listener setup for station photos
+document.querySelectorAll('.station-photo').forEach(station => {
+    station.addEventListener('mouseover', function() {
+        const tooltip = this.querySelector('.tooltip');
+        const metadataUrl = this.getAttribute('onclick').split(", ")[2].replace(/[')]/g, '').trim();
+
+        if (metadataUrl) {
+            if (eventSources.has(metadataUrl)) {
+                // Close existing EventSource if it exists
+                eventSources.get(metadataUrl).close();
+            }
+
+            // Open a new EventSource for the station
+            const newEventSource = handleEventSource(metadataUrl, tooltip);
+            eventSources.set(metadataUrl, newEventSource);
+        }
+    });
+});
+
+// Clean up event sources when mouse leaves the station
+document.querySelectorAll('.station-photo').forEach(station => {
+    station.addEventListener('mouseleave', function() {
+        const metadataUrl = this.getAttribute('onclick').split(", ")[2].replace(/[')]/g, '').trim();
+
+        if (metadataUrl && eventSources.has(metadataUrl)) {
+            // Close the EventSource when the mouse leaves the station
+            eventSources.get(metadataUrl).close();
+            eventSources.delete(metadataUrl);
+        }
+    });
+});
+
     </script>
-    <h2 id="betaVersion">BETA VERSION 5.1</h2>
+    <h2 id="betaVersion">BETA VERSION 6.0</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <div class="animation-wrapper">
