@@ -718,7 +718,7 @@ let albumCovers = {};
 
 async function fetchAlbumCovers() {
     try {
-        const response = await fetch('albumCovers.json');
+        const response = await fetch('https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/albumCovers.json');
         albumCovers = await response.json();
         console.log('Album covers fetched successfully:', albumCovers);
     } catch (error) {
