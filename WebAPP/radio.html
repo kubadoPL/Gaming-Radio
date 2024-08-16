@@ -714,28 +714,19 @@ async function getSpotifyAccessToken() {
     }
 }
 
-const albumCovers = {
-    "Miodzix - Coś nowego": "https://radio-gaming.stream/Images/CustomAlbumCovers/MiodzixMusic.jpg",
-    "Miodzix - Expansion": "https://radio-gaming.stream/Images/CustomAlbumCovers/MiodzixMusic.jpg",
-    "Miodzix - Houseee": "https://radio-gaming.stream/Images/CustomAlbumCovers/MiodzixMusic.jpg",
-    "Miodzix - PHOOONK.mp3": "https://radio-gaming.stream/Images/CustomAlbumCovers/MiodzixMusic.jpg",
-    "Miodzix - xxyy_2.mp3": "https://radio-gaming.stream/Images/CustomAlbumCovers/MiodzixMusic.jpg",
-    "Miodzix - Ezeteriusz Remix": "https://radio-gaming.stream/Images/CustomAlbumCovers/ezeteriuszremix_1024x1024.png",
-    "Błogosławieni Miłosierni (Krysiek Remix)": "https://radio-gaming.stream/Images/CustomAlbumCovers/B%C5%82ogos%C5%82awieni%20Mi%C5%82osierni%20(Krysiek%20Remix).jpg",
-    "ŚCIERNISCO [POTĘŻNY REMIX]": "https://radio-gaming.stream/Images/CustomAlbumCovers/sciernisko.jpg",
-    "DEUS EX LUMINA - WE ARE DEAD TONIGHT": "https://radio-gaming.stream/Images/CustomAlbumCovers/DEUSEXLUMINAWEAREDEADTONIGHT.jpg",
-    "Nightwish - Escapist": "https://radio-gaming.stream/Images/CustomAlbumCovers/NightwishBye-Bye-Beautiful.jpeg",
-    "Rammstein - Sonne": "https://radio-gaming.stream/Images/CustomAlbumCovers/RammsteinSonne.jpg",
-    "Big Cyc - Makumba (KRK Remix)": "https://radio-gaming.stream/Images/CustomAlbumCovers/big-cyc-makumba-Cover-Art.jpg",
-    "Midnight Darkwave - Nevermore": "https://radio-gaming.stream/Images/CustomAlbumCovers/midnightdarkwavenevermore.jpg",
-    "Miodzix - Endless road": "https://radio-gaming.stream/Images/CustomAlbumCovers/endlessroad.jpg",
-    "California - Single by YOU": "https://radio-gaming.stream/Images/CustomAlbumCovers/californiayou.jpg",
-    "Tom Walker - My Way": "https://radio-gaming.stream/Images/CustomAlbumCovers/TomWalkerMyWay.jpg",
-    "Miodzix - For Your Sadness": "https://radio-gaming.stream/Images/CustomAlbumCovers/MiodzixForYourSadness.jpg",
-    "Avatar - Torn Apart": "https://radio-gaming.stream/Images/CustomAlbumCovers/avatar.jpg",
-    "Avatar - Black Waltz": "https://radio-gaming.stream/Images/CustomAlbumCovers/avatar.jpg",
-    "Avatar - Bloody Angel": "https://radio-gaming.stream/Images/CustomAlbumCovers/avatarangel.jpg",
-};
+let albumCovers = {};
+
+async function fetchAlbumCovers() {
+    try {
+        const response = await fetch('albumCovers.json');
+        albumCovers = await response.json();
+        console.log('Album covers fetched successfully:', albumCovers);
+    } catch (error) {
+        console.error('Error fetching album covers:', error);
+    }
+}
+
+fetchAlbumCovers()
 
 async function fetchSpotifyCover(query) {
     const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
