@@ -617,7 +617,7 @@ body::-webkit-scrollbar-thumb {
 
         <div class="station-selector">
             <div class="station-photo active"
-                onclick="changeStation('https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
+                onclick="changeStation('https://stream.zeno.fm/es4ngpu7ud6tv', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
                 <img
                     src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp"
                     alt="Radio GAMING">
@@ -628,7 +628,7 @@ body::-webkit-scrollbar-thumb {
             </div>
             
             <div class="station-photo"
-                onclick="changeStation('https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
+                onclick="changeStation('https://stream.zeno.fm/pfg9eajshnjtv', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
                 <img
                     src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp"
                     alt="Radio GAMING DARK">
@@ -638,7 +638,7 @@ body::-webkit-scrollbar-thumb {
                     </div>
             </div>
             <div class="station-photo"
-                onclick="changeStation('https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
+                onclick="changeStation('https://stream.zeno.fm/5nhy0myl4jpuv', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
                 <img
                     src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp"
                     alt="Radio GAMING MARON FM">
@@ -651,7 +651,7 @@ body::-webkit-scrollbar-thumb {
 
         <div class="audio-player" id="radioPlayer">
             <audio id="audioPlayer" controls>
-                <source src="https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA" type="audio/mpeg">
+                <source src="https://stream.zeno.fm/es4ngpu7ud6tv" type="audio/mpeg">
                 Your browser does not support the audio element.
             </audio>
             <div class="album-cover-and-title">
@@ -871,7 +871,7 @@ function changeStation(source, name, metadataURL) {
     var liveIndicator = document.getElementById('liveIndicator');
 
     var stationDetails = {
-        "https://stream-151.zeno.fm/es4ngpu7ud6tv?zs=2BwYwqIYTMqcKxJsn--gHA": {
+        "https://stream.zeno.fm/es4ngpu7ud6tv": {
             backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Background.webp')",
             playerControlsBackgroundColor: "#420092",
             borderColor: "#7300ff",
@@ -879,7 +879,7 @@ function changeStation(source, name, metadataURL) {
             liveEmoji: "🟣LIVE",
             streamTitleColor: "#ffffff"
         },
-        "https://stream-149.zeno.fm/pfg9eajshnjtv?zs=NJSAMS1wQTeKC0Xx-stFMQ": {
+        "https://stream.zeno.fm/pfg9eajshnjtv": {
             backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Dark-background.webp')",
             playerControlsBackgroundColor: "#423eff",
             borderColor: "#293cca",
@@ -887,7 +887,7 @@ function changeStation(source, name, metadataURL) {
             liveEmoji: "🔵LIVE",
             streamTitleColor: "#0039ff"
         },
-        "https://stream-152.zeno.fm/5nhy0myl4jpuv?zs=vUHGvqfCRD6ZqX50fEFhqw": {
+        "https://stream.zeno.fm/5nhy0myl4jpuv": {
             backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Maron-FM-background-Polished.webp')",
             playerControlsBackgroundColor: "#272956",
             borderColor: "#272956",
