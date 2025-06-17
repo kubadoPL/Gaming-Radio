@@ -702,9 +702,6 @@
 
     </main>
     <script>
-        var clientId = '438fde52eca7404ab4da139d81fbb0c5'; //Spotify
-        var clientSecret = 'f72fc7db0e834b23a71e6ebb6eadad9a';
-
         var audio = document.getElementById('audioPlayer');
         var streamTitleElement = document.getElementById('streamTitle');
         var playPauseIcon = document.getElementById('playPauseIcon');
@@ -722,17 +719,14 @@
         var notificationTimeout;
 
         async function getSpotifyAccessToken() {
-            const tokenUrl = 'https://accounts.spotify.com/api/token';
+            const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/spotify/token';
 
             const response = await fetch(tokenUrl, {
-                method: 'POST',
+                method: 'GET',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': 'Basic ' + btoa(clientId + ':' + clientSecret)
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: new URLSearchParams({
-                    'grant_type': 'client_credentials'
-                })
+
             });
 
             const data = await response.json();
