@@ -718,7 +718,27 @@
         // Declare notificationTimeout outside of the function to maintain its scope
         var notificationTimeout;
 
+
+
         async function getSpotifyAccessToken() {
+            const now = Date.now();
+
+            // Try to read token and expiration from localStorage
+            let cachedToken = localStorage.getItem('RadioGaming-spotifyAccessToken');
+            let tokenExpiresAt = parseInt(localStorage.getItem('RadioGaming-spotifyTokenExpiresAt'), 10) || 0;
+
+            if (cachedToken && now < tokenExpiresAt) {
+                const msLeft = tokenExpiresAt - now;
+                const secondsLeft = Math.floor(msLeft / 1000);
+                const minutes = Math.floor(secondsLeft / 60);
+                const seconds = secondsLeft % 60;
+                console.log(`Using cached Spotify access token. Expires in ${minutes}m ${seconds}s.`);
+                console.log(`Using cached Spotify access token. Expires in ${minutes}m ${seconds}s.`);
+                return cachedToken;
+            }
+
+            console.log('Fetching new Spotify access token...');
+
             const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/spotify/token';
 
             const response = await fetch(tokenUrl, {
@@ -726,16 +746,30 @@
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
-
             });
 
             const data = await response.json();
+
             if (response.ok) {
-                return data.access_token;
+                cachedToken = data.access_token;
+                const expiresIn = data.expires_in || 3600;
+                tokenExpiresAt = now + expiresIn * 1000 - 60000; // expire 60 seconds early
+
+                // Save token and expiration to localStorage
+                localStorage.setItem('RadioGaming-spotifyAccessToken', cachedToken);
+                localStorage.setItem('RadioGaming-spotifyTokenExpiresAt', tokenExpiresAt.toString());
+
+                console.log('Spotify access token fetched successfully:', cachedToken, expiresIn);
+                console.log(`New token fetched. Expires in ${expiresIn} seconds.`);
+
+                return cachedToken;
             } else {
                 throw new Error('Failed to fetch access token: ' + data.error_description);
             }
         }
+
+
+
 
         let albumCovers = {};
 
@@ -1182,7 +1216,7 @@
         });
 
     </script>
-    <h2 id="betaVersion">BETA VERSION 6.1</h2>
+    <h2 id="betaVersion">BETA VERSION 6.2</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <div class="animation-wrapper">
