@@ -599,7 +599,11 @@
             }
         }
 
-
+        .tooltip-Online-Users {
+            font-size: 10px;
+            color: purple;
+            margin-top: 5px;
+        }
         /* For larger screens */
         @media only screen and (min-width: 601px) {
             .tooltip {
@@ -790,14 +794,16 @@
                 const minutes = Math.floor(secondsLeft / 60);
                 const seconds = secondsLeft % 60;
                 console.log(`Using cached Spotify access token. Expires in ${minutes}m ${seconds}s.`);
-                console.log(`Using cached Spotify access token. Expires in ${minutes}m ${seconds}s.`);
+        
                 setTimeout(function () {
                     document.querySelector('.loading-screen').style.display = 'none';
                 }, 1000); // 1000 milliseconds = 1 second
+                //showNotification(`Using cached Album Covers token. Expires in ${minutes}m ${seconds}s.`);
                 return cachedToken;
             }
             if (fetching == true) {
                 console.log('Already fetching a new Spotify access token. Please wait...');
+                showNotification('Fetching Album Covers token...');
                 return cachedToken; // Return the cached token while fetching
             }
             fetching = true; // Set the flag to true to prevent multiple fetches
@@ -1383,6 +1389,7 @@
             }
             if (isError) {
                 tooltipElement2.textContent = 'Error loading Live Listeners';
+                showNotification(`Error loading Live Listeners for ${stationNameWithoutChanges}`);
             } else {
                 tooltipElement2.textContent = `Live Listeners: ${listenerCount}`;
             }
