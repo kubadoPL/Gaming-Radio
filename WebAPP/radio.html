@@ -651,6 +651,7 @@
                     <img src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
                         alt="Album Cover" class="tooltip-cover" />
                     <div class="tooltip-track">Loading...</div>
+                    <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
                 </div>
             </div>
 
@@ -661,6 +662,7 @@
                     <img src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
                         alt="Album Cover" class="tooltip-cover" />
                     <div class="tooltip-track">Loading...</div>
+                    <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
                 </div>
             </div>
             <div class="station-photo"
@@ -671,6 +673,7 @@
                     <img src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
                         alt="Album Cover" class="tooltip-cover" />
                     <div class="tooltip-track">Loading...</div>
+                    <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
                 </div>
             </div>
         </div>
@@ -693,7 +696,7 @@
                 </div>
                 <div class="volume-control">
                     <i id="volume-down" class="fas fa-volume-down volume-icon"></i>
-                    <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="1"
+                    <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="0.1"
                         onchange="changeVolume(this.value)">
                     <i id="volume-up" class="fas fa-volume-up volume-icon"></i>
                 </div>
@@ -1104,6 +1107,22 @@
             };
         };
 
+
+        async function metaDataUrlToStationName(metadataUrl) {
+            let stationName = null;
+            if (metadataUrl == 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv') {
+                stationName = 'Radio GAMING';
+            } else if (metadataUrl == 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv') {
+                stationName = 'Radio GAMING DARK';
+            } else if (metadataUrl == 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv') {
+                stationName = 'Radio GAMING MARON FM';
+            }
+            else {
+                stationName = 'Unknown Station';
+            }
+            console.log("Station name for metadata URL", metadataUrl, "is", stationName);
+            return stationName;
+        }
         // Function to fetch Spotify album cover and update tooltip
         async function fetchSpotifyCovertooltip(query, tooltipElement) {
             const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
@@ -1214,7 +1233,97 @@
                 }
             });
         });
+        async function updateOnlineUsersTooltip(tooltipElement, stationName, metadataUrl) {
+            try {
+                stationName = stationName.replace(/\s+/g, '').toUpperCase(); // Normalize station name
+                const cacheKey = `listenerCount_${stationName}`;
+                const now = Date.now();
 
+                // Try to get cached data from localStorage
+                const cachedStr = localStorage.getItem(cacheKey);
+                if (cachedStr) {
+                    const cached = JSON.parse(cachedStr);
+                    // Check if cache is less than 5 minutes old
+                    if (now - cached.timestamp < 5 * 60 * 1000) {
+                        const elapsed = now - cached.timestamp; // ms elapsed since cache
+                        const refreshInterval = 5 * 60 * 1000; // 5 minutes in ms
+                        const timeLeftMs = refreshInterval - elapsed;
+
+                        // Convert to minutes and seconds
+                        const minutesLeft = Math.floor(timeLeftMs / 60000);
+                        const secondsLeft = Math.ceil((timeLeftMs % 60000) / 1000);
+
+                        const timeLeftFormatted = `${minutesLeft}m ${secondsLeft}s`;
+
+                        updateTooltip(tooltipElement, `${cached.listenerCount}`);
+                        console.log(`Used cached listener count for ${stationName}, refresh in ${timeLeftFormatted}`);
+                        return;
+                    }
+
+                }
+
+                console.log("Fetching fresh listener count for " + stationName);
+                const response = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationName);
+                const data = await response.json();
+                const listenerCount = data.total_sum;
+
+                // Cache new data in localStorage
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    listenerCount,
+                    timestamp: now
+                }));
+
+                updateTooltip(tooltipElement, listenerCount);
+
+            } catch (error) {
+                console.error("Failed to fetch listener count:", error);
+                updateTooltip(tooltipElement, null, true);
+            }
+        }
+
+        function updateTooltip(tooltipElement, listenerCount, isError = false) {
+            if (!tooltipElement) {
+                console.warn("Tooltip element not found!");
+                return;
+            }
+            const tooltipElement2 = tooltipElement.querySelector('.tooltip-Online-Users');
+            if (!tooltipElement2) {
+                console.warn("tooltip-Online-Users element not found!");
+                return;
+            }
+            if (isError) {
+                tooltipElement2.textContent = 'Error loading Live Listeners';
+            } else {
+                tooltipElement2.textContent = `Live Listeners: ${listenerCount}`;
+            }
+        }
+
+
+        function updateAllOnlineUsers() {
+            document.querySelectorAll('.station-photo').forEach(station => {
+                const tooltip = station.querySelector('.tooltip');
+
+                const metadataUrl = station.getAttribute('onclick').split(", ")[2].replace(/[')]/g, '').trim();
+                console.log(metadataUrl)
+
+
+
+                let stationName = metaDataUrlToStationName(metadataUrl);
+                console.log("Station name for metadata URL", metadataUrl, "is", stationName);
+                stationName.then(name => {
+                    updateOnlineUsersTooltip(tooltip, name, metadataUrl);
+                }).catch(error => {
+                    console.error("Error getting station name:", error);
+                });
+            });
+        }
+
+        // Run immediately on page load
+        updateAllOnlineUsers();
+
+        // Then update every 1 minute (60000 ms)
+        setInterval(updateAllOnlineUsers, 60000);
+        changeVolume(0.1)
     </script>
     <h2 id="betaVersion">BETA VERSION 6.2</h2>
     <h1>&nbsp;</h1>
