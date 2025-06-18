@@ -765,6 +765,7 @@
         var currentEventSource = eventSource;
         let globalCurrentColor = "#7300ff"; // Default color for the loading screen and scrollbar
         let fetching = false; // Flag to prevent multiple fetches
+        let cooldown = false;
         // Show loading screen
         document.querySelector('.loading-screen').style.backgroundColor = "#7300ff";
         document.querySelector('.loading-screen').style.display = 'flex';
@@ -997,6 +998,10 @@
         });
 
         function changeStation(source, name, metadataURL) {
+            if (cooldown == true) {
+                console.log('Cooldown active. Please wait before changing the station again.');
+                return; // Prevent changing the station if cooldown is active
+            }
             var audio = document.getElementById('audioPlayer');
             var stationName = document.querySelector('h1');
             var streamTitleElement = document.getElementById('streamTitle');
@@ -1094,17 +1099,19 @@
             };
 
             // Wait for the background image to load
+            cooldown = true; // Set cooldown to true to prevent changing the station again immediately
             var backgroundImg = new Image();
             backgroundImg.src = backgroundImage.slice(5, -2); // Remove 'url(' and ')' from the backgroundImage string
             backgroundImg.onload = function () {
-             setTimeout(function () {
-                if (fetching == true) {
+                setTimeout(function () {
+                    if (fetching == true) {
                         console.log('Already fetching a new Spotify access token. Please wait...');
                         return; // Prevent hiding the loading screen if fetching is in progress
                     }
                     document.querySelector('.loading-screen').style.display = 'none';
-              }, 2000); // 1000 milliseconds = 1 second
-             };
+                    cooldown = false
+                }, 2000); // 1000 milliseconds = 1 second
+            };
         }
 
         eventSource.onmessage = function (event) {
