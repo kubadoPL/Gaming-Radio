@@ -340,7 +340,7 @@
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            opacity: 0;
+            opacity: 0.4;
             animation: fadeIn 0.5s ease forwards, fadeOut 0.5s ease forwards 5s;
 
             z-index: 9999;
@@ -444,6 +444,56 @@
 
         body::-webkit-scrollbar-thumb {
             background-color: var(--scrollbar-thumb-color);
+        }
+
+        #notificationContainer {
+            position: fixed;
+            bottom: 80px;
+            /* was 20px, now raised above the footer */
+            left: 20px;
+            z-index: 1999999000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+
+        .notificationPopup {
+            background-color: #333;
+            color: #fff;
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards, fadeOut 0.5s ease forwards 5s;
+        }
+
+
+
+        @keyframes fadeIn {
+            to {
+                opacity: 0.8;
+                transform: translateY(0);
+            }
+
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
         }
     </style>
 
@@ -630,7 +680,9 @@
             <div></div>
         </div>
     </div>
-    <div id="notificationPopup"></div>
+    <!--<div id="notificationPopup"></div> -->
+    <div id="notificationContainer"></div>
+
     <header>
         <nav>
             <ul>
@@ -711,7 +763,7 @@
         var stationName = document.querySelector('h1');
         var eventSource = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
         var currentEventSource = eventSource;
-
+        let globalCurrentColor = "#7300ff"; // Default color for the loading screen and scrollbar
         // Show loading screen
         document.querySelector('.loading-screen').style.backgroundColor = "#7300ff";
         document.querySelector('.loading-screen').style.display = 'flex';
@@ -871,21 +923,25 @@
         }
 
         function showNotification(message) {
-            var notificationPopup = document.getElementById('notificationPopup');
-            if (!notificationPopup) {
-                console.error("Element with id 'notificationPopup' not found!");
+            const container = document.getElementById('notificationContainer');
+            if (!container) {
+                console.error("Element with id 'notificationContainer' not found!");
                 return;
             }
 
-            console.log("Showing notification:", message);
-            notificationPopup.textContent = message;
-            notificationPopup.style.display = 'block';
-            notificationPopup.style.animation = 'none';
-            notificationPopup.offsetHeight; // Trigger reflow to reset the animation
+            const notification = document.createElement('div');
+            notification.className = 'notificationPopup';
+            notification.textContent = message;
+            // Apply global color
+            notification.style.backgroundColor = globalCurrentColor;
+            container.appendChild(notification);
 
-            // Apply the fadeIn and fadeOut animations
-            notificationPopup.style.animation = 'fadeIn 0.5s ease forwards, fadeOut 0.5s ease forwards 5s';
+            // Remove after animation ends (5.5s = 0.5 fadeIn + 5s display)
+            setTimeout(() => {
+                notification.remove();
+            }, 5500);
         }
+
         showNotification("Welcome to Radio GAMING!");
 
         function playPause() {
@@ -963,7 +1019,8 @@
             document.querySelector('.loading-screen').style.display = 'flex';
 
             // Update notification color
-            document.getElementById('notificationPopup').style.backgroundColor = loadingBackgroundColor;
+            //document.getElementById('notificationPopup').style.backgroundColor = loadingBackgroundColor;
+            globalCurrentColor = loadingBackgroundColor;
 
             // Update CSS properties based on the selected station
             var backgroundImage = stationDetails[source].backgroundImage;
@@ -1235,6 +1292,7 @@
         });
         async function updateOnlineUsersTooltip(tooltipElement, stationName, metadataUrl) {
             try {
+                let stationNameWithoutChanges = stationName;
                 stationName = stationName.replace(/\s+/g, '').toUpperCase(); // Normalize station name
                 const cacheKey = `listenerCount_${stationName}`;
                 const now = Date.now();
@@ -1255,7 +1313,7 @@
 
                         const timeLeftFormatted = `${minutesLeft}m ${secondsLeft}s`;
 
-                        updateTooltip(tooltipElement, `${cached.listenerCount}`);
+                        updateTooltip(tooltipElement, `${cached.listenerCount}`, stationNameWithoutChanges);
                         console.log(`Used cached listener count for ${stationName}, refresh in ${timeLeftFormatted}`);
                         return;
                     }
@@ -1273,15 +1331,15 @@
                     timestamp: now
                 }));
 
-                updateTooltip(tooltipElement, listenerCount);
+                updateTooltip(tooltipElement, listenerCount, stationNameWithoutChanges);
 
             } catch (error) {
                 console.error("Failed to fetch listener count:", error);
-                updateTooltip(tooltipElement, null, true);
+                updateTooltip(tooltipElement, null, stationNameWithoutChanges, true);
             }
         }
 
-        function updateTooltip(tooltipElement, listenerCount, isError = false) {
+        function updateTooltip(tooltipElement, listenerCount, stationNameWithoutChanges, isError = false) {
             if (!tooltipElement) {
                 console.warn("Tooltip element not found!");
                 return;
@@ -1295,6 +1353,16 @@
                 tooltipElement2.textContent = 'Error loading Live Listeners';
             } else {
                 tooltipElement2.textContent = `Live Listeners: ${listenerCount}`;
+            }
+            if (listenerCount > 0) {
+                tooltipElement2.style.color = '#00ff00'; // Green for positive count
+                //wait 1 second before showing the notification
+                setTimeout(() => {
+                    showNotification(`Live Listeners for ${stationNameWithoutChanges}: ${listenerCount}`);
+                }, 1000);
+
+            } else {
+                tooltipElement2.style.color = '#ff0000'; // Red for zero or negative count
             }
         }
 
