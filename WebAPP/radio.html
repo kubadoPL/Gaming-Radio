@@ -764,6 +764,7 @@
         var eventSource = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
         var currentEventSource = eventSource;
         let globalCurrentColor = "#7300ff"; // Default color for the loading screen and scrollbar
+        let fetching = false; // Flag to prevent multiple fetches
         // Show loading screen
         document.querySelector('.loading-screen').style.backgroundColor = "#7300ff";
         document.querySelector('.loading-screen').style.display = 'flex';
@@ -789,13 +790,20 @@
                 const seconds = secondsLeft % 60;
                 console.log(`Using cached Spotify access token. Expires in ${minutes}m ${seconds}s.`);
                 console.log(`Using cached Spotify access token. Expires in ${minutes}m ${seconds}s.`);
+                setTimeout(function () {
+                    document.querySelector('.loading-screen').style.display = 'none';
+                }, 1000); // 1000 milliseconds = 1 second
                 return cachedToken;
             }
-
+            if (fetching == true) {
+                console.log('Already fetching a new Spotify access token. Please wait...');
+                return cachedToken; // Return the cached token while fetching
+            }
+            fetching = true; // Set the flag to true to prevent multiple fetches
             console.log('Fetching new Spotify access token...');
 
             const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/spotify/token';
-
+            showNotification('Fetching Album Covers token...');
             const response = await fetch(tokenUrl, {
                 method: 'GET',
                 headers: {
@@ -816,9 +824,18 @@
 
                 console.log('Spotify access token fetched successfully:', cachedToken, expiresIn);
                 console.log(`New token fetched. Expires in ${expiresIn} seconds.`);
-
+                fetching = false; // Reset the flag after fetching
+                setTimeout(function () {
+                    document.querySelector('.loading-screen').style.display = 'none';
+                }, 1000); // 1000 milliseconds = 1 second
+                showNotification('Album Covers token fetched successfully!');
                 return cachedToken;
             } else {
+                fetching = false; // Reset the flag after fetching
+                setTimeout(function () {
+                    document.querySelector('.loading-screen').style.display = 'none';
+                }, 1000); // 1000 milliseconds = 1 second
+                showNotification('Failed to fetch Album Covers token. Please try again later.');
                 throw new Error('Failed to fetch access token: ' + data.error_description);
             }
         }
@@ -1080,10 +1097,14 @@
             var backgroundImg = new Image();
             backgroundImg.src = backgroundImage.slice(5, -2); // Remove 'url(' and ')' from the backgroundImage string
             backgroundImg.onload = function () {
-                setTimeout(function () {
+             setTimeout(function () {
+                if (fetching == true) {
+                        console.log('Already fetching a new Spotify access token. Please wait...');
+                        return; // Prevent hiding the loading screen if fetching is in progress
+                    }
                     document.querySelector('.loading-screen').style.display = 'none';
-                }, 1000); // 1000 milliseconds = 1 second
-            };
+              }, 2000); // 1000 milliseconds = 1 second
+             };
         }
 
         eventSource.onmessage = function (event) {
@@ -1159,6 +1180,10 @@
             backgroundImg.src = getComputedStyle(document.body).backgroundImage.slice(5, -2); // Remove 'url(' and ')' from the backgroundImage string
             backgroundImg.onload = function () {
                 setTimeout(function () {
+                    if (fetching == true) {
+                        console.log('Already fetching a new Spotify access token. Please wait...');
+                        return; // Prevent hiding the loading screen if fetching is in progress
+                    }
                     document.querySelector('.loading-screen').style.display = 'none';
                 }, 1000); // 1000 milliseconds = 1 second
             };
@@ -1387,13 +1412,17 @@
         }
 
         // Run immediately on page load
-        updateAllOnlineUsers();
 
-        // Then update every 1 minute (60000 ms)
-        setInterval(updateAllOnlineUsers, 60000);
+        setTimeout(function () {
+            console.log("Updating all online users 6 sec after page load");
+            // Then update every 1 minute (60000 ms)
+            updateAllOnlineUsers();
+            setInterval(updateAllOnlineUsers, 60000);
+        }, 6000); // 1000 milliseconds = 1 second
+
         changeVolume(0.1)
     </script>
-    <h2 id="betaVersion">BETA VERSION 6.2</h2>
+    <h2 id="betaVersion">BETA VERSION 6.3</h2>
     <h1>&nbsp;</h1>
     <h1>&nbsp;</h1>
     <div class="animation-wrapper">
