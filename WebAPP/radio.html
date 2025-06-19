@@ -803,12 +803,13 @@
                         if (document.querySelector('.loading-screen').style.display != 'none') {
                             setTimeout(function () {
                                 if (IsChangingStation == false) {
-                                    if (document.querySelector('.loading-screen').style.display == 'none') {
-                                        return;
-                                    }
+                                    if (document.querySelector('.loading-screen').style.display != 'none') {
 
-                                    document.querySelector('.loading-screen').style.display = 'none';
-                                    console.log('Album Covers token from CACHE. Hiding loading screen!');
+
+
+                                        document.querySelector('.loading-screen').style.display = 'none';
+                                        console.log('Album Covers token from CACHE. Hiding loading screen!');
+                                    }
                                 }
                             }, 2000); // 1000 milliseconds = 1 second
                         }
@@ -839,7 +840,8 @@
             if (response.ok) {
                 cachedToken = data.access_token;
                 const expiresIn = data.expires_in || 3600;
-                tokenExpiresAt = now + expiresIn * 1000 - 60000; // expire 60 seconds early
+                const createdAt = new Date(data.created_at).getTime();
+                tokenExpiresAt = createdAt + expiresIn * 1000 - 60000; // Subtract 1 minute for safety margin
 
                 // Save token and expiration to localStorage
                 localStorage.setItem('RadioGaming-spotifyAccessToken', cachedToken);
@@ -854,11 +856,12 @@
                         if (document.querySelector('.loading-screen').style.display != 'none') {
                             setTimeout(function () {
                                 if (IsChangingStation == false) {
-                                    if (document.querySelector('.loading-screen').style.display == 'none') {
-                                        return;
+                                    if (document.querySelector('.loading-screen').style.display != 'none') {
+
+
+                                        document.querySelector('.loading-screen').style.display = 'none';
+                                        console.log('Album Covers token fetched successfully. Hiding loading screen!');
                                     }
-                                    document.querySelector('.loading-screen').style.display = 'none';
-                                    console.log('Album Covers token fetched successfully. Hiding loading screen!');
                                 }
                             }, 2000); // 1000 milliseconds = 1 second
                         }
@@ -874,11 +877,12 @@
                         if (document.querySelector('.loading-screen').style.display != 'none') {
                             setTimeout(function () {
                                 if (IsChangingStation == false) {
-                                    if (document.querySelector('.loading-screen').style.display == 'none') {
-                                        return;
+                                    if (document.querySelector('.loading-screen').style.display != 'none') {
+
+
+                                        document.querySelector('.loading-screen').style.display = 'none';
+                                        console.log('Failed to fetch album covers token. Hiding loading screen!');
                                     }
-                                    document.querySelector('.loading-screen').style.display = 'none';
-                                    console.log('Failed to fetch album covers token. Hiding loading screen!');
                                 }
                             }, 2000); // 1000 milliseconds = 1 second
                         }
@@ -1157,11 +1161,12 @@
                         console.log('Already fetching a new Spotify access token. Please wait...');
                         return; // Prevent hiding the loading screen if fetching is in progress
                     }
-                    if (document.querySelector('.loading-screen').style.display == 'none') {
-                        return;
+                    if (document.querySelector('.loading-screen').style.display != 'none') {
+
+
+                        document.querySelector('.loading-screen').style.display = 'none';
+                        console.log('Background image loaded successfully. hiding loading screen!');
                     }
-                    document.querySelector('.loading-screen').style.display = 'none';
-                    console.log('Background image loaded successfully. hiding loading screen!');
                     cooldown = false
                     IsChangingStation = false; // Reset the flag after changing the station
                 }, 3000); // 1000 milliseconds = 1 second
@@ -1245,11 +1250,12 @@
                         console.log('Already fetching a new Spotify access token. Please wait...');
                         return; // Prevent hiding the loading screen if fetching is in progress
                     }
-                    if (document.querySelector('.loading-screen').style.display == 'none') {
-                        return;
+                    if (document.querySelector('.loading-screen').style.display != 'none') {
+
+
+                        document.querySelector('.loading-screen').style.display = 'none';
+                        console.log('Background image loaded successfully. hiding loading screen!');
                     }
-                    document.querySelector('.loading-screen').style.display = 'none';
-                    console.log('Background image loaded successfully. hiding loading screen!');
                 }, 1000); // 1000 milliseconds = 1 second
             };
         };
