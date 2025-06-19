@@ -795,7 +795,9 @@
                 const secondsLeft = Math.floor(msLeft / 1000);
                 const minutes = Math.floor(secondsLeft / 60);
                 const seconds = secondsLeft % 60;
-                console.log(`Using cached Spotify access token. Expires in ${minutes}m ${seconds}s.`);
+                const expiryDate = new Date(tokenExpiresAt).toLocaleString();
+
+                console.log(`Using cached Spotify access token. Expires in ${minutes}m ${seconds}s (at ${expiryDate}).`);
 
                 if (document.querySelector('.loading-screen').style.display != 'none') {
                     setTimeout(function () {
@@ -847,8 +849,21 @@
                 localStorage.setItem('RadioGaming-spotifyAccessToken', cachedToken);
                 localStorage.setItem('RadioGaming-spotifyTokenExpiresAt', tokenExpiresAt.toString());
 
-                console.log('Spotify access token fetched successfully:', cachedToken, expiresIn);
-                console.log(`New token fetched. Expires in ${expiresIn} seconds.`);
+                const now = Date.now();
+                const msLeft = tokenExpiresAt - now;
+                const secondsLeft = Math.max(0, Math.floor(msLeft / 1000)); // avoid negative
+                const minutesLeft = Math.floor(secondsLeft / 60);
+                const secondsRemaining = secondsLeft % 60;
+                const timeStr = minutesLeft > 0
+                    ? `${minutesLeft}m ${secondsRemaining}s`
+                    : `${secondsRemaining}s`;
+
+                const expiryDate = new Date(tokenExpiresAt).toLocaleString();
+
+                console.log(`New Spotify token fetched. Valid for ${timeStr} (expires at ${expiryDate}).`);
+
+
+
                 fetching = false; // Reset the flag after fetching
                 if (document.querySelector('.loading-screen').style.display != 'none') {
                     setTimeout(function () {
