@@ -771,6 +771,7 @@
         let globalCurrentColor = "#7300ff"; // Default color for the loading screen and scrollbar
         let fetching = false; // Flag to prevent multiple fetches
         let cooldown = false;
+        let IsChangingStation = false; // Flag to prevent multiple station changes
         // Show loading screen
         document.querySelector('.loading-screen').style.backgroundColor = "#7300ff";
         document.querySelector('.loading-screen').style.display = 'flex';
@@ -801,8 +802,10 @@
 
                         if (document.querySelector('.loading-screen').style.display != 'none') {
                             setTimeout(function () {
-                                document.querySelector('.loading-screen').style.display = 'none';
-
+                                if (IsChangingStation == false) {
+                                    document.querySelector('.loading-screen').style.display = 'none';
+                                    console.log('Album Covers token from CACHE. Hiding loading screen!');
+                                }
                             }, 2000); // 1000 milliseconds = 1 second
                         }
                     }, 1000); // 1000 milliseconds = 1 second
@@ -846,8 +849,10 @@
 
                         if (document.querySelector('.loading-screen').style.display != 'none') {
                             setTimeout(function () {
+                                if (IsChangingStation == false) {
                                 document.querySelector('.loading-screen').style.display = 'none';
-
+                                console.log('Album Covers token fetched successfully. Hiding loading screen!');
+                                }
                             }, 2000); // 1000 milliseconds = 1 second
                         }
                     }, 1000); // 1000 milliseconds = 1 second
@@ -861,8 +866,10 @@
 
                         if (document.querySelector('.loading-screen').style.display != 'none') {
                             setTimeout(function () {
+                                if (IsChangingStation == false) {
                                 document.querySelector('.loading-screen').style.display = 'none';
-
+                                console.log('Failed to fetch album covers token. Hiding loading screen!');
+                                }
                             }, 2000); // 1000 milliseconds = 1 second
                         }
                     }, 1000); // 1000 milliseconds = 1 second
@@ -1033,6 +1040,7 @@
                 console.log('Cooldown active. Please wait before changing the station again.');
                 return; // Prevent changing the station if cooldown is active
             }
+            IsChangingStation = true; // Set flag to prevent multiple station changes
             var audio = document.getElementById('audioPlayer');
             var stationName = document.querySelector('h1');
             var streamTitleElement = document.getElementById('streamTitle');
@@ -1140,7 +1148,9 @@
                         return; // Prevent hiding the loading screen if fetching is in progress
                     }
                     document.querySelector('.loading-screen').style.display = 'none';
+                    console.log('Background image loaded successfully. hiding loading screen!');
                     cooldown = false
+                    IsChangingStation = false; // Reset the flag after changing the station
                 }, 3000); // 1000 milliseconds = 1 second
             };
         }
@@ -1223,6 +1233,7 @@
                         return; // Prevent hiding the loading screen if fetching is in progress
                     }
                     document.querySelector('.loading-screen').style.display = 'none';
+                    console.log('Background image loaded successfully. hiding loading screen!');
                 }, 1000); // 1000 milliseconds = 1 second
             };
         };
