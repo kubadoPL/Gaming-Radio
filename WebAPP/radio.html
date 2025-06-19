@@ -806,6 +806,7 @@
                                     if (document.querySelector('.loading-screen').style.display == 'none') {
                                         return;
                                     }
+
                                     document.querySelector('.loading-screen').style.display = 'none';
                                     console.log('Album Covers token from CACHE. Hiding loading screen!');
                                 }
@@ -853,8 +854,11 @@
                         if (document.querySelector('.loading-screen').style.display != 'none') {
                             setTimeout(function () {
                                 if (IsChangingStation == false) {
-                                document.querySelector('.loading-screen').style.display = 'none';
-                                console.log('Album Covers token fetched successfully. Hiding loading screen!');
+                                    if (document.querySelector('.loading-screen').style.display == 'none') {
+                                        return;
+                                    }
+                                    document.querySelector('.loading-screen').style.display = 'none';
+                                    console.log('Album Covers token fetched successfully. Hiding loading screen!');
                                 }
                             }, 2000); // 1000 milliseconds = 1 second
                         }
@@ -870,8 +874,11 @@
                         if (document.querySelector('.loading-screen').style.display != 'none') {
                             setTimeout(function () {
                                 if (IsChangingStation == false) {
-                                document.querySelector('.loading-screen').style.display = 'none';
-                                console.log('Failed to fetch album covers token. Hiding loading screen!');
+                                    if (document.querySelector('.loading-screen').style.display == 'none') {
+                                        return;
+                                    }
+                                    document.querySelector('.loading-screen').style.display = 'none';
+                                    console.log('Failed to fetch album covers token. Hiding loading screen!');
                                 }
                             }, 2000); // 1000 milliseconds = 1 second
                         }
@@ -1150,6 +1157,9 @@
                         console.log('Already fetching a new Spotify access token. Please wait...');
                         return; // Prevent hiding the loading screen if fetching is in progress
                     }
+                    if (document.querySelector('.loading-screen').style.display == 'none') {
+                        return;
+                    }
                     document.querySelector('.loading-screen').style.display = 'none';
                     console.log('Background image loaded successfully. hiding loading screen!');
                     cooldown = false
@@ -1234,6 +1244,9 @@
                     if (fetching == true) {
                         console.log('Already fetching a new Spotify access token. Please wait...');
                         return; // Prevent hiding the loading screen if fetching is in progress
+                    }
+                    if (document.querySelector('.loading-screen').style.display == 'none') {
+                        return;
                     }
                     document.querySelector('.loading-screen').style.display = 'none';
                     console.log('Background image loaded successfully. hiding loading screen!');
