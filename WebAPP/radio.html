@@ -803,7 +803,7 @@
                         if (document.querySelector('.loading-screen').style.display != 'none') {
                             setTimeout(function () {
                                 if (IsChangingStation == false) {
-                                    if (document.querySelector('.loading-screen').style.display != 'none') {
+                                    if (document.querySelector('.loading-screen').style.display == 'none') {
                                         return;
                                     }
                                     document.querySelector('.loading-screen').style.display = 'none';
