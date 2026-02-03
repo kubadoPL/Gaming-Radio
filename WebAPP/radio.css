@@ -1295,7 +1295,7 @@ body::-webkit-scrollbar-thumb {
 
 #notificationContainer {
     position: fixed;
-    bottom: 100px;
+    bottom: 140px;
     /* Raised to be well above the new footer */
     left: 30px;
     z-index: 1999999000;
