@@ -100,7 +100,7 @@ function handleMainStreamMessage(event) {
         var jsonData = JSON.parse(event.data);
         if (jsonData.streamTitle) {
             var cleanedTitle = cleanTitle(jsonData.streamTitle);
-            if (streamTitleElement) streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
+            if (streamTitleElement) streamTitleElement.textContent = cleanedTitle;
             fetchSpotifyCover(cleanedTitle); // Fetch and display the Spotify cover
 
             // If we are still loading, this is a good sign we are ready
@@ -557,7 +557,7 @@ function handleEventSource(metadataUrl, tooltipElement) {
             if (data.streamTitle) {
                 const cleaned = cleanTitle(data.streamTitle);
                 const trackElem = tooltipElement.querySelector('.tooltip-track');
-                if (trackElem) trackElem.textContent = 'LIVE STREAM: ' + cleaned;
+                if (trackElem) trackElem.textContent = cleaned;
                 await fetchSpotifyCovertooltip(cleaned, tooltipElement);
             }
         } catch (e) { console.error(e); }
