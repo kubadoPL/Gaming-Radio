@@ -1751,6 +1751,54 @@ body::-webkit-scrollbar-thumb {
     width: 1px;
 }
 
+.particle-5 {
+    -webkit-animation: animParticle 100s linear infinite;
+    animation: animParticle 100s linear infinite;
+    box-shadow: 0px 0px #fff, 1200px 1500px #fff, 800px 2200px #fff, 1900px 400px #fff, 2500px 1100px #fff, 150px 1350px #fff, 450px 250px #fff, 1750px 1650px #fff, 2350px 1950px #fff, 1050px 50px #fff, 2150px 850px #fff, 550px 1250px #fff, 1350px 2450px #fff, 950px 750px #fff, 1650px 2150px #fff, 2450px 650px #fff, 350px 1850px #fff, 1850px 150px #fff, 750px 1050px #fff;
+    height: 1px;
+    width: 1px;
+    transform: translate3d(0, 0, 0);
+    opacity: 0.6;
+}
+
+.particle-5:after {
+    box-shadow: 0px 0px #fff, 1200px 1500px #fff, 800px 2200px #fff, 1900px 400px #fff, 2500px 1100px #fff, 150px 1350px #fff, 450px 250px #fff, 1750px 1650px #fff, 2350px 1950px #fff, 1050px 50px #fff, 2150px 850px #fff, 550px 1250px #fff, 1350px 2450px #fff, 950px 750px #fff, 1650px 2150px #fff, 2450px 650px #fff, 350px 1850px #fff, 1850px 150px #fff, 750px 1050px #fff;
+    height: 1px;
+    width: 1px;
+}
+
+.particle-6 {
+    -webkit-animation: animParticle 250s linear infinite;
+    animation: animParticle 250s linear infinite;
+    box-shadow: 0px 0px #fff, 300px 1200px #fff, 1600px 200px #fff, 900px 2400px #fff, 2100px 800px #fff, 500px 1500px #fff, 1800px 2300px #fff, 100px 600px #fff, 1400px 1100px #fff, 2500px 1700px #fff, 700px 300px #fff, 2200px 1400px #fff, 1100px 2100px #fff, 400px 1900px #fff, 1900px 500px #fff, 1300px 400px #fff;
+    height: 2px;
+    width: 2px;
+    transform: translate3d(0, 0, 0);
+    opacity: 0.4;
+}
+
+.particle-6:after {
+    box-shadow: 0px 0px #fff, 300px 1200px #fff, 1600px 200px #fff, 900px 2400px #fff, 2100px 800px #fff, 500px 1500px #fff, 1800px 2300px #fff, 100px 600px #fff, 1400px 1100px #fff, 2500px 1700px #fff, 700px 300px #fff, 2200px 1400px #fff, 1100px 2100px #fff, 400px 1900px #fff, 1900px 500px #fff, 1300px 400px #fff;
+    height: 2px;
+    width: 2px;
+}
+
+.particle-7 {
+    -webkit-animation: animParticle 400s linear infinite;
+    animation: animParticle 400s linear infinite;
+    box-shadow: 0px 0px #fff, 1000px 1000px #fff, 2000px 2000px #fff, 500px 500px #fff, 1500px 1500px #fff, 2500px 2500px #fff, 1250px 1250px #fff, 750px 750px #fff, 1750px 1750px #fff, 2250px 2250px #fff, 250px 250px #fff, 1150px 1150px #fff;
+    height: 4px;
+    width: 4px;
+    transform: translate3d(0, 0, 0);
+    opacity: 0.2;
+}
+
+.particle-7:after {
+    box-shadow: 0px 0px #fff, 1000px 1000px #fff, 2000px 2000px #fff, 500px 500px #fff, 1500px 1500px #fff, 2500px 2500px #fff, 1250px 1250px #fff, 750px 750px #fff, 1750px 1750px #fff, 2250px 2250px #fff, 250px 250px #fff, 1150px 1150px #fff;
+    height: 4px;
+    width: 4px;
+}
+
 @-webkit-keyframes animParticle {
     from {
         transform: translate3d(0, 0, 0);
