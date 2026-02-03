@@ -40,6 +40,60 @@ let fetching = false; // Flag to prevent multiple fetches
 let cooldown = false;
 let IsChangingStation = false; // Flag to prevent multiple station changes
 var notificationTimeout;
+let lastPercentage = 0;
+let statusQueue = [];
+let isProcessingQueue = false;
+
+async function processStatusQueue() {
+    if (isProcessingQueue) return;
+    isProcessingQueue = true;
+
+    while (statusQueue.length > 0) {
+        const { percentage, status } = statusQueue.shift();
+
+        const progressBar = document.getElementById('loading-progress-bar');
+        const statusText = document.getElementById('loading-status');
+        const percentageText = document.getElementById('loading-percentage');
+
+        // Only allow percentage to increase
+        if (percentage > lastPercentage) {
+            lastPercentage = percentage;
+            if (progressBar) progressBar.style.width = lastPercentage + '%';
+            if (percentageText) percentageText.textContent = Math.round(lastPercentage) + '%';
+        }
+
+        if (statusText && status) {
+            statusText.style.opacity = '0';
+            await new Promise(r => setTimeout(r, 150));
+            statusText.textContent = status;
+            statusText.style.opacity = '1';
+        }
+
+        // Wait a bit so the user can actually read the status
+        await new Promise(r => setTimeout(r, 600));
+
+        if (lastPercentage >= 100 && statusQueue.length === 0) {
+            setTimeout(() => {
+                const ls = document.querySelector('.loading-screen');
+                if (ls && !IsChangingStation) {
+                    ls.style.opacity = '0';
+                    setTimeout(() => {
+                        ls.style.display = 'none';
+                        ls.style.opacity = '1';
+                        // Reset for next time (e.g. station change)
+                        lastPercentage = 0;
+                    }, 500);
+                }
+            }, 500);
+        }
+    }
+    isProcessingQueue = false;
+}
+
+function updateLoadingProgress(percentage, status) {
+    statusQueue.push({ percentage, status });
+    processStatusQueue();
+}
 
 function handleMainStreamMessage(event) {
     try {
@@ -48,6 +102,12 @@ function handleMainStreamMessage(event) {
             var cleanedTitle = cleanTitle(jsonData.streamTitle);
             if (streamTitleElement) streamTitleElement.textContent = 'LIVE STREAM: ' + cleanedTitle;
             fetchSpotifyCover(cleanedTitle); // Fetch and display the Spotify cover
+
+            // If we are still loading, this is a good sign we are ready
+            const ls = document.querySelector('.loading-screen');
+            if (ls && ls.style.display !== 'none' && !IsChangingStation) {
+                updateLoadingProgress(100, "Ready to Play!");
+            }
         }
     } catch (error) {
         console.error('Error processing data:', error);
@@ -55,6 +115,7 @@ function handleMainStreamMessage(event) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    updateLoadingProgress(5, "Initializing UI...");
     audio = document.getElementById('audioPlayer');
     streamTitleElement = document.getElementById('streamTitle');
     playPauseIcon = document.getElementById('playPauseIcon');
@@ -69,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.documentElement.style.setProperty('--scrollbar-thumb-color', '#7300ff');
 
+    updateLoadingProgress(70, "Connecting to Stream...");
     // Main Stream EventSource
     eventSource = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
     currentEventSource = eventSource;
@@ -78,6 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
     eventSource.onerror = function (error) {
         console.error('Connection error:', error);
         eventSource.close();
+        if (document.querySelector('.loading-screen').style.display !== 'none') {
+            updateLoadingProgress(100, "Connection Error - Continuing...");
+        }
     };
 
     // Event listener setup for station photos
@@ -134,6 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     changeVolume(0.1);
 
+    // Fetch Spotify token early for loading progress
+    getSpotifyAccessToken();
+
     // Mute/Restore icons setup
     const volDown = document.getElementById('volume-down');
     const volUp = document.getElementById('volume-up');
@@ -159,10 +227,7 @@ async function getSpotifyAccessToken() {
         if (document.querySelector('.loading-screen')) {
             const ls = document.querySelector('.loading-screen');
             if (ls.style.display !== 'none' && !IsChangingStation) {
-                setTimeout(() => {
-                    ls.style.display = 'none';
-                    console.log('Album Covers token from CACHE. Hiding loading screen!');
-                }, 3000);
+                updateLoadingProgress(60, "Spotify authentication successful");
             }
         }
         return cachedToken;
@@ -171,6 +236,7 @@ async function getSpotifyAccessToken() {
     if (fetching) return cachedToken;
     fetching = true;
 
+    updateLoadingProgress(40, "Authenticating with Spotify...");
     const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/spotify/token';
     try {
         const response = await fetch(tokenUrl);
@@ -192,10 +258,7 @@ async function getSpotifyAccessToken() {
             fetching = false;
             const ls = document.querySelector('.loading-screen');
             if (ls && ls.style.display !== 'none' && !IsChangingStation) {
-                setTimeout(() => {
-                    ls.style.display = 'none';
-                    console.log('Album Covers token fetched successfully. Hiding loading screen!');
-                }, 3000);
+                updateLoadingProgress(60, "Spotify authentication successful");
             }
             showNotification('Album Covers token fetched successfully!');
             return cachedToken;
@@ -203,6 +266,7 @@ async function getSpotifyAccessToken() {
             console.log('Failed to fetch album covers token. Hiding loading screen!');
             showNotification('Failed to fetch Album Covers token. Please try again later.');
             fetching = false;
+            if (!IsChangingStation) updateLoadingProgress(60, "Spotify authentication failed");
             throw new Error('Failed to fetch access token');
         }
     } catch (error) {
@@ -213,13 +277,16 @@ async function getSpotifyAccessToken() {
 }
 
 async function fetchAlbumCovers() {
+    updateLoadingProgress(10, "Loading Artwork Data...");
     try {
         const response = await fetch('https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/albumCovers.json');
         const data = await response.json();
         Object.assign(albumCovers, data);
         console.log('Album covers fetched successfully:', albumCovers);
+        updateLoadingProgress(30, "Artwork Data Loaded");
     } catch (error) {
         console.error('Error fetching album covers:', error);
+        updateLoadingProgress(30, "Artwork Data Failed to Load");
     }
 }
 
@@ -379,6 +446,7 @@ function changeStation(source, name, metadataURL) {
     if (ls) {
         ls.style.backgroundColor = config.loadingBackgroundColor;
         ls.style.display = 'flex';
+        updateLoadingProgress(10, "Switching to " + name + "...");
     }
 
     document.body.style.backgroundImage = config.backgroundImage;
@@ -392,6 +460,7 @@ function changeStation(source, name, metadataURL) {
     if (streamTitleElement) streamTitleElement.style.color = config.streamTitleColor;
 
     if (audio) {
+        updateLoadingProgress(40, "Buffering Audio Stream...");
         audio.src = source;
         audio.load();
         audio.play();
@@ -409,11 +478,17 @@ function changeStation(source, name, metadataURL) {
     const backgroundImg = new Image();
     backgroundImg.src = bgUrl;
     backgroundImg.onload = () => {
+        updateLoadingProgress(80, "Environment Ready...");
         setTimeout(() => {
-            if (!fetching && ls) ls.style.display = 'none';
+            updateLoadingProgress(100, "Enjoy your music!");
             cooldown = false;
             IsChangingStation = false;
-        }, 3000);
+        }, 1200);
+    };
+    backgroundImg.onerror = () => {
+        updateLoadingProgress(100, "Ready!");
+        cooldown = false;
+        IsChangingStation = false;
     };
 }
 

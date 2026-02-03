@@ -23,9 +23,25 @@
 <body>
     <!-- Loading screen -->
     <div class="loading-screen">
-        <div class="lds-ripple">
-            <div></div>
-            <div></div>
+        <div class="loading-bg-glow">
+            <div class="glow-1"></div>
+            <div class="glow-2"></div>
+        </div>
+        <div class="loading-content">
+            <div class="lds-ripple">
+                <div></div>
+                <div></div>
+            </div>
+            <div class="loading-text">
+                <span id="loading-status">Initializing...</span>
+                <span id="loading-percentage">0%</span>
+            </div>
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar-container">
+                    <div id="loading-progress-bar"></div>
+                </div>
+                <div class="progress-glow"></div>
+            </div>
         </div>
     </div>
     <!--<div id="notificationPopup"></div> -->
