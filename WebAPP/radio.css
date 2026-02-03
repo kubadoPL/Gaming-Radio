@@ -61,7 +61,8 @@ h2 {
    ======================== */
 
 .audio-player {
-    width: 380px;
+    width: 420px;
+    height: 240px;
     background: linear-gradient(165deg, rgba(20, 15, 35, 0.95) 0%, rgba(10, 8, 20, 0.98) 100%);
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
@@ -77,9 +78,10 @@ h2 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: visible;
+    overflow: hidden;
+
+    justify-content: space-between;
 }
 
 /* Animated gradient border effect */
@@ -144,24 +146,42 @@ audio {
     flex-direction: column;
     align-items: center;
     width: 100%;
-    margin-bottom: 20px;
-    gap: 15px;
+    position: relative;
+    z-index: 10;
 }
 
 /* Floating album cover with vinyl effect */
 .album-cover {
-    width: 60px;
-    height: 60px;
-    border-radius: 24px;
+    width: 300px;
+    height: 300px;
+    border-radius: 50px;
     border: none;
     box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.6),
-        0 0 0 4px rgba(255, 255, 255, 0.05),
-        0 0 60px var(--active-station-glow);
+        0 30px 60px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        0 0 100px var(--active-station-glow);
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     object-fit: cover;
-    position: relative;
-    animation: floatAlbum 6s ease-in-out infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 1;
+    opacity: 0.8;
+    filter: saturate(1.1) brightness(0.9);
+    animation: floatAlbumCentered 8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes floatAlbumCentered {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) rotateZ(0deg) scale(1);
+    }
+
+    50% {
+        transform: translate(-50%, -54%) rotateZ(2deg) scale(1.05);
+    }
 }
 
 @keyframes floatAlbum {
@@ -176,14 +196,7 @@ audio {
     }
 }
 
-.album-cover:hover {
-    transform: scale(1.08) translateY(-5px);
-    box-shadow:
-        0 30px 70px rgba(0, 0, 0, 0.7),
-        0 0 0 4px rgba(255, 255, 255, 0.1),
-        0 0 100px var(--active-station-glow);
-    animation: none;
-}
+/* Removed local hover as it's absolute now */
 
 /* Dynamic song title with gradient text */
 #streamTitle {
@@ -199,25 +212,12 @@ audio {
     width: 100%;
     padding: 12px 16px;
     border-radius: 16px;
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     transition: all 0.4s ease;
-    position: relative;
-    overflow: hidden;
+    margin-top: 120px;
+    z-index: 11;
 }
 
-#streamTitle::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-    animation: shimmer 3s infinite;
-}
+
 
 @keyframes shimmer {
     0% {
@@ -245,9 +245,12 @@ audio {
         inset 0 -1px 0 rgba(0, 0, 0, 0.1),
         0 4px 20px rgba(0, 0, 0, 0.2);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     position: relative;
+    z-index: 12;
     overflow: hidden;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 }
 
 .player-controls::before {
@@ -405,11 +408,13 @@ audio {
     100% {
         opacity: 1;
         box-shadow: 0 0 15px var(--active-station-glow);
+        transform: scale(1);
     }
 
     50% {
-        opacity: 0.9;
-        box-shadow: 0 0 8px var(--active-station-glow);
+        opacity: 0.85;
+        box-shadow: 0 0 30px var(--active-station-glow);
+        transform: scale(1.05);
     }
 }
 
