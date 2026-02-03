@@ -155,7 +155,7 @@ audio {
 .album-cover {
     width: 200px;
     height: 200px;
-    border-radius: 50px;
+    border-radius: 50%;
     border: 3px solid var(--active-station-color);
     box-shadow:
         0 20px 50px rgba(0, 0, 0, 0.6),
