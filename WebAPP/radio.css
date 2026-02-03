@@ -1,3 +1,9 @@
+:root {
+    --active-station-color: #7300ff;
+    --active-station-color-secondary: #a855f7;
+    --active-station-glow: rgba(115, 0, 255, 0.6);
+}
+
 body {
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
@@ -1813,6 +1819,100 @@ body::-webkit-scrollbar-thumb {
     transition: opacity 0.3s ease;
 }
 
+
+/* Notification System */
+#notificationContainer {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.notificationPopup {
+    background: rgba(15, 10, 25, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 4px solid var(--active-station-color);
+    border-radius: 12px;
+    padding: 16px 20px;
+    min-width: 250px;
+    max-width: 350px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px var(--active-station-glow);
+    animation: notificationEnter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    pointer-events: auto;
+    cursor: default;
+    transition: all 0.3s ease;
+}
+
+.notificationPopup.exiting {
+    animation: notificationExit 0.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+}
+
+.notificationPopup:hover {
+    transform: translateX(-5px);
+    background: rgba(25, 20, 40, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+    border-left-color: var(--active-station-color);
+}
+
+.notification-icon {
+    font-size: 20px;
+    color: var(--active-station-color);
+    text-shadow: 0 0 10px var(--active-station-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+}
+
+.notification-message {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.notification-listeners-count {
+    color: #00ff8c;
+    font-weight: 700;
+    margin-left: 4px;
+}
+
+@keyframes notificationEnter {
+    from {
+        opacity: 0;
+        transform: translateX(100%) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes notificationExit {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100%) scale(0.9);
+    }
+}
 
 /* Heartbeat Animation */
 @keyframes heartBeat {

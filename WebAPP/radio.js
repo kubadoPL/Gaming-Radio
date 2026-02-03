@@ -63,6 +63,8 @@ var notificationTimeout;
 let lastPercentage = 0;
 let statusQueue = [];
 let isProcessingQueue = false;
+let lastActiveListenerCount = -1;
+let lastListenerNotifyTime = 0;
 
 // Audio Visualizer Variables
 let audioCtx, analyser, dataArray, source, gainNode;
@@ -442,20 +444,32 @@ function updateMediaSessionMetadata(title, artwork) {
     }
 }
 
-function showNotification(message) {
+function showNotification(message, icon = 'fas fa-bell') {
     const container = document.getElementById('notificationContainer');
     if (!container) return;
 
     const notification = document.createElement('div');
     notification.className = 'notificationPopup';
     notification.innerHTML = `
-        <div class="notification-icon"><i class="fas fa-bell"></i></div>
+        <div class="notification-icon"><i class="${icon}"></i></div>
         <div class="notification-message">${message}</div>
     `;
-    notification.style.borderColor = getComputedStyle(document.documentElement).getPropertyValue('--active-station-color');
+
+    // Apply active station color for border
+    const activeColor = getComputedStyle(document.documentElement).getPropertyValue('--active-station-color');
+    notification.style.borderLeftColor = activeColor;
+
     container.appendChild(notification);
-    setTimeout(() => notification.remove(), 5600);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.add('exiting');
+        setTimeout(() => {
+            notification.remove();
+        }, 500); // Wait for exit animation
+    }, 5000);
 }
+
 
 function playPause() {
     if (!audio) return;
@@ -612,6 +626,7 @@ window.muteVolume = function () {
 function changeStation(source, name, metadataURL) {
     if (cooldown) return;
     IsChangingStation = true;
+    lastActiveListenerCount = -1; // Reset listener count tracker for new station
 
     const stationDetails = {
         "https://stream.zeno.fm/es4ngpu7ud6tv": {
@@ -818,6 +833,22 @@ function updateTooltip(tooltipElement, count, sName, isError = false) {
     } else {
         userElem.textContent = `Live Listeners: ${count}`;
         userElem.style.color = count > 0 ? '#00ff00' : '#ff0000';
+
+        // Notify if it's the active station and count changed significantly
+        const currentStationName = stationName ? stationName.textContent : '';
+        if (sName === currentStationName && count !== null) {
+            const now = Date.now();
+            const timeSinceLastNotify = now - lastListenerNotifyTime;
+
+            // Notify if count changed and it's been at least 2 minutes, or if it's the first fetch
+            if (lastActiveListenerCount === -1 || (count !== lastActiveListenerCount && timeSinceLastNotify > 120000)) {
+                if (count > 0) {
+                    showNotification(`There are <span class="notification-listeners-count">${count}</span> live listeners on ${sName}!`, 'fas fa-users');
+                }
+                lastActiveListenerCount = count;
+                lastListenerNotifyTime = now;
+            }
+        }
     }
 }
 
