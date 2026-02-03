@@ -1087,7 +1087,7 @@ body::-webkit-scrollbar-thumb {
 
 .info-card strong {
     background: #ffffff;
-    color: #0a0a0f;
+    color: var(--active-station-color);
     padding: 6px 16px;
     border-radius: 50px;
     display: inline-block;
