@@ -427,7 +427,7 @@ async function fetchSpotifyCover(query) {
         const accessToken = await getSpotifyAccessToken();
         if (!accessToken) throw new Error("No token");
 
-        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`;
+        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`;
         const response = await fetch(url, {
             headers: { 'Authorization': 'Bearer ' + accessToken }
         });
@@ -435,8 +435,8 @@ async function fetchSpotifyCover(query) {
 
         let albumCover = fallbackCover;
         if (data.tracks && data.tracks.items.length > 0) {
-            const track = data.tracks.items[0];
-            const defaultCover = track.album.images[0].url;
+            const bestTrack = findBestTrackMatch(query, data.tracks.items);
+            const defaultCover = bestTrack.album.images[0].url;
             albumCover = albumCovers[query] || defaultCover;
         } else {
             console.log('No cover found for: ' + query);
@@ -805,6 +805,51 @@ function cleanTitle(title) {
         .trim();
 }
 
+/**
+ * Finds the most similar track from Spotify search results based on the query.
+ */
+function findBestTrackMatch(query, tracks) {
+    let bestMatch = tracks[0];
+    let highestScore = -1;
+
+    tracks.forEach(track => {
+        // Build a full title for comparison: "Artist - Track Name"
+        const trackTitle = `${track.artists[0].name} - ${track.name}`;
+        const score = getSimilarityScore(query, trackTitle);
+
+        if (score > highestScore) {
+            highestScore = score;
+            bestMatch = track;
+        }
+    });
+
+    console.log(`Best match for "${query}" is "${bestMatch.artists[0].name} - ${bestMatch.name}" (Similarity Score: ${highestScore.toFixed(2)})`);
+    return bestMatch;
+}
+
+/**
+ * Calculates a simple similarity score between two strings based on shared words.
+ */
+function getSimilarityScore(s1, s2) {
+    if (!s1 || !s2) return 0;
+
+    const normalize = (s) => s.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const n1 = normalize(s1);
+    const n2 = normalize(s2);
+
+    if (n1 === n2) return 1.0;
+
+    const words1 = n1.split(' ');
+    const words2 = n2.split(' ');
+
+    const intersection = words1.filter(w => words2.includes(w));
+    return (intersection.length * 2) / (words1.length + words2.length); // Dice's coefficient
+}
+
 async function metaDataUrlToStationName(url) {
     if (url.includes('es4ngpu7ud6tv')) return 'Radio GAMING';
     if (url.includes('pfg9eajshnjtv')) return 'Radio GAMING DARK';
@@ -816,13 +861,14 @@ async function fetchSpotifyCovertooltip(query, tooltipElement) {
     const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
     try {
         const accessToken = await getSpotifyAccessToken();
-        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`;
+        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`;
         const response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + accessToken } });
         const data = await response.json();
 
         let cover = fallbackCover;
         if (data.tracks && data.tracks.items.length > 0) {
-            cover = albumCovers[query] || data.tracks.items[0].album.images[0].url;
+            const bestTrack = findBestTrackMatch(query, data.tracks.items);
+            cover = albumCovers[query] || bestTrack.album.images[0].url;
         }
         const img = tooltipElement.querySelector('.tooltip-cover');
         if (img) img.src = cover;
