@@ -186,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.documentElement.style.setProperty('--scrollbar-thumb-color', '#7300ff');
+    document.documentElement.style.setProperty('--active-station-glow-rgb', hexToRgb('#7300ff').join(','));
 
     updateLoadingProgress(70, "Connecting to Stream...");
     // Main Stream EventSource
@@ -521,6 +522,13 @@ function initVisualizer() {
     }
 }
 
+let lastVisScale = 1;
+let lastVisIntensity = 0.35;
+let lastVisGlow = 30;
+
+let cachedCover = null;
+let cachedPlayer = null;
+
 function animateVisualizer() {
     requestAnimationFrame(animateVisualizer);
 
@@ -528,7 +536,6 @@ function animateVisualizer() {
         analyser.getByteFrequencyData(dataArray);
 
         // Focus on bass frequencies (drums)
-        // With fftSize 32, we only have 16 bins. Let's use the first 4 bins (bass)
         let bassSum = 0;
         const bassBins = 4;
         for (let i = 0; i < bassBins; i++) {
@@ -536,8 +543,6 @@ function animateVisualizer() {
         }
         let bassAverage = bassSum / bassBins;
 
-        // Thresholding: Ignore low-level noise to only catch the "thump"
-        // 0-255 scale. Higher threshold = only louder sounds trigger.
         const threshold = 235;
         let triggerValue = 0;
 
@@ -545,44 +550,45 @@ function animateVisualizer() {
             triggerValue = (bassAverage - threshold) / (255 - threshold);
         }
 
-        // Apply smoothing (lerp) to the trigger value to make it less jittery
         if (!window.lastTriggerValue) window.lastTriggerValue = 0;
         window.lastTriggerValue = window.lastTriggerValue * 0.8 + triggerValue * 0.2;
         const v = window.lastTriggerValue;
 
-        // Intensity values - toned down for subtler effect
         const scale = 1 + v * 0.08;
         const glowSize = 30 + v * 80;
         const borderGlow = 6 + v * 18;
         const intensity = 0.35 + v * 0.35;
+        const brightness = 0.92 + v * 0.18;
 
-        const cover = document.getElementById('albumCover');
-        if (cover) {
-            cover.style.setProperty('--vis-scale', scale);
-            cover.style.filter = `saturate(1.05) brightness(${0.92 + v * 0.18})`;
-            cover.style.boxShadow = `
-                0 20px 50px rgba(0, 0, 0, 0.6),
-                0 0 ${borderGlow}px var(--active-station-color),
-                0 0 ${borderGlow * 1.5}px var(--active-station-color),
-                0 0 ${glowSize}px rgba(${hexToRgb(getComputedStyle(document.documentElement).getPropertyValue('--active-station-glow')).join(',')}, ${intensity})
-            `;
-        }
+        // Optimization: only update DOM if values changed significantly
+        if (Math.abs(scale - lastVisScale) > 0.001 || Math.abs(intensity - lastVisIntensity) > 0.01) {
+            if (!cachedCover) cachedCover = document.getElementById('albumCover');
+            if (!cachedPlayer) cachedPlayer = document.querySelector('.audio-player');
 
-        // Also animate the audio-player glow
-        const player = document.querySelector('.audio-player');
-        if (player) {
-            const playerGlowSize = 80 + v * 120;
-            const playerGlowSize2 = 40 + v * 80;
-            const playerBorderOpacity = 0.5 + v * 0.5;
-            player.style.boxShadow = `
-                0 35px 100px rgba(0, 0, 0, 0.8),
-                0 0 0 1px rgba(255, 255, 255, ${0.12 + v * 0.15}),
-                inset 0 1px 0 rgba(255, 255, 255, ${0.1 + v * 0.1}),
-                0 0 ${playerGlowSize2}px var(--active-station-color),
-                0 0 ${playerGlowSize}px var(--active-station-glow)
-            `;
-            // Animate the ::before pseudo-element opacity via CSS variable
-            player.style.setProperty('--border-glow-opacity', playerBorderOpacity);
+            if (cachedCover) {
+                cachedCover.style.setProperty('--vis-scale', scale);
+                cachedCover.style.setProperty('--vis-brightness', brightness);
+                cachedCover.style.setProperty('--vis-border-glow', borderGlow);
+                cachedCover.style.setProperty('--vis-glow-size', glowSize);
+                cachedCover.style.setProperty('--vis-intensity', intensity);
+            }
+
+            if (cachedPlayer) {
+                const playerGlowSize = 80 + v * 120;
+                const playerGlowSize2 = 40 + v * 80;
+                const playerBorderOpacity = 0.12 + v * 0.15;
+                const playerInsetOpacity = 0.1 + v * 0.1;
+                const borderGlowOpacity = 0.5 + v * 0.5;
+
+                cachedPlayer.style.setProperty('--player-border-opacity', playerBorderOpacity);
+                cachedPlayer.style.setProperty('--player-inset-opacity', playerInsetOpacity);
+                cachedPlayer.style.setProperty('--player-glow', playerGlowSize);
+                cachedPlayer.style.setProperty('--player-glow2', playerGlowSize2);
+                cachedPlayer.style.setProperty('--border-glow-opacity', borderGlowOpacity);
+            }
+
+            lastVisScale = scale;
+            lastVisIntensity = intensity;
         }
     }
 }
@@ -664,6 +670,7 @@ function changeStation(source, name, metadataURL) {
     document.documentElement.style.setProperty('--active-station-color', config.borderColor);
     document.documentElement.style.setProperty('--active-station-color-secondary', config.secondaryColor);
     document.documentElement.style.setProperty('--active-station-glow', config.glowColor);
+    document.documentElement.style.setProperty('--active-station-glow-rgb', hexToRgb(config.borderColor).join(','));
     document.documentElement.style.setProperty('--scrollbar-thumb-color', config.loadingBackgroundColor);
 
     const ls = document.querySelector('.loading-screen');
