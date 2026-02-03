@@ -1279,7 +1279,7 @@ body::-webkit-scrollbar-thumb {
 /* Tooltip Styling */
 .tooltip {
     position: absolute;
-    bottom: 125%;
+    bottom: 108%;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
     width: 160px;
