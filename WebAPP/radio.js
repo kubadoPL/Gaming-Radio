@@ -57,6 +57,7 @@ function switchSection(sectionId) {
 let audio, streamTitleElement, playPauseIcon, stationName, eventSource, currentEventSource;
 let globalCurrentColor = "#7300ff"; // Default color for the loading screen and scrollbar
 let fetching = false; // Flag to prevent multiple fetches
+let tokenPromise = null; // Shared promise for token fetching
 let cooldown = false;
 let IsChangingStation = false; // Flag to prevent multiple station changes
 var notificationTimeout;
@@ -189,19 +190,38 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.style.setProperty('--active-station-glow-rgb', hexToRgb('#7300ff').join(','));
 
     updateLoadingProgress(70, "Connecting to Stream...");
-    // Main Stream EventSource
-    eventSource = new EventSource('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
-    currentEventSource = eventSource;
 
-    eventSource.onmessage = handleMainStreamMessage;
+    // Improved Metadata Connection with retry logic
+    function setupMetadataConnection(url) {
+        if (currentEventSource) currentEventSource.close();
 
-    eventSource.onerror = function (error) {
-        console.error('Connection error:', error);
-        eventSource.close();
-        if (document.querySelector('.loading-screen').style.display !== 'none') {
-            updateLoadingProgress(100, "Connection Error - Continuing...");
-        }
-    };
+        console.log("Initializing metadata connection to:", url);
+        const es = new EventSource(url);
+        currentEventSource = es;
+
+        es.onmessage = handleMainStreamMessage;
+
+        es.onerror = function (error) {
+            console.error('Metadata connection error. Retrying in 5s...', error);
+            es.close();
+
+            // Check if we are still on the same station before retrying
+            setTimeout(() => {
+                const currentUrl = currentEventSource ? currentEventSource.url : null;
+                if (currentUrl === url) {
+                    setupMetadataConnection(url);
+                }
+            }, 5000);
+
+            if (document.querySelector('.loading-screen') && document.querySelector('.loading-screen').style.display !== 'none') {
+                updateLoadingProgress(100, "Connection issues detected - still trying...");
+            }
+        };
+
+        return es;
+    }
+
+    eventSource = setupMetadataConnection('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
 
     // Event listener setup for station photos
     document.querySelectorAll('.station-photo').forEach(station => {
@@ -316,6 +336,7 @@ async function getSpotifyAccessToken() {
     let cachedToken = localStorage.getItem('RadioGaming-spotifyAccessToken');
     let tokenExpiresAt = parseInt(localStorage.getItem('RadioGaming-spotifyTokenExpiresAt'), 10) || 0;
 
+    // Use cached token if valid
     if (cachedToken && now < tokenExpiresAt) {
         const msLeft = tokenExpiresAt - now;
         const secondsLeft = Math.floor(msLeft / 1000);
@@ -333,47 +354,55 @@ async function getSpotifyAccessToken() {
         return cachedToken;
     }
 
-    if (fetching) return cachedToken;
-    fetching = true;
-
-    updateLoadingProgress(40, "Authenticating with Spotify...");
-    const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/spotify/token';
-    try {
-        const response = await fetch(tokenUrl);
-        const data = await response.json();
-
-        if (response.ok) {
-            cachedToken = data.access_token;
-            const expiresIn = data.expires_in || 3600;
-            const createdAt = new Date(data.created_at).getTime();
-            tokenExpiresAt = createdAt + expiresIn * 1000 - 60000;
-
-            const timeStr = Math.floor(expiresIn / 60) + "m " + (expiresIn % 60) + "s";
-            const expiryDate = new Date(tokenExpiresAt).toLocaleString();
-            console.log(`New Spotify token fetched. Valid for ${timeStr} (expires at ${expiryDate}).`);
-
-            localStorage.setItem('RadioGaming-spotifyAccessToken', cachedToken);
-            localStorage.setItem('RadioGaming-spotifyTokenExpiresAt', tokenExpiresAt.toString());
-
-            fetching = false;
-            const ls = document.querySelector('.loading-screen');
-            if (ls && ls.style.display !== 'none' && !IsChangingStation) {
-                updateLoadingProgress(60, "Spotify authentication successful");
-            }
-            showNotification('Album Covers token fetched successfully!');
-            return cachedToken;
-        } else {
-            console.log('Failed to fetch album covers token. Hiding loading screen!');
-            showNotification('Failed to fetch Album Covers token. Please try again later.');
-            fetching = false;
-            if (!IsChangingStation) updateLoadingProgress(60, "Spotify authentication failed");
-            throw new Error('Failed to fetch access token');
-        }
-    } catch (error) {
-        fetching = false;
-        console.error(error);
-        return null;
+    // If already fetching, return the existing promise
+    if (tokenPromise) {
+        console.log("Spotify token fetch already in progress, waiting...");
+        return tokenPromise;
     }
+
+    // Create a new promise for fetching the token
+    tokenPromise = (async () => {
+        updateLoadingProgress(40, "Authenticating with Spotify...");
+        const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/spotify/token';
+
+        try {
+            const response = await fetch(tokenUrl);
+            const data = await response.json();
+
+            if (response.ok) {
+                const newToken = data.access_token;
+                const expiresIn = data.expires_in || 3600;
+                const createdAt = new Date(data.created_at).getTime();
+                const newExpiry = createdAt + expiresIn * 1000 - 60000;
+
+                const timeStr = Math.floor(expiresIn / 60) + "m " + (expiresIn % 60) + "s";
+                const expiryDate = new Date(newExpiry).toLocaleString();
+                console.log(`New Spotify token fetched. Valid for ${timeStr} (expires at ${expiryDate}).`);
+
+                localStorage.setItem('RadioGaming-spotifyAccessToken', newToken);
+                localStorage.setItem('RadioGaming-spotifyTokenExpiresAt', newExpiry.toString());
+
+                const ls = document.querySelector('.loading-screen');
+                if (ls && ls.style.display !== 'none' && !IsChangingStation) {
+                    updateLoadingProgress(60, "Spotify authentication successful");
+                }
+
+                showNotification('Album Covers token fetched successfully!');
+                return newToken;
+            } else {
+                throw new Error('Failed to fetch access token');
+            }
+        } catch (error) {
+            console.error('Spotify Auth Error:', error);
+            showNotification('Failed to fetch Album Covers token.');
+            if (!IsChangingStation) updateLoadingProgress(60, "Spotify authentication failed");
+            return null;
+        } finally {
+            tokenPromise = null; // Clear promise after completion
+        }
+    })();
+
+    return tokenPromise;
 }
 
 async function fetchAlbumCovers() {
@@ -709,8 +738,23 @@ function changeStation(source, name, metadataURL) {
     showNotification("Changing station to: " + name);
 
     if (currentEventSource) currentEventSource.close();
-    currentEventSource = new EventSource(metadataURL);
-    currentEventSource.onmessage = handleMainStreamMessage;
+
+    // Use the same robust connection logic as initial load
+    const setupMetadataConnection = (url) => {
+        const es = new EventSource(url);
+        currentEventSource = es;
+        es.onmessage = handleMainStreamMessage;
+        es.onerror = (err) => {
+            console.error("Metadata retry for station:", url);
+            es.close();
+            setTimeout(() => {
+                if (currentEventSource === es) setupMetadataConnection(url);
+            }, 5000);
+        };
+        return es;
+    };
+
+    setupMetadataConnection(metadataURL);
 
     cooldown = true;
     const bgUrl = config.backgroundImage.slice(5, -2);
