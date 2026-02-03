@@ -28,9 +28,9 @@ function switchSection(sectionId) {
 
     // Update title badge logic (optional)
     if (sectionId === 'info') {
-        showNotification("Viewing Information");
+        //showNotification("Viewing Information");
     } else if (sectionId === 'download') {
-        showNotification("Get the Desktop App!");
+        //  showNotification("Get the Desktop App!");
     }
 }
 
