@@ -639,14 +639,28 @@ nav ul li a:hover {
 /* Online State */
 .status-badge.online {
     color: #00ff8c;
-    border-color: #014327;
-    background: rgba(0, 255, 140, 0.03);
-    box-shadow: 0 0 20px rgba(0, 255, 140, 0.05);
+    border-color: #00ff8c;
+    background: rgba(0, 255, 140, 0.05);
+    box-shadow: 0 0 20px rgba(0, 255, 140, 0.2), inset 0 0 10px rgba(0, 255, 140, 0.1);
+    text-shadow: 0 0 12px rgba(0, 255, 140, 0.8);
+    animation: onlineStatusPulse 2s infinite alternate;
 }
 
 .status-badge.online .dot {
     background: #00ff8c;
-    box-shadow: 0 0 15px #00ff8c, 0 0 30px rgba(0, 255, 140, 0.6);
+    box-shadow: 0 0 15px #00ff8c, 0 0 30px rgba(0, 255, 140, 0.8), 0 0 45px rgba(0, 255, 140, 0.4);
+}
+
+@keyframes onlineStatusPulse {
+    from {
+        box-shadow: 0 0 15px rgba(0, 255, 140, 0.1), inset 0 0 5px rgba(0, 255, 140, 0.05);
+        text-shadow: 0 0 8px rgba(0, 255, 140, 0.6);
+    }
+
+    to {
+        box-shadow: 0 0 25px rgba(0, 255, 140, 0.4), inset 0 0 15px rgba(0, 255, 140, 0.2);
+        text-shadow: 0 0 18px rgba(0, 255, 140, 1);
+    }
 }
 
 /* Loading State */
