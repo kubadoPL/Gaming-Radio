@@ -90,6 +90,37 @@ async function processStatusQueue() {
     isProcessingQueue = false;
 }
 
+function updateStatusBadge(status) {
+    const badge = document.getElementById('stream-status-badge');
+    const text = document.getElementById('status-text');
+    if (!badge || !text) return;
+
+    badge.classList.remove('online', 'loading', 'paused', 'offline');
+
+    switch (status.toLowerCase()) {
+        case 'playing':
+        case 'online':
+            badge.classList.add('online');
+            text.textContent = 'ONLINE';
+            break;
+        case 'loading':
+        case 'waiting':
+        case 'buffering':
+            badge.classList.add('loading');
+            text.textContent = 'LOADING';
+            break;
+        case 'paused':
+            badge.classList.add('paused');
+            text.textContent = 'PAUSED';
+            break;
+        case 'offline':
+        case 'error':
+            badge.classList.add('offline');
+            text.textContent = 'OFFLINE';
+            break;
+    }
+}
+
 function updateLoadingProgress(percentage, status) {
     statusQueue.push({ percentage, status });
     processStatusQueue();
@@ -207,6 +238,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const volUp = document.getElementById('volume-up');
     if (volDown) volDown.addEventListener('click', () => window.muteVolume());
     if (volUp) volUp.addEventListener('click', () => window.restoreVolume());
+
+    // Audio Event Listeners for Status Badge
+    if (audio) {
+        audio.addEventListener('playing', () => updateStatusBadge('playing'));
+        audio.addEventListener('waiting', () => updateStatusBadge('loading'));
+        audio.addEventListener('pause', () => updateStatusBadge('paused'));
+        audio.addEventListener('error', () => updateStatusBadge('error'));
+        audio.addEventListener('stalled', () => updateStatusBadge('loading'));
+        audio.addEventListener('loadstart', () => updateStatusBadge('loading'));
+        audio.addEventListener('canplay', () => {
+            if (!audio.paused) updateStatusBadge('playing');
+            else updateStatusBadge('paused');
+        });
+    }
 
     showNotification("Welcome to Radio GAMING!");
 });
@@ -448,6 +493,7 @@ function changeStation(source, name, metadataURL) {
         ls.style.display = 'flex';
         updateLoadingProgress(10, "Switching to " + name + "...");
     }
+    updateStatusBadge('loading');
 
     document.body.style.backgroundImage = config.backgroundImage;
     document.querySelectorAll('.station-photo').forEach(photo => {

@@ -422,28 +422,106 @@ nav ul li a:hover {
 }
 
 .status-badge {
-    background: rgba(0, 255, 127, 0.1);
-    color: #00ff7f;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 6px 18px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 8px;
-    border: 1px solid rgba(0, 255, 127, 0.2);
+    gap: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Online State */
+.status-badge.online {
+    color: #00ff8c;
+    border-color: #014327;
+    background: rgba(0, 255, 140, 0.03);
+    box-shadow: 0 0 20px rgba(0, 255, 140, 0.05);
+}
+
+.status-badge.online .dot {
+    background: #00ff8c;
+    box-shadow: 0 0 15px #00ff8c, 0 0 30px rgba(0, 255, 140, 0.6);
+}
+
+/* Loading State */
+.status-badge.loading {
+    color: #ffb300;
+    border-color: rgba(255, 179, 0, 0.3);
+    background: rgba(255, 179, 0, 0.05);
+}
+
+.status-badge.loading .dot {
+    background: #ffb300;
+    box-shadow: 0 0 12px #ffb300;
+    animation: loadingPulse 1s infinite alternate;
+}
+
+/* Paused State */
+.status-badge.paused {
+    color: #6366f1;
+    border-color: rgba(99, 102, 241, 0.3);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.status-badge.paused .dot {
+    background: #6366f1;
+    box-shadow: 0 0 12px #6366f1;
+    animation: none;
+}
+
+/* Offline/Error State */
+.status-badge.offline {
+    color: #ff4d4d;
+    border-color: rgba(255, 77, 77, 0.3);
+    background: rgba(255, 77, 77, 0.05);
+}
+
+.status-badge.offline .dot {
+    background: #ff4d4d;
+    box-shadow: 0 0 12px #ff4d4d;
+    animation: pulseError 2s infinite;
 }
 
 .status-badge .dot {
-    width: 8px;
-    height: 8px;
-    background: #00ff7f;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     display: inline-block;
-    box-shadow: 0 0 8px #00ff7f;
-    animation: pulse 2s infinite;
+    transition: all 0.3s ease;
+}
+
+@keyframes loadingPulse {
+    from {
+        opacity: 0.4;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+@keyframes pulseError {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 77, 77, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 77, 77, 0);
+    }
 }
 
 @keyframes pulse {
@@ -453,8 +531,8 @@ nav ul li a:hover {
     }
 
     50% {
-        transform: scale(1.5);
-        opacity: 0.5;
+        transform: scale(1.3);
+        opacity: 0.7;
     }
 
     100% {
