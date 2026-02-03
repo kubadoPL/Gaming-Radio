@@ -2,19 +2,18 @@ const albumCovers = {};
 const eventSources = new Map();
 
 function switchSection(sectionId) {
-    // Remove active class from all sections
     const sections = document.querySelectorAll('.page-section');
-    sections.forEach(section => {
-        section.classList.remove('active');
-    });
-
-    // Show target section
     const targetSection = document.getElementById(sectionId + '-section');
-    if (targetSection) {
-        targetSection.classList.add('active');
-    }
 
-    // Update nav links active state
+    if (!targetSection) return;
+
+    // Find currently active section
+    const currentSection = document.querySelector('.page-section.active');
+
+    // If clicking the same section, do nothing
+    if (currentSection && currentSection.id === sectionId + '-section') return;
+
+    // Update nav links active state immediately for responsiveness
     const navLinks = document.querySelectorAll('nav ul li a');
     navLinks.forEach(link => {
         link.classList.remove('active-nav-link');
@@ -26,11 +25,32 @@ function switchSection(sectionId) {
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Update title badge logic (optional)
-    if (sectionId === 'info') {
-        //showNotification("Viewing Information");
-    } else if (sectionId === 'download') {
-        //  showNotification("Get the Desktop App!");
+    // If there's a current section, animate it out first
+    if (currentSection) {
+        currentSection.classList.add('exiting');
+        currentSection.classList.remove('active');
+
+        // After exit animation completes, show the new section
+        setTimeout(() => {
+            currentSection.classList.remove('exiting');
+
+            // Show target section with entrance animation
+            targetSection.classList.add('entering');
+            targetSection.classList.add('active');
+
+            // Remove entering class after animation
+            setTimeout(() => {
+                targetSection.classList.remove('entering');
+            }, 500);
+        }, 300);
+    } else {
+        // No current section, just show the target
+        targetSection.classList.add('entering');
+        targetSection.classList.add('active');
+
+        setTimeout(() => {
+            targetSection.classList.remove('entering');
+        }, 500);
     }
 }
 

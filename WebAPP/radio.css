@@ -1362,14 +1362,51 @@ body::-webkit-scrollbar-thumb {
     flex-direction: column;
     align-items: center;
     opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translateY(30px) scale(0.98);
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity, transform;
 }
 
 .page-section.active {
     display: flex;
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+}
+
+/* Entering animation - slide up and fade in */
+.page-section.entering {
+    animation: sectionEnter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Exiting animation - fade out and slide down */
+.page-section.exiting {
+    display: flex;
+    animation: sectionExit 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes sectionEnter {
+    0% {
+        opacity: 0;
+        transform: translateY(40px) scale(0.96);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes sectionExit {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.98);
+    }
 }
 
 /* Info Card Styling */
