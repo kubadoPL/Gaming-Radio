@@ -80,7 +80,12 @@ h2 {
     align-items: center;
     position: relative;
     overflow: hidden;
-
+    transform: translateY(-8px) scale(1.01);
+    box-shadow:
+        0 35px 100px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(255, 255, 255, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 80px var(--active-station-glow);
     justify-content: space-between;
 }
 
@@ -127,14 +132,7 @@ h2 {
     }
 }
 
-.audio-player:hover {
-    transform: translateY(-8px) scale(1.01);
-    box-shadow:
-        0 35px 100px rgba(0, 0, 0, 0.8),
-        0 0 0 1px rgba(255, 255, 255, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 80px var(--active-station-glow);
-}
+
 
 audio {
     display: none;
@@ -1499,7 +1497,8 @@ body::-webkit-scrollbar-thumb {
 
 .download-card i {
     font-size: 2.5rem;
-    color: var(--active-station-color);
+    color: #ffffff;
+    /*var(--active-station-color);*/
     margin-bottom: 5px;
     text-shadow: 0 0 20px var(--active-station-glow);
 }
