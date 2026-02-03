@@ -615,11 +615,15 @@ main {
     align-items: center;
     justify-content: center;
     padding: 120px 20px 100px;
-    /* Increased padding for header/footer  min-height: calc(100vh - 220px); */
-
+    /* Increased padding for header/footer */
     opacity: 0;
     transform: translateY(-20px);
     animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Fullscreen mode - main element gets min-height */
+body.is-fullscreen main {
+    min-height: calc(100vh - 220px) !important;
 }
 
 .section-title {

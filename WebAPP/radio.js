@@ -254,6 +254,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     showNotification("Welcome to Radio GAMING!");
+
+    // Fullscreen change detection (handles both F11 and Fullscreen API)
+    function checkFullscreen() {
+        // Check Fullscreen API
+        const isFullscreenAPI = document.fullscreenElement || document.webkitFullscreenElement ||
+            document.mozFullScreenElement || document.msFullscreenElement;
+
+        // Check F11/browser fullscreen (window matches screen size)
+        const isF11Fullscreen = window.innerWidth === screen.width && window.innerHeight === screen.height;
+
+        if (isFullscreenAPI || isF11Fullscreen) {
+            document.body.classList.add('is-fullscreen');
+        } else {
+            document.body.classList.remove('is-fullscreen');
+        }
+    }
+
+    // Listen for Fullscreen API changes
+    document.addEventListener('fullscreenchange', checkFullscreen);
+    document.addEventListener('webkitfullscreenchange', checkFullscreen);
+    document.addEventListener('mozfullscreenchange', checkFullscreen);
+    document.addEventListener('MSFullscreenChange', checkFullscreen);
+
+    // Listen for F11/window resize
+    window.addEventListener('resize', checkFullscreen);
+
+    // Initial check
+    checkFullscreen();
 });
 
 async function getSpotifyAccessToken() {
