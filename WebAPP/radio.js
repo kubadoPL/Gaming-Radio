@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(function () {
         console.log("Updating all online users 6 sec after page load");
         updateAllOnlineUsers();
-        setInterval(updateAllOnlineUsers, 60000);
+        setInterval(updateAllOnlineUsers, 40000);
     }, 6000);
 
     // Audio time update listener
@@ -789,18 +789,22 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
         const cacheKey = `listenerCount_${normalized}`;
         const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
 
-        if (cached && (Date.now() - cached.timestamp < 5 * 60 * 1000)) {
+        if (cached && (Date.now() - cached.timestamp < 2 * 60 * 1000)) {
+            console.log(`[Live Listeners] ${sName}: ${cached.listenerCount} (cached)`);
             updateTooltip(tooltipElement, cached.listenerCount, sName);
             return;
         }
 
+        console.log(`[Live Listeners] Fetching count for ${sName}...`);
         const res = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + normalized);
         const data = await res.json();
         const count = data.total_sum;
 
+        console.log(`[Live Listeners] ${sName}: ${count} listeners`);
         localStorage.setItem(cacheKey, JSON.stringify({ listenerCount: count, timestamp: Date.now() }));
         updateTooltip(tooltipElement, count, sName);
     } catch (e) {
+        console.error(`[Live Listeners] Error fetching count for ${sName}:`, e);
         updateTooltip(tooltipElement, null, sName, true);
     }
 }
