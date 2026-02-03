@@ -44,6 +44,10 @@ let lastPercentage = 0;
 let statusQueue = [];
 let isProcessingQueue = false;
 
+// Audio Visualizer Variables
+let audioCtx, analyser, dataArray, source, gainNode;
+let isVisualizerInitialized = false;
+
 async function processStatusQueue() {
     if (isProcessingQueue) return;
     isProcessingQueue = true;
@@ -445,32 +449,127 @@ function playPause() {
         playPauseIcon.className = 'fas fa-play';
         showNotification("Paused!");
     }
+
+    // Initialize/Resume visualizer on user interaction
+    if (!isVisualizerInitialized) {
+        initVisualizer();
+    } else if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}
+
+function initVisualizer() {
+    if (isVisualizerInitialized || !audio) return;
+
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        source = audioCtx.createMediaElementSource(audio);
+        gainNode = audioCtx.createGain();
+
+        source.connect(analyser);
+        analyser.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        // Map audio volume to gainNode and set element volume to 1
+        // This ensures the visualizer gets full signal while user controls output volume
+        gainNode.gain.value = previousVolume;
+        audio.volume = 1;
+
+        analyser.fftSize = 32;
+        const bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+
+        isVisualizerInitialized = true;
+        animateVisualizer();
+    } catch (e) {
+        console.error("Failed to initialize visualizer:", e);
+    }
+}
+
+function animateVisualizer() {
+    requestAnimationFrame(animateVisualizer);
+
+    if (audio && !audio.paused && dataArray) {
+        analyser.getByteFrequencyData(dataArray);
+
+        // Focus on bass frequencies (drums)
+        // With fftSize 32, we only have 16 bins. Let's use the first 4 bins (bass)
+        let bassSum = 0;
+        const bassBins = 4;
+        for (let i = 0; i < bassBins; i++) {
+            bassSum += dataArray[i];
+        }
+        let bassAverage = bassSum / bassBins;
+
+        // Thresholding: Ignore low-level noise to only catch the "thump"
+        // 0-255 scale. Higher threshold = only louder sounds trigger.
+        const threshold = 235;
+        let triggerValue = 0;
+
+        if (bassAverage > threshold) {
+            triggerValue = (bassAverage - threshold) / (255 - threshold);
+        }
+
+        // Apply smoothing (lerp) to the trigger value to make it less jittery
+        if (!window.lastTriggerValue) window.lastTriggerValue = 0;
+        window.lastTriggerValue = window.lastTriggerValue * 0.8 + triggerValue * 0.2;
+        const v = window.lastTriggerValue;
+
+        // Intensity values - toned down for subtler effect
+        const scale = 1 + v * 0.08;
+        const glowSize = 30 + v * 80;
+        const borderGlow = 6 + v * 18;
+        const intensity = 0.35 + v * 0.35;
+
+        const cover = document.getElementById('albumCover');
+        if (cover) {
+            cover.style.setProperty('--vis-scale', scale);
+            cover.style.filter = `saturate(1.05) brightness(${0.92 + v * 0.18})`;
+            cover.style.boxShadow = `
+                0 20px 50px rgba(0, 0, 0, 0.6),
+                0 0 ${borderGlow}px var(--active-station-color),
+                0 0 ${borderGlow * 1.5}px var(--active-station-color),
+                0 0 ${glowSize}px rgba(${hexToRgb(getComputedStyle(document.documentElement).getPropertyValue('--active-station-glow')).join(',')}, ${intensity})
+            `;
+        }
+    }
 }
 
 let previousVolume = 0.1;
 
 function changeVolume(value) {
-    if (audio) audio.volume = value;
+    if (gainNode) {
+        gainNode.gain.value = value;
+    } else if (audio) {
+        audio.volume = value;
+    }
     previousVolume = value;
 }
 
 // Restore volume when clicking the volume-up icon
 window.restoreVolume = function () {
-    if (audio) {
-        audio.volume = previousVolume || 0.1;
-        document.querySelector('.volume-slider').value = audio.volume;
-        showNotification("Restoring volume!");
+    const vol = previousVolume || 0.1;
+    if (gainNode) {
+        gainNode.gain.value = vol;
+    } else if (audio) {
+        audio.volume = vol;
     }
+    document.querySelector('.volume-slider').value = vol;
+    showNotification("Restoring volume!");
 };
 
 // Mute volume when clicking the volume-down icon
 window.muteVolume = function () {
-    if (audio) {
+    if (gainNode) {
+        previousVolume = gainNode.gain.value;
+        gainNode.gain.value = 0;
+    } else if (audio) {
         previousVolume = audio.volume;
         audio.volume = 0;
-        document.querySelector('.volume-slider').value = 0;
-        showNotification("Muting volume!");
     }
+    document.querySelector('.volume-slider').value = 0;
+    showNotification("Muting volume!");
 };
 
 function changeStation(source, name, metadataURL) {
@@ -537,8 +636,15 @@ function changeStation(source, name, metadataURL) {
         updateLoadingProgress(40, "Buffering Audio Stream...");
         audio.src = source;
         audio.load();
-        audio.play();
+        audio.play().catch(e => console.error("Playback failed:", e));
         playPauseIcon.className = 'fas fa-pause';
+
+        // Initialize/Resume visualizer
+        if (!isVisualizerInitialized) {
+            initVisualizer();
+        } else if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
     }
     if (stationName) stationName.textContent = name;
     showNotification("Changing station to: " + name);
@@ -685,4 +791,20 @@ function updateAllOnlineUsers() {
         const sName = await metaDataUrlToStationName(metadataUrl);
         updateOnlineUsersTooltip(tooltip, sName, metadataUrl);
     });
+}
+
+function hexToRgb(color) {
+    color = color.trim();
+    if (color.startsWith('rgba')) {
+        return color.match(/\d+/g).slice(0, 3);
+    }
+    if (color.startsWith('rgb')) {
+        return color.match(/\d+/g);
+    }
+    let hex = color.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(s => s + s).join('');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return [r, g, b];
 }

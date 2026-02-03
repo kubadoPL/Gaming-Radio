@@ -150,8 +150,8 @@ audio {
 
 /* Floating album cover with vinyl effect */
 .album-cover {
-    width: 300px;
-    height: 300px;
+    width: 200px;
+    height: 200px;
     border-radius: 50px;
     border: 3px solid var(--active-station-color);
     box-shadow:
@@ -175,11 +175,13 @@ audio {
 
     0%,
     100% {
-        transform: translate(-50%, -50%) rotateZ(0deg) scale(1);
+        transform: translate(-50%, -50%) rotateZ(0deg) scale(var(--vis-scale, 1));
+        /* transform: translate(-50%, -50%) rotateZ(0deg) scale(1);*/
     }
 
     50% {
-        transform: translate(-50%, -54%) rotateZ(2deg) scale(1.05);
+        transform: translate(-50%, -54%) rotateZ(2deg) scale(calc(var(--vis-scale, 1)));
+        /*transform: translate(-50%, -54%) rotateZ(2deg) scale(1.05);*/
     }
 }
 
@@ -197,15 +199,14 @@ audio {
 
 /* Removed local hover as it's absolute now */
 
-/* Dynamic song title with gradient text */
+/* Dynamic song title with text stroke */
 #streamTitle {
-    font-size: 14px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.8) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: none;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    -webkit-text-fill-color: #fff;
+    -webkit-text-stroke: 1px var(--active-station-color);
+    text-shadow: 0 0 10px var(--active-station-glow);
     line-height: 1.5;
     text-align: center;
     width: 100%;
