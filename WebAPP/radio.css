@@ -1147,59 +1147,93 @@ body::-webkit-scrollbar-thumb {
     }
 }
 
-.tooltip-Online-Users {
-    font-size: 10px;
-    color: purple;
-    margin-top: 5px;
+/* Tooltip Styling */
+.tooltip {
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    width: 200px;
+    padding: 16px;
+    background: rgba(15, 15, 25, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    color: #fff;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 9998;
+    text-align: center;
+    pointer-events: none;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(0, 0, 0, 0.2);
 }
 
-/* For larger screens */
-@media only screen and (min-width: 601px) {
-    .tooltip {
-        position: fixed;
-        top: -33%;
-        /* Change this to move tooltip up/down */
-        left: 17%;
-        /* Position it to the right of the station photo */
-        transform: translateY(-50%);
-        width: 100px;
-        padding: 10px;
-        background-color: black;
-        color: #fff;
-        border-radius: 8px;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s ease;
-        z-index: 9998;
-        text-align: center;
-        font-size: 9px;
-        pointer-events: none;
-        /* Ensure tooltip doesn't block clicks */
-    }
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px;
+    border-style: solid;
+    border-color: rgba(15, 15, 25, 0.85) transparent transparent transparent;
+}
+
+.station-photo:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-track {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    color: #fff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.tooltip-Online-Users {
+    font-size: 11px;
+    color: #ff4d4d;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.tooltip-Online-Users::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #ff4d4d;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ff4d4d;
 }
 
 /* For phones */
 @media only screen and (max-width: 600px) {
     .tooltip {
-        position: fixed;
-        top: -40%;
-        /* Change this to move tooltip up/down */
-        left: -10%;
-        /* Position it to the right of the station photo */
-        transform: translateY(-50%);
-        width: 100px;
-        padding: 10px;
-        background-color: black;
-        color: #fff;
-        border-radius: 8px;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s ease;
-        z-index: 9998;
-        text-align: center;
+        width: 160px;
+        padding: 12px;
+        bottom: 115%;
+    }
+
+    .tooltip-track {
+        font-size: 11px;
+    }
+
+    .tooltip-Online-Users {
         font-size: 9px;
-        pointer-events: none;
-        /* Ensure tooltip doesn't block clicks */
     }
 }
 
