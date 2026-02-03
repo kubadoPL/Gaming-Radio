@@ -622,7 +622,61 @@ nav ul li a:hover {
 .header-right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
+}
+
+.vis-toggle-btn {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.vis-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--active-station-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 10px var(--active-station-glow);
+}
+
+.vis-toggle-btn i {
+    font-size: 14px;
+    color: var(--active-station-color);
+}
+
+.vis-toggle-btn.disabled {
+    opacity: 0.6;
+}
+
+.vis-toggle-btn.disabled i {
+    color: #ff4d4d;
+}
+
+@media (max-width: 600px) {
+    .vis-toggle-btn span {
+        display: none;
+    }
+
+    .vis-toggle-btn {
+        padding: 8px;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        justify-content: center;
+    }
 }
 
 .status-badge {

@@ -70,6 +70,49 @@ let lastListenerNotifyTime = 0;
 // Audio Visualizer Variables
 let audioCtx, analyser, dataArray, source, gainNode;
 let isVisualizerInitialized = false;
+let isVisualizerEnabled = localStorage.getItem('RadioGaming-visualizerEnabled') !== 'false';
+
+window.toggleVisualizations = function () {
+    isVisualizerEnabled = !isVisualizerEnabled;
+    localStorage.setItem('RadioGaming-visualizerEnabled', isVisualizerEnabled);
+    applyVisualizationState();
+    showNotification(isVisualizerEnabled ? "Visuals Enabled" : "Visuals Disabled", isVisualizerEnabled ? 'fas fa-eye' : 'fas fa-eye-slash');
+};
+
+function applyVisualizationState() {
+    const particles = document.querySelector('.animation-wrapper');
+    const toggleBtn = document.querySelector('.vis-toggle-btn');
+    const toggleIcon = document.getElementById('vis-toggle-icon');
+
+    if (isVisualizerEnabled) {
+        if (particles) particles.style.display = 'block';
+        if (toggleBtn) toggleBtn.classList.remove('disabled');
+        if (toggleIcon) toggleIcon.className = 'fas fa-eye';
+    } else {
+        if (particles) particles.style.display = 'none';
+        if (toggleBtn) toggleBtn.classList.add('disabled');
+        if (toggleIcon) toggleIcon.className = 'fas fa-eye-slash';
+
+        // Reset player styles to defaults
+        if (!cachedCover) cachedCover = document.getElementById('albumCover');
+        if (!cachedPlayer) cachedPlayer = document.querySelector('.audio-player');
+
+        if (cachedCover) {
+            cachedCover.style.setProperty('--vis-scale', '1');
+            cachedCover.style.setProperty('--vis-brightness', '0.92');
+            cachedCover.style.setProperty('--vis-border-glow', '6');
+            cachedCover.style.setProperty('--vis-glow-size', '30');
+            cachedCover.style.setProperty('--vis-intensity', '0.35');
+        }
+        if (cachedPlayer) {
+            cachedPlayer.style.setProperty('--player-border-opacity', '0.12');
+            cachedPlayer.style.setProperty('--player-inset-opacity', '0.1');
+            cachedPlayer.style.setProperty('--player-glow', '80');
+            cachedPlayer.style.setProperty('--player-glow2', '40');
+            cachedPlayer.style.setProperty('--border-glow-opacity', '0.5');
+        }
+    }
+}
 
 async function processStatusQueue() {
     if (isProcessingQueue) return;
@@ -318,6 +361,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Apply initial visualization state
+    applyVisualizationState();
+
     // Listen for Fullscreen API changes
     document.addEventListener('fullscreenchange', checkFullscreen);
     document.addEventListener('webkitfullscreenchange', checkFullscreen);
@@ -560,6 +606,8 @@ let cachedPlayer = null;
 
 function animateVisualizer() {
     requestAnimationFrame(animateVisualizer);
+
+    if (!isVisualizerEnabled) return;
 
     if (audio && !audio.paused && dataArray) {
         analyser.getByteFrequencyData(dataArray);
