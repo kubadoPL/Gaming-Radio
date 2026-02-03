@@ -412,7 +412,7 @@ function changeStation(source, name, metadataURL) {
             glowColor: "rgba(115, 0, 255, 0.6)",
             loadingBackgroundColor: "#7300ff",
             liveEmoji: "🟣LIVE",
-            streamTitleColor: "#ffffff"
+            streamTitleColor: "#7300ff"
         },
         "https://stream.zeno.fm/pfg9eajshnjtv": {
             backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Dark-background.webp')",
