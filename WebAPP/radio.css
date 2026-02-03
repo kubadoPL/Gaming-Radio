@@ -615,8 +615,8 @@ main {
     align-items: center;
     justify-content: center;
     padding: 120px 20px 100px;
-    /* Increased padding for header/footer */
-    min-height: calc(100vh - 220px);
+    /* Increased padding for header/footer  min-height: calc(100vh - 220px); */
+
     opacity: 0;
     transform: translateY(-20px);
     animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -721,8 +721,8 @@ main {
     }
 
     .station-photo {
-        width: 80px;
-        height: 80px;
+        width: 100px;
+        height: 100px;
     }
 
     .footer-content {
@@ -739,6 +739,12 @@ main {
 
     main {
         padding-top: 80px;
+    }
+
+    .station-photo:hover .tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(50px) !important;
     }
 }
 
@@ -1295,6 +1301,35 @@ body::-webkit-scrollbar-thumb {
     font-weight: 500;
 }
 
+/* Responsive Download Grid */
+@media (max-width: 768px) {
+    .download-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        padding: 0 15px;
+        max-height: 10%;
+    }
+
+    .download-card {
+        padding: 25px 20px;
+
+    }
+
+    .download-card h3 {
+        font-size: 1.3rem;
+    }
+
+    .hero-section h1 {
+        font-size: 2rem;
+        padding: 0 20px;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+        padding: 0 20px;
+    }
+}
+
 .active-nav-link {
     color: white !important;
     background: rgba(255, 255, 255, 0.1) !important;
@@ -1410,7 +1445,7 @@ body::-webkit-scrollbar-thumb {
     position: absolute;
     bottom: 108%;
     left: 50%;
-    transform: translateX(-50%) translateY(10px);
+    transform: translateX(-50%) translateY(20px);
     width: 160px;
     padding: 12px;
     background: rgba(15, 15, 25, 0.85);
@@ -1443,7 +1478,7 @@ body::-webkit-scrollbar-thumb {
 .station-photo:hover .tooltip {
     opacity: 1;
     visibility: visible;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50%) translateY(25px);
 }
 
 .tooltip-track {
@@ -1501,10 +1536,7 @@ body::-webkit-scrollbar-thumb {
     margin-bottom: 8px;
 }
 
-.station-photo:hover .tooltip {
-    opacity: 1;
-    visibility: visible;
-}
+
 
 .tooltip img {
     width: 30px;
