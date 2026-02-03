@@ -149,13 +149,22 @@ async function getSpotifyAccessToken() {
     let tokenExpiresAt = parseInt(localStorage.getItem('RadioGaming-spotifyTokenExpiresAt'), 10) || 0;
 
     if (cachedToken && now < tokenExpiresAt) {
+        const msLeft = tokenExpiresAt - now;
+        const secondsLeft = Math.floor(msLeft / 1000);
+        const minutes = Math.floor(secondsLeft / 60);
+        const seconds = secondsLeft % 60;
+        const expiryDate = new Date(tokenExpiresAt).toLocaleString();
+        console.log(`Using cached Spotify access token. Expires in ${minutes}m ${seconds}s (at ${expiryDate}).`);
+
         if (document.querySelector('.loading-screen')) {
             const ls = document.querySelector('.loading-screen');
             if (ls.style.display !== 'none' && !IsChangingStation) {
-                setTimeout(() => ls.style.display = 'none', 3000);
+                setTimeout(() => {
+                    ls.style.display = 'none';
+                    console.log('Album Covers token from CACHE. Hiding loading screen!');
+                }, 3000);
             }
         }
-        // showNotification(`Using cached Album Covers token.`);
         return cachedToken;
     }
 
@@ -173,17 +182,25 @@ async function getSpotifyAccessToken() {
             const createdAt = new Date(data.created_at).getTime();
             tokenExpiresAt = createdAt + expiresIn * 1000 - 60000;
 
+            const timeStr = Math.floor(expiresIn / 60) + "m " + (expiresIn % 60) + "s";
+            const expiryDate = new Date(tokenExpiresAt).toLocaleString();
+            console.log(`New Spotify token fetched. Valid for ${timeStr} (expires at ${expiryDate}).`);
+
             localStorage.setItem('RadioGaming-spotifyAccessToken', cachedToken);
             localStorage.setItem('RadioGaming-spotifyTokenExpiresAt', tokenExpiresAt.toString());
 
             fetching = false;
             const ls = document.querySelector('.loading-screen');
             if (ls && ls.style.display !== 'none' && !IsChangingStation) {
-                setTimeout(() => ls.style.display = 'none', 3000);
+                setTimeout(() => {
+                    ls.style.display = 'none';
+                    console.log('Album Covers token fetched successfully. Hiding loading screen!');
+                }, 3000);
             }
             showNotification('Album Covers token fetched successfully!');
             return cachedToken;
         } else {
+            console.log('Failed to fetch album covers token. Hiding loading screen!');
             showNotification('Failed to fetch Album Covers token. Please try again later.');
             fetching = false;
             throw new Error('Failed to fetch access token');
@@ -200,7 +217,7 @@ async function fetchAlbumCovers() {
         const response = await fetch('https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/albumCovers.json');
         const data = await response.json();
         Object.assign(albumCovers, data);
-        console.log('Album covers fetched successfully');
+        console.log('Album covers fetched successfully:', albumCovers);
     } catch (error) {
         console.error('Error fetching album covers:', error);
     }
@@ -225,6 +242,8 @@ async function fetchSpotifyCover(query) {
             const track = data.tracks.items[0];
             const defaultCover = track.album.images[0].url;
             albumCover = albumCovers[query] || defaultCover;
+        } else {
+            console.log('No cover found for: ' + query);
         }
 
         const coverElem = document.getElementById('albumCover');
