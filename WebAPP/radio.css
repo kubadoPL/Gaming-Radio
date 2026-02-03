@@ -104,7 +104,8 @@ h2 {
             var(--active-station-color-secondary) 100%);
     border-radius: 34px;
     z-index: -1;
-    opacity: 0.5;
+    opacity: var(--border-glow-opacity, 0.5);
+    transition: opacity 0.1s ease-out;
     animation: borderGlow 4s ease-in-out infinite alternate;
 }
 

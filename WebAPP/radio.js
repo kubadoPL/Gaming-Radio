@@ -553,6 +553,23 @@ function animateVisualizer() {
                 0 0 ${glowSize}px rgba(${hexToRgb(getComputedStyle(document.documentElement).getPropertyValue('--active-station-glow')).join(',')}, ${intensity})
             `;
         }
+
+        // Also animate the audio-player glow
+        const player = document.querySelector('.audio-player');
+        if (player) {
+            const playerGlowSize = 80 + v * 120;
+            const playerGlowSize2 = 40 + v * 80;
+            const playerBorderOpacity = 0.5 + v * 0.5;
+            player.style.boxShadow = `
+                0 35px 100px rgba(0, 0, 0, 0.8),
+                0 0 0 1px rgba(255, 255, 255, ${0.12 + v * 0.15}),
+                inset 0 1px 0 rgba(255, 255, 255, ${0.1 + v * 0.1}),
+                0 0 ${playerGlowSize2}px var(--active-station-color),
+                0 0 ${playerGlowSize}px var(--active-station-glow)
+            `;
+            // Animate the ::before pseudo-element opacity via CSS variable
+            player.style.setProperty('--border-glow-opacity', playerBorderOpacity);
+        }
     }
 }
 
