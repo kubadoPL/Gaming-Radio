@@ -1153,8 +1153,8 @@ body::-webkit-scrollbar-thumb {
     bottom: 125%;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
-    width: 200px;
-    padding: 16px;
+    width: 160px;
+    padding: 12px;
     background: rgba(15, 15, 25, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -1223,8 +1223,8 @@ body::-webkit-scrollbar-thumb {
 /* For phones */
 @media only screen and (max-width: 600px) {
     .tooltip {
-        width: 160px;
-        padding: 12px;
+        width: 140px;
+        padding: 10px;
         bottom: 115%;
     }
 
