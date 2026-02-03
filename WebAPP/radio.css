@@ -71,7 +71,7 @@ h2 {
         0 0 0 1px rgba(255, 255, 255, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.08),
         inset 0 -1px 0 rgba(0, 0, 0, 0.3);
-    padding: 32px 28px 28px;
+    padding: 24px 24px 22px;
     color: #fff;
     font-family: 'Inter', Arial, sans-serif;
     display: flex;
@@ -144,14 +144,14 @@ audio {
     flex-direction: column;
     align-items: center;
     width: 100%;
-    margin-bottom: 24px;
-    gap: 20px;
+    margin-bottom: 20px;
+    gap: 15px;
 }
 
 /* Floating album cover with vinyl effect */
 .album-cover {
-    width: 180px;
-    height: 180px;
+    width: 60px;
+    height: 60px;
     border-radius: 24px;
     border: none;
     box-shadow:
@@ -187,7 +187,7 @@ audio {
 
 /* Dynamic song title with gradient text */
 #streamTitle {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.8) 100%);
     -webkit-background-clip: text;
@@ -197,7 +197,7 @@ audio {
     line-height: 1.5;
     text-align: center;
     width: 100%;
-    padding: 16px 20px;
+    padding: 12px 16px;
     border-radius: 16px;
     background-color: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
@@ -236,7 +236,7 @@ audio {
             rgba(255, 255, 255, 0.08) 0%,
             rgba(255, 255, 255, 0.03) 100%);
     border-radius: 20px;
-    padding: 16px 20px;
+    padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -807,7 +807,7 @@ main {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 120px 20px 100px;
+    padding: 80px 20px 60px;
     /* Increased padding for header/footer */
     opacity: 0;
     transform: translateY(-20px);
@@ -832,8 +832,8 @@ body.is-fullscreen main {
     display: flex;
     justify-content: center;
     gap: 24px;
-    margin-bottom: 40px;
-    padding: 20px;
+    margin-bottom: 30px;
+    padding: 12px 20px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 100px;
     backdrop-filter: blur(10px);
@@ -842,8 +842,8 @@ body.is-fullscreen main {
 
 .station-photo {
     position: relative;
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -935,30 +935,16 @@ body.is-fullscreen main {
         padding: 24px 18px;
     }
 
-    .album-cover {
-        width: 140px;
-        height: 140px;
-    }
+
 
     #streamTitle {
         font-size: 14px;
         padding: 12px 16px;
     }
 
-    .player-controls {
-        padding: 12px 15px;
-    }
 
-    #playPauseIcon {
-        width: 44px;
-        height: 44px;
-        font-size: 18px;
-    }
 
-    .volume-control {
-        display: none;
-        /* Hide volume slider on small mobile to save space */
-    }
+
 
     main {
         padding-top: 80px;
@@ -1701,7 +1687,7 @@ body::-webkit-scrollbar-thumb {
 .station-photo:hover .tooltip {
     opacity: 1;
     visibility: visible;
-    transform: translateX(-50%) translateY(25px);
+    transform: translateX(-50%) translateY(60px);
 }
 
 .tooltip-track {
