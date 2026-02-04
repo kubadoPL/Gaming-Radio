@@ -2503,6 +2503,7 @@ body::-webkit-scrollbar-thumb {
 .chat-message-content {
     flex: 1;
     min-width: 0;
+    text-align: left;
 }
 
 .chat-message-header {
@@ -2528,6 +2529,7 @@ body::-webkit-scrollbar-thumb {
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.5;
     word-break: break-word;
+    text-align: left;
 }
 
 /* Chat Input Area */
@@ -2562,6 +2564,7 @@ body::-webkit-scrollbar-thumb {
     outline: none;
     transition: all 0.3s ease;
     font-family: 'Inter', sans-serif;
+    text-align: left;
 }
 
 .chat-input::placeholder {
