@@ -58,6 +58,8 @@
                     <li><a href="javascript:void(0)" onclick="switchSection('home')" class="active-nav-link"><i
                                 class="fas fa-home"></i>
                             <span>Home</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="switchSection('chat')"><i class="fas fa-comments"></i>
+                            <span>Chat</span></a></li>
                     <li><a href="javascript:void(0)" onclick="switchSection('download')"><i class="fas fa-download"></i>
                             <span>Download</span></a></li>
                     <li><a href="javascript:void(0)" onclick="switchSection('info')"><i class="fas fa-info-circle"></i>
@@ -71,6 +73,20 @@
                     <div id="stream-status-badge" class="status-badge loading">
                         <span class="dot"></span>
                         <span id="status-text">INITIALIZING</span>
+                    </div>
+                    <!-- Discord Login Button -->
+                    <div id="discord-auth-container" class="discord-auth">
+                        <button id="discord-login-btn" class="discord-btn" onclick="initiateDiscordLogin()">
+                            <i class="fab fa-discord"></i>
+                            <span>Login</span>
+                        </button>
+                        <div id="discord-user-info" class="discord-user hidden">
+                            <img id="discord-user-avatar" class="discord-avatar" src="" alt="Avatar">
+                            <span id="discord-user-name"></span>
+                            <button class="discord-logout-btn" onclick="logoutDiscord()" title="Logout">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -159,6 +175,51 @@
                     <a href="https://k5studio.dev/" target="_blank" class="btn">
                         <i class="fas fa-project-diagram"></i> Other Projects
                     </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chat Section -->
+        <section id="chat-section" class="page-section">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2><i class="fas fa-comments"></i> Station Chat</h2>
+                    <div class="chat-station-indicator">
+                        <span class="chat-station-dot"></span>
+                        <span id="chat-current-station">Radio GAMING</span>
+                    </div>
+                </div>
+
+                <div class="chat-auth-required" id="chat-auth-prompt">
+                    <div class="auth-prompt-content">
+                        <i class="fab fa-discord auth-prompt-icon"></i>
+                        <h3>Login to Chat</h3>
+                        <p>Connect with Discord to join the conversation with other listeners!</p>
+                        <button class="discord-btn large" onclick="initiateDiscordLogin()">
+                            <i class="fab fa-discord"></i>
+                            <span>Login with Discord</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chat-main hidden" id="chat-main">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-welcome">
+                            <i class="fas fa-music"></i>
+                            <p>Welcome to the chat! Say hello to other listeners.</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <div class="chat-user-badge">
+                            <img id="chat-user-avatar" class="chat-avatar" src="" alt="">
+                        </div>
+                        <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
+                            maxlength="500" autocomplete="off">
+                        <button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>

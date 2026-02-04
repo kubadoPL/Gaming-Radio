@@ -1025,3 +1025,361 @@ function hexToRgb(color) {
     const b = parseInt(hex.substring(4, 6), 16);
     return [r, g, b];
 }
+
+// ========================
+// DISCORD AUTH & CHAT SYSTEM
+// ========================
+
+const CHAT_API_BASE = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi';
+let discordAuthToken = localStorage.getItem('RadioGaming-discordAuthToken');
+let discordUser = null;
+let currentChatStation = 'RADIOGAMING';
+
+// Check for auth callback on page load
+document.addEventListener('DOMContentLoaded', () => {
+    handleAuthCallback();
+    checkExistingSession();
+});
+
+function handleAuthCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authToken = urlParams.get('auth_token');
+    const authError = urlParams.get('auth_error');
+
+    if (authToken) {
+        localStorage.setItem('RadioGaming-discordAuthToken', authToken);
+        discordAuthToken = authToken;
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        showNotification('Successfully logged in with Discord!', 'fab fa-discord');
+        checkExistingSession();
+    }
+
+    if (authError) {
+        showNotification('Login failed: ' + authError, 'fas fa-exclamation-triangle');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+async function checkExistingSession() {
+    if (!discordAuthToken) {
+        updateAuthUI(false);
+        return;
+    }
+
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/discord/user`, {
+            headers: {
+                'Authorization': `Bearer ${discordAuthToken}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            discordUser = data.user;
+            updateAuthUI(true);
+            initializeChatPolling();
+        } else {
+            // Token invalid or expired
+            localStorage.removeItem('RadioGaming-discordAuthToken');
+            discordAuthToken = null;
+            updateAuthUI(false);
+        }
+    } catch (error) {
+        console.error('Error checking session:', error);
+        updateAuthUI(false);
+    }
+}
+
+function updateAuthUI(isLoggedIn) {
+    const loginBtn = document.getElementById('discord-login-btn');
+    const userInfo = document.getElementById('discord-user-info');
+    const userAvatar = document.getElementById('discord-user-avatar');
+    const userName = document.getElementById('discord-user-name');
+    const chatAuthPrompt = document.getElementById('chat-auth-prompt');
+    const chatMain = document.getElementById('chat-main');
+    const chatUserAvatar = document.getElementById('chat-user-avatar');
+
+    if (isLoggedIn && discordUser) {
+        if (loginBtn) loginBtn.classList.add('hidden');
+        if (userInfo) userInfo.classList.remove('hidden');
+        if (userAvatar) userAvatar.src = discordUser.avatar_url;
+        if (userName) userName.textContent = discordUser.global_name || discordUser.username;
+        if (chatAuthPrompt) chatAuthPrompt.classList.add('hidden');
+        if (chatMain) chatMain.classList.remove('hidden');
+        if (chatUserAvatar) chatUserAvatar.src = discordUser.avatar_url;
+    } else {
+        if (loginBtn) loginBtn.classList.remove('hidden');
+        if (userInfo) userInfo.classList.add('hidden');
+        if (chatAuthPrompt) chatAuthPrompt.classList.remove('hidden');
+        if (chatMain) chatMain.classList.add('hidden');
+    }
+}
+
+window.initiateDiscordLogin = async function () {
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/discord/login`);
+        const data = await response.json();
+
+        if (data.oauth_url) {
+            window.location.href = data.oauth_url;
+        } else {
+            showNotification('Failed to initialize Discord login', 'fas fa-exclamation-triangle');
+        }
+    } catch (error) {
+        console.error('Discord login error:', error);
+        showNotification('Failed to connect to auth server', 'fas fa-exclamation-triangle');
+    }
+};
+
+window.logoutDiscord = async function () {
+    try {
+        if (discordAuthToken) {
+            await fetch(`${CHAT_API_BASE}/discord/logout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${discordAuthToken}`
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+
+    // Clean up
+    localStorage.removeItem('RadioGaming-discordAuthToken');
+    discordAuthToken = null;
+    discordUser = null;
+
+    stopChatPolling();
+
+    updateAuthUI(false);
+    showNotification('Logged out successfully', 'fas fa-sign-out-alt');
+};
+
+// Chat Polling System (no WebSockets needed)
+let chatPollingInterval = null;
+let lastMessageTimestamp = null;
+let isChatVisible = false;
+
+function initializeChatPolling() {
+    if (!discordAuthToken || chatPollingInterval) return;
+
+    console.log('[CHAT] Initializing polling...');
+    updateCurrentStation();
+    loadChatHistory();
+
+    // Poll for new messages every 3 seconds
+    chatPollingInterval = setInterval(pollNewMessages, 3000);
+}
+
+function stopChatPolling() {
+    if (chatPollingInterval) {
+        clearInterval(chatPollingInterval);
+        chatPollingInterval = null;
+    }
+}
+
+function updateCurrentStation() {
+    const stationNameElem = document.getElementById('StationNameInh1');
+    const stationName = stationNameElem ? stationNameElem.textContent : 'Radio GAMING';
+    currentChatStation = stationName.replace(/\s+/g, '').toUpperCase();
+
+    // Update chat UI
+    const chatStationLabel = document.getElementById('chat-current-station');
+    if (chatStationLabel) chatStationLabel.textContent = stationName;
+}
+
+async function loadChatHistory() {
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`);
+        const data = await response.json();
+
+        if (data.messages && data.messages.length > 0) {
+            const messagesContainer = document.getElementById('chat-messages');
+            if (messagesContainer) {
+                // Clear welcome message
+                messagesContainer.innerHTML = '';
+                data.messages.forEach(message => appendChatMessage(message, false));
+                // Scroll to bottom
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                // Track last message timestamp
+                lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
+            }
+        }
+
+        if (data.server_time) {
+            lastMessageTimestamp = lastMessageTimestamp || data.server_time;
+        }
+    } catch (error) {
+        console.error('[CHAT] Error loading history:', error);
+    }
+}
+
+async function pollNewMessages() {
+    if (!discordAuthToken || !isChatVisible) return;
+
+    try {
+        const since = lastMessageTimestamp ? `?since=${encodeURIComponent(lastMessageTimestamp)}` : '';
+        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`);
+        const data = await response.json();
+
+        if (data.messages && data.messages.length > 0) {
+            data.messages.forEach(message => {
+                // Only append if we don't already have this message
+                if (!document.getElementById(`msg-${message.id}`)) {
+                    appendChatMessage(message);
+                }
+            });
+
+            // Update last timestamp
+            lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
+        }
+
+        if (data.server_time) {
+            lastMessageTimestamp = lastMessageTimestamp || data.server_time;
+        }
+    } catch (error) {
+        console.error('[CHAT] Polling error:', error);
+    }
+}
+
+function appendChatMessage(message, scrollToBottom = true) {
+    const messagesContainer = document.getElementById('chat-messages');
+    if (!messagesContainer) return;
+
+    // Remove welcome message if present
+    const welcome = messagesContainer.querySelector('.chat-welcome');
+    if (welcome) welcome.remove();
+
+    const messageEl = document.createElement('div');
+    messageEl.className = 'chat-message';
+    messageEl.id = `msg-${message.id}`;
+
+    const timestamp = new Date(message.timestamp);
+    const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    messageEl.innerHTML = `
+        <img class="chat-message-avatar" src="${message.user.avatar_url}" alt="${message.user.username}">
+        <div class="chat-message-content">
+            <div class="chat-message-header">
+                <span class="chat-message-username">${message.user.global_name || message.user.username}</span>
+                <span class="chat-message-time">${timeStr}</span>
+            </div>
+            <div class="chat-message-text">${escapeHtml(message.content)}</div>
+        </div>
+    `;
+
+    messagesContainer.appendChild(messageEl);
+
+    if (scrollToBottom) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+window.sendChatMessage = async function () {
+    const input = document.getElementById('chat-input');
+    if (!input) return;
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    if (!discordAuthToken) {
+        showNotification('Please login to chat', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/chat/send`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${discordAuthToken}`
+            },
+            body: JSON.stringify({
+                message: message,
+                station: currentChatStation
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            input.value = '';
+            // Append message immediately for instant feedback
+            if (!document.getElementById(`msg-${data.message.id}`)) {
+                appendChatMessage(data.message);
+            }
+        } else {
+            showNotification(data.error || 'Failed to send message', 'fas fa-exclamation-triangle');
+        }
+    } catch (error) {
+        console.error('[CHAT] Send error:', error);
+        showNotification('Failed to send message', 'fas fa-exclamation-triangle');
+    }
+};
+
+// Handle Enter key for sending messages
+document.addEventListener('keydown', (e) => {
+    if (e.target.id === 'chat-input' && e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+    }
+});
+
+// Track when chat section is visible
+const originalSwitchSection = window.switchSection || switchSection;
+window.switchSection = function (sectionId) {
+    originalSwitchSection(sectionId);
+
+    isChatVisible = (sectionId === 'chat');
+
+    if (isChatVisible && discordAuthToken && discordUser) {
+        updateCurrentStation();
+        loadChatHistory();
+        if (!chatPollingInterval) {
+            initializeChatPolling();
+        }
+    }
+};
+
+// Update chat station when changing radio station
+const originalChangeStation = window.changeStation || changeStation;
+window.changeStation = function (source, name, metadataURL) {
+    originalChangeStation(source, name, metadataURL);
+
+    // Update chat station
+    const oldStation = currentChatStation;
+    currentChatStation = name.replace(/\s+/g, '').toUpperCase();
+
+    if (oldStation !== currentChatStation) {
+        // Clear messages and reload
+        const messagesContainer = document.getElementById('chat-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = `
+                <div class="chat-welcome">
+                    <i class="fas fa-music"></i>
+                    <p>Welcome to the chat! Say hello to other listeners.</p>
+                </div>
+            `;
+        }
+
+        lastMessageTimestamp = null;
+
+        if (isChatVisible) {
+            loadChatHistory();
+        }
+
+        // Update chat UI
+        const chatStationLabel = document.getElementById('chat-current-station');
+        if (chatStationLabel) chatStationLabel.textContent = name;
+    }
+};
+
