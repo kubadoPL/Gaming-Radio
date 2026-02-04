@@ -227,8 +227,19 @@
                         <div class="chat-user-badge">
                             <img id="chat-user-avatar" class="chat-avatar" src="" alt="">
                         </div>
-                        <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
-                            maxlength="500" autocomplete="off">
+                        <div class="chat-input-wrapper">
+                            <div id="chat-song-preview" class="chat-song-preview hidden">
+                                <span class="preview-song-name"></span>
+                                <i class="fas fa-times remove-preview" onclick="toggleSongShare(false)"></i>
+                            </div>
+                            <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
+                                maxlength="205" autocomplete="off">
+                            <div id="chat-char-count" class="chat-char-count">0/200</div>
+                        </div>
+                        <button id="chat-share-song-btn" class="chat-share-song-btn" onclick="toggleSongShare()"
+                            title="Reference current song">
+                            <i class="fas fa-music"></i>
+                        </button>
                         <button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()">
                             <i class="fas fa-paper-plane"></i>
                         </button>
@@ -298,7 +309,7 @@
             </div>
             <div class="footer-right">
                 Developed with <i class="fas fa-heart" style="color: #a200ff; animation: heartBeat 1.5s infinite;"></i>
-                by K5 Studio | Version 7.0
+                by K5 Studio | Version 7.1
             </div>
         </div>
     </footer>

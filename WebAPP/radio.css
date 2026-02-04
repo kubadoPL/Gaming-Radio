@@ -2577,6 +2577,182 @@ body::-webkit-scrollbar-thumb {
     box-shadow: 0 0 20px rgba(var(--active-station-glow-rgb), 0.2);
 }
 
+/* Message Embed Support */
+.song-embed {
+    margin-top: 10px;
+    background: rgba(var(--active-station-glow-rgb), 0.1);
+    border: 1px solid rgba(var(--active-station-glow-rgb), 0.3);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    max-width: 300px;
+    animation: embedFadeIn 0.4s ease-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.song-embed::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--active-station-color);
+}
+
+@keyframes embedFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.song-embed-cover {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.song-embed-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.song-embed-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.song-embed-station {
+    font-size: 11px;
+    color: var(--active-station-color-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Share Song Button */
+.chat-share-song-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    position: relative;
+}
+
+.chat-share-song-btn:hover {
+    background: rgba(var(--active-station-glow-rgb), 0.2);
+    color: white;
+    border-color: var(--active-station-color);
+    transform: translateY(-2px);
+}
+
+.chat-share-song-btn.active {
+    background: var(--active-station-color);
+    color: white;
+    border-color: white;
+    box-shadow: 0 0 15px var(--active-station-glow);
+}
+
+.chat-share-song-btn.active::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background: #00ff8c;
+    border-radius: 50%;
+    border: 2px solid #000;
+}
+
+/* Preview area in input */
+.chat-input-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-song-preview {
+    background: rgba(var(--active-station-glow-rgb), 0.2);
+    border-radius: 12px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.preview-song-name {
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.remove-preview {
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.2s;
+}
+
+.remove-preview:hover {
+    color: #ff4d4d;
+}
+
+.chat-char-count {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: right;
+    margin-top: 4px;
+    padding-right: 12px;
+    transition: color 0.3s ease;
+}
+
+.chat-char-count.error {
+    color: #ff4d4d;
+    font-weight: 700;
+}
+
 .chat-send-btn {
     width: 48px;
     height: 48px;

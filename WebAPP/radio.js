@@ -1034,6 +1034,36 @@ const CHAT_API_BASE = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/D
 let discordAuthToken = localStorage.getItem('RadioGaming-discordAuthToken');
 let discordUser = null;
 let currentChatStation = 'RADIOGAMING';
+let isSongShared = false;
+
+window.toggleSongShare = function (forceState = null) {
+    if (forceState !== null) {
+        isSongShared = forceState;
+    } else {
+        isSongShared = !isSongShared;
+    }
+
+    const shareBtn = document.getElementById('chat-share-song-btn');
+    const preview = document.getElementById('chat-song-preview');
+    const previewText = preview.querySelector('.preview-song-name');
+
+    if (isSongShared) {
+        const currentSong = document.getElementById('streamTitle').textContent;
+        if (!currentSong || currentSong === 'Loading...' || currentSong === '') {
+            showNotification('Wait for a song to load before sharing!', 'fas fa-info-circle');
+            isSongShared = false;
+            return;
+        }
+
+        shareBtn.classList.add('active');
+        preview.classList.remove('hidden');
+        previewText.textContent = `Sharing: ${currentSong}`;
+        showNotification('Current song attached to your message!', 'fas fa-music');
+    } else {
+        shareBtn.classList.remove('active');
+        preview.classList.add('hidden');
+    }
+};
 
 // Check for auth callback on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -1331,6 +1361,15 @@ function appendChatMessage(message, scrollToBottom = true) {
                 <span class="chat-message-time">${timeStr}</span>
             </div>
             <div class="chat-message-text">${escapeHtml(message.content)}</div>
+            ${message.song_data ? `
+            <div class="song-embed">
+                <img class="song-embed-cover" src="${message.song_data.artwork}" alt="Album Cover">
+                <div class="song-embed-info">
+                    <div class="song-embed-title">${escapeHtml(message.song_data.title)}</div>
+                    <div class="song-embed-station">${escapeHtml(message.song_data.station)}</div>
+                </div>
+            </div>
+            ` : ''}
         </div>
     `;
 
@@ -1354,12 +1393,23 @@ window.sendChatMessage = async function () {
     const message = input.value.trim();
     if (!message) return;
 
+    if (message.length > 200) {
+        showNotification(`Message is too long! ${message.length}/200 letters`, 'fas fa-exclamation-triangle');
+        return;
+    }
+
     if (!discordAuthToken) {
         showNotification('Please login to chat', 'fas fa-exclamation-triangle');
         return;
     }
 
     try {
+        const songData = isSongShared ? {
+            title: document.getElementById('streamTitle').textContent,
+            artwork: document.getElementById('albumCover').src,
+            station: document.getElementById('StationNameInh1').textContent
+        } : null;
+
         const response = await fetch(`${CHAT_API_BASE}/chat/send`, {
             method: 'POST',
             headers: {
@@ -1368,7 +1418,8 @@ window.sendChatMessage = async function () {
             },
             body: JSON.stringify({
                 message: message,
-                station: currentChatStation
+                station: currentChatStation,
+                song_data: songData
             })
         });
 
@@ -1376,6 +1427,7 @@ window.sendChatMessage = async function () {
 
         if (response.ok && data.success) {
             input.value = '';
+            toggleSongShare(false); // Reset share state
             // Append message immediately for instant feedback
             if (!document.getElementById(`msg-${data.message.id}`)) {
                 appendChatMessage(data.message);
@@ -1391,9 +1443,29 @@ window.sendChatMessage = async function () {
 
 // Handle Enter key for sending messages
 document.addEventListener('keydown', (e) => {
-    if (e.target.id === 'chat-input' && e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendChatMessage();
+    if (e.target.id === 'chat-input') {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    }
+});
+
+// Character counter for chat
+document.addEventListener('input', (e) => {
+    if (e.target.id === 'chat-input') {
+        const input = e.target;
+        const count = input.value.length;
+        const counterElem = document.getElementById('chat-char-count');
+
+        if (counterElem) {
+            counterElem.textContent = `${count}/200`;
+            if (count > 200) {
+                counterElem.classList.add('error');
+            } else {
+                counterElem.classList.remove('error');
+            }
+        }
     }
 });
 

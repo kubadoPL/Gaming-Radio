@@ -222,7 +222,7 @@ def send_message():
         return jsonify({"error": "Invalid session"}), 401
 
     data = request.json
-    content = data.get("message", "").strip()[:500]
+    content = data.get("message", "").strip()[:200]
     station = data.get("station", "").upper().replace("-", "").replace(" ", "")
 
     if not content or station not in chat_messages:
@@ -246,6 +246,7 @@ def send_message():
         "content": content,
         "timestamp": now.isoformat(),
         "station": station,
+        "song_data": data.get("song_data"),  # optional song embed
     }
 
     chat_messages[station].append(msg_obj)
