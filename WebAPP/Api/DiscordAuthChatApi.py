@@ -16,8 +16,7 @@ import requests as http_requests
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
 
-# More robust CORS configuration
-# explicitly allowing Authorization header and responding with 200 to preflights
+# CORS configuration
 CORS(
     app,
     resources={
@@ -29,8 +28,6 @@ CORS(
     },
 )
 
-# Define Blueprint WITHOUT prefix internally
-# If the entry point uses a prefix, it will be handled there
 chat_api = Blueprint("chat_api", __name__)
 
 # Discord OAuth2 Configuration
@@ -45,14 +42,34 @@ DISCORD_API_URL = "https://discord.com/api/v10"
 # In-memory storage
 user_sessions = {}
 chat_messages = {"RADIOGAMING": [], "RADIOGAMINGDARK": [], "RADIOGAMINGMARONFM": []}
+online_users = {}  # station_key -> {user_id -> last_activity_timestamp}
 MAX_MESSAGES_PER_CHANNEL = 100
 message_cooldowns = {}
 MESSAGE_COOLDOWN_SECONDS = 2
+ONLINE_THRESHOLD_SECONDS = 60
+
+
+def update_user_activity(user_id, station_key):
+    if station_key not in online_users:
+        online_users[station_key] = {}
+    online_users[station_key][user_id] = datetime.utcnow()
+
+
+def get_online_count(station_key):
+    if station_key not in online_users:
+        return 0
+    now = datetime.utcnow()
+    # Clean up old entries
+    online_users[station_key] = {
+        uid: ts
+        for uid, ts in online_users[station_key].items()
+        if (now - ts).total_seconds() < ONLINE_THRESHOLD_SECONDS
+    }
+    return len(online_users[station_key])
 
 
 @chat_api.route("/")
 def home():
-    print("[CHAT] Health check request")
     return jsonify({"service": "Discord Auth & Chat API", "status": "online"})
 
 
@@ -93,7 +110,6 @@ def discord_callback():
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
-
         token_json = token_response.json()
         if "access_token" not in token_json:
             return redirect(f"{frontend_url}?auth_error=token_exchange_failed")
@@ -121,7 +137,6 @@ def discord_callback():
         }
         return redirect(f"{frontend_url}?auth_token={session_token}")
     except Exception as e:
-        print(f"[ERROR] Callback exception: {e}")
         return redirect(f"{frontend_url}?auth_error=server_error")
 
 
@@ -143,10 +158,19 @@ def get_chat_history(station):
     station_key = station.upper().replace("-", "").replace(" ", "")
     if station_key not in chat_messages:
         return jsonify({"error": "Invalid station"}), 400
+
+    # Track activity if token provided
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        if token in user_sessions:
+            update_user_activity(user_sessions[token]["id"], station_key)
+
     return jsonify(
         {
             "station": station_key,
             "messages": chat_messages[station_key][-50:],
+            "online_count": get_online_count(station_key),
             "server_time": datetime.utcnow().isoformat(),
         }
     )
@@ -158,6 +182,13 @@ def poll_messages(station):
     since = request.args.get("since", "")
     if station_key not in chat_messages:
         return jsonify({"error": "Invalid station"}), 400
+
+    # Track activity
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        if token in user_sessions:
+            update_user_activity(user_sessions[token]["id"], station_key)
 
     messages = chat_messages[station_key]
     if since:
@@ -172,7 +203,11 @@ def poll_messages(station):
             pass
 
     return jsonify(
-        {"messages": messages[-50:], "server_time": datetime.utcnow().isoformat()}
+        {
+            "messages": messages[-50:],
+            "online_count": get_online_count(station_key),
+            "server_time": datetime.utcnow().isoformat(),
+        }
     )
 
 
@@ -195,8 +230,8 @@ def send_message():
 
     user = user_sessions[token]
     now = datetime.utcnow()
+    update_user_activity(user["id"], station)
 
-    # Rate limit
     if (
         user["id"] in message_cooldowns
         and (now - message_cooldowns[user["id"]]).total_seconds()
@@ -220,9 +255,7 @@ def send_message():
     return jsonify({"success": True, "message": msg_obj})
 
 
-# Register blueprint both with and without prefix to handle different routing environments
 app.register_blueprint(chat_api, url_prefix="/DiscordAuthChatApi")
-# Also allow root access (in case Heroku router strips the subpath)
 app.register_blueprint(chat_api, name="chat_api_root")
 
 

@@ -1162,6 +1162,44 @@ let chatPollingInterval = null;
 let lastMessageTimestamp = null;
 let isChatVisible = false;
 
+function toggleChannelDropdown() {
+    const dropdown = document.getElementById('channel-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('hidden');
+    }
+}
+
+// Close dropdown when clicking outside
+window.addEventListener('click', (e) => {
+    if (!e.target.closest('.chat-channel-selector')) {
+        const dropdown = document.getElementById('channel-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+    }
+});
+
+async function switchChatChannel(stationName) {
+    const oldStation = currentChatStation;
+    currentChatStation = stationName.replace(/\s+/g, '').toUpperCase();
+
+    if (oldStation !== currentChatStation) {
+        lastMessageTimestamp = null;
+        const messagesContainer = document.getElementById('chat-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '<div class="chat-loading">Loading channel...</div>';
+        }
+
+        // Update UI
+        const chatStationLabel = document.getElementById('chat-current-station');
+        if (chatStationLabel) chatStationLabel.textContent = stationName;
+
+        await loadChatHistory();
+        showNotification(`Switched to ${stationName} chat`, 'fas fa-comments');
+    }
+
+    const dropdown = document.getElementById('channel-dropdown');
+    if (dropdown) dropdown.classList.add('hidden');
+}
+
 function initializeChatPolling() {
     if (!discordAuthToken || chatPollingInterval) return;
 
@@ -1181,6 +1219,7 @@ function stopChatPolling() {
 }
 
 function updateCurrentStation() {
+
     const stationNameElem = document.getElementById('StationNameInh1');
     const stationName = stationNameElem ? stationNameElem.textContent : 'Radio GAMING';
     currentChatStation = stationName.replace(/\s+/g, '').toUpperCase();
@@ -1192,8 +1231,17 @@ function updateCurrentStation() {
 
 async function loadChatHistory() {
     try {
-        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`);
+        const headers = {};
+        if (discordAuthToken) {
+            headers['Authorization'] = `Bearer ${discordAuthToken}`;
+        }
+
+        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, { headers });
         const data = await response.json();
+
+        if (data.online_count !== undefined) {
+            updateOnlineCountUI(data.online_count);
+        }
 
         if (data.messages && data.messages.length > 0) {
             const messagesContainer = document.getElementById('chat-messages');
@@ -1222,8 +1270,16 @@ async function pollNewMessages() {
 
     try {
         const since = lastMessageTimestamp ? `?since=${encodeURIComponent(lastMessageTimestamp)}` : '';
-        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`);
+        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`, {
+            headers: {
+                'Authorization': `Bearer ${discordAuthToken}`
+            }
+        });
         const data = await response.json();
+
+        if (data.online_count !== undefined) {
+            updateOnlineCountUI(data.online_count);
+        }
 
         if (data.messages && data.messages.length > 0) {
             data.messages.forEach(message => {
@@ -1242,6 +1298,13 @@ async function pollNewMessages() {
         }
     } catch (error) {
         console.error('[CHAT] Polling error:', error);
+    }
+}
+
+function updateOnlineCountUI(count) {
+    const onlineCountElem = document.getElementById('chat-online-count');
+    if (onlineCountElem) {
+        onlineCountElem.textContent = count;
     }
 }
 
@@ -1356,6 +1419,7 @@ window.changeStation = function (source, name, metadataURL) {
     originalChangeStation(source, name, metadataURL);
 
     // Update chat station
+
     const oldStation = currentChatStation;
     currentChatStation = name.replace(/\s+/g, '').toUpperCase();
 

@@ -184,9 +184,22 @@
             <div class="chat-container">
                 <div class="chat-header">
                     <h2><i class="fas fa-comments"></i> Station Chat</h2>
-                    <div class="chat-station-indicator">
-                        <span class="chat-station-dot"></span>
-                        <span id="chat-current-station">Radio GAMING</span>
+                    <div class="chat-channel-selector">
+                        <div class="chat-station-indicator" onclick="toggleChannelDropdown()">
+                            <span class="chat-station-dot"></span>
+                            <span id="chat-current-station">Radio GAMING</span>
+                            <i class="fas fa-chevron-down channel-chevron"></i>
+                        </div>
+                        <div class="chat-online-badge"><i class="fas fa-users"></i> <span
+                                id="chat-online-count">1</span> online</div>
+
+                        <div id="channel-dropdown" class="channel-dropdown hidden">
+                            <div class="channel-option" onclick="switchChatChannel('Radio GAMING')">Radio GAMING</div>
+                            <div class="channel-option" onclick="switchChatChannel('Radio GAMING DARK')">Radio GAMING
+                                DARK</div>
+                            <div class="channel-option" onclick="switchChatChannel('Radio GAMING MARON FM')">MARON FM
+                            </div>
+                        </div>
                     </div>
                 </div>
 
