@@ -1191,6 +1191,7 @@ window.logoutDiscord = async function () {
 let chatPollingInterval = null;
 let lastMessageTimestamp = null;
 let isChatVisible = false;
+let isChatAtBottom = true; // Global flag to track if we should auto-scroll
 
 function toggleChannelDropdown() {
     const dropdown = document.getElementById('channel-dropdown');
@@ -1279,8 +1280,12 @@ async function loadChatHistory() {
                 // Clear welcome message
                 messagesContainer.innerHTML = '';
                 data.messages.forEach(message => appendChatMessage(message, false));
-                // Scroll to bottom
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                // Scroll to bottom after the section transition and DOM update
+                setTimeout(() => {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    isChatAtBottom = true;
+                }, 300);
 
                 // Track last message timestamp
                 lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
@@ -1375,9 +1380,21 @@ function appendChatMessage(message, scrollToBottom = true) {
 
     messagesContainer.appendChild(messageEl);
 
+    // Auto-scroll logic for new messages
     if (scrollToBottom) {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        isChatAtBottom = true;
     }
+
+    // Always handle images loading late
+    const images = messageEl.querySelectorAll('img');
+    images.forEach(img => {
+        img.addEventListener('load', () => {
+            if (isChatAtBottom && isChatVisible) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        });
+    });
 }
 
 function escapeHtml(text) {
@@ -1469,6 +1486,29 @@ document.addEventListener('input', (e) => {
     }
 });
 
+// Robust auto-scroll for chat
+document.addEventListener('DOMContentLoaded', () => {
+    const messagesContainer = document.getElementById('chat-messages');
+    if (!messagesContainer) return;
+
+    let isAtBottom = true;
+
+    // Track if user is at the bottom
+    messagesContainer.addEventListener('scroll', () => {
+        const threshold = 50; // pixels from bottom
+        isChatAtBottom = (messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight) < threshold;
+    });
+
+    // Handle window resize
+    const resizeObserver = new ResizeObserver(() => {
+        if (isChatAtBottom && isChatVisible) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    });
+
+    resizeObserver.observe(messagesContainer);
+});
+
 // Track when chat section is visible
 const originalSwitchSection = window.switchSection || switchSection;
 window.switchSection = function (sectionId) {
@@ -1478,7 +1518,11 @@ window.switchSection = function (sectionId) {
 
     if (isChatVisible && discordAuthToken && discordUser) {
         updateCurrentStation();
-        loadChatHistory();
+        // Wait for section transition to complete before loading history and scrolling
+        setTimeout(() => {
+            loadChatHistory();
+        }, 400);
+
         if (!chatPollingInterval) {
             initializeChatPolling();
         }
