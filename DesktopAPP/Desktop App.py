@@ -20,7 +20,7 @@ use_discord = is_discord_running()
 
 # Import Discord Rich Presence if enabled
 if use_discord:
-    from pypresence import Presence
+    from pypresence import Presence, ActivityType
 
     start_time = int(time.time())
 
@@ -54,6 +54,7 @@ def update_rpc(stream_title, audio_playing, playstateicon, statestring):
             small_image=playstateicon,
             small_text=cleaned_title,
             instance=True,
+            activity_type=ActivityType.LISTENING,
         )
 
 
