@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 # Set the script and parent directory
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.abspath(os.path.join(script_dir, ".."))
-sys.path.append(parent_dir)
-os.chdir(parent_dir)
+if parent_dir not in sys.path:
+    sys.path.append(parent_dir)
 
 from flask import Flask, request, jsonify, redirect, Blueprint
 from flask_cors import CORS
