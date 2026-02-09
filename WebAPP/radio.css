@@ -361,7 +361,8 @@ audio {
 }
 
 #volume-down,
-#volume-up {
+#volume-up,
+.share-discord-icon {
     cursor: pointer;
     transition: all 0.3s ease;
     opacity: 0.6;
@@ -369,10 +370,22 @@ audio {
 }
 
 #volume-down:hover,
-#volume-up:hover {
+#volume-up:hover,
+.share-discord-icon:hover {
     opacity: 1;
     transform: scale(1.2);
     color: var(--active-station-color-secondary);
+}
+
+.share-discord-icon {
+    font-size: 18px;
+    margin-right: 4px;
+    color: #5865F2; /* Discord Blurple */
+}
+
+.share-discord-icon:hover {
+    color: #fff;
+    filter: drop-shadow(0 0 8px #5865F2);
 }
 
 /* Time display with accent styling */

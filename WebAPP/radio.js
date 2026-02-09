@@ -1187,6 +1187,109 @@ window.logoutDiscord = async function () {
     showNotification('Logged out successfully', 'fas fa-sign-out-alt');
 };
 
+// Discord Webhook Share System
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1470564336358653952/oMTvjCkgbKDfdernUGZuvsCWIWNgC2JHZXMK8cYrGJscMIr2o2BfxxaXwNswpkkEaPyU'; // USER: Add your Discord Webhook URL here to enable sharing to a server
+let lastDiscordShareTime = 0;
+const DISCORD_SHARE_COOLDOWN = 120000; // 120 seconds in ms
+
+window.shareOnDiscord = async function () {
+    if (!discordAuthToken) {
+        showNotification('Please login with Discord to share!', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    const now = Date.now();
+    if (now - lastDiscordShareTime < DISCORD_SHARE_COOLDOWN) {
+        const remaining = Math.ceil((DISCORD_SHARE_COOLDOWN - (now - lastDiscordShareTime)) / 1000);
+        showNotification(`Please wait ${remaining} seconds before sharing again!`, 'fas fa-clock');
+        return;
+    }
+
+    const stationName = document.getElementById('StationNameInh1').textContent;
+    const songTitle = document.getElementById('streamTitle').textContent;
+    const albumCover = document.getElementById('albumCover').src;
+    const radioUrl = window.location.origin + window.location.pathname;
+
+    // Determine embed design based on station
+    let embedColor = 7536895; // Default Purple (#7300ff)
+    let webhookUser = "Radio GAMING";
+    let webhookAvatar = "https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp";
+
+    if (stationName.includes('DARK')) {
+        embedColor = 2702538; // Blue (#293cca)
+        webhookUser = "Radio GAMING DARK";
+        webhookAvatar = "https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp";
+    } else if (stationName.includes('MARON')) {
+        embedColor = 2566486; // Dark Blue (#272956)
+        webhookUser = "Radio GAMING MARON FM";
+        webhookAvatar = "https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp";
+    }
+
+    if (!songTitle || songTitle === 'Loading...' || songTitle === '') {
+        showNotification('Wait for a song to load before sharing!', 'fas fa-info-circle');
+        return;
+    }
+
+    if (!DISCORD_WEBHOOK_URL) {
+        // If no webhook is configured, we can still "share" by posting to the integrated chat
+        if (discordAuthToken && discordUser) {
+            const chatInput = document.getElementById('chat-input');
+            if (chatInput) {
+                chatInput.value = "🎶 I'm currently listening to this! ";
+                toggleSongShare(true);
+                await sendChatMessage();
+                showNotification('Shared current song to the station chat!', 'fab fa-discord');
+                return;
+            }
+        }
+        showNotification('Discord Webhook not configured in radio.js!', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    try {
+        const response = await fetch(DISCORD_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: webhookUser,
+                avatar_url: webhookAvatar,
+                embeds: [{
+                    author: {
+                        name: `${discordUser.global_name || discordUser.username} is sharing...`,
+                        icon_url: discordUser.avatar_url
+                    },
+                    title: `Listening to ${stationName}`,
+                    description: `🎵 Currently playing: **${songTitle}**\n\n[▶️ **Listen to Radio Gaming Also**](${radioUrl})`,
+                    url: radioUrl,
+                    color: embedColor,
+                    thumbnail: {
+                        url: albumCover
+                    },
+                    footer: {
+                        text: "Shared via Radio GAMING",
+                        icon_url: "https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp"
+                    },
+                    timestamp: new Date().toISOString()
+                }]
+            })
+        });
+
+        if (response.ok) {
+            lastDiscordShareTime = Date.now();
+            showNotification('Successfully shared to Discord!', 'fab fa-discord');
+        } else {
+            const data = await response.json();
+            console.error('Webhook error:', data);
+            showNotification('Failed to share to Discord', 'fas fa-exclamation-triangle');
+        }
+    } catch (error) {
+        console.error('Share on Discord error:', error);
+        showNotification('Error connecting to Discord', 'fas fa-exclamation-triangle');
+    }
+};
+
 // Chat Polling System (no WebSockets needed)
 let chatPollingInterval = null;
 let lastMessageTimestamp = null;
