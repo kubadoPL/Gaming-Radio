@@ -1188,8 +1188,8 @@ window.logoutDiscord = async function () {
 };
 
 // Discord Webhook Share System
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1470564336358653952/oMTvjCkgbKDfdernUGZuvsCWIWNgC2JHZXMK8cYrGJscMIr2o2BfxxaXwNswpkkEaPyU'; // USER: Add your Discord Webhook URL here to enable sharing to a server
-let lastDiscordShareTime = 0;
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1470563794424955069/Z5r9gtLBDyrzSYFUBQ_04bQwE5MaW7pzlTUfbcplEXpKEwo9lbGo2XPh8qpWkJJWaWMz'; // USER: Add your Discord Webhook URL here to enable sharing to a server
+let lastDiscordShareTime = parseInt(localStorage.getItem('RadioGaming-lastDiscordShareTime')) || 0;
 const DISCORD_SHARE_COOLDOWN = 120000; // 120 seconds in ms
 
 window.shareOnDiscord = async function () {
@@ -1278,6 +1278,7 @@ window.shareOnDiscord = async function () {
 
         if (response.ok) {
             lastDiscordShareTime = Date.now();
+            localStorage.setItem('RadioGaming-lastDiscordShareTime', lastDiscordShareTime.toString());
             showNotification('Successfully shared to Discord!', 'fab fa-discord');
         } else {
             const data = await response.json();
