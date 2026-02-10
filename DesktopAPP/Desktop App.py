@@ -130,9 +130,14 @@ def update_rpc_periodically(stop_event):
 # Function to toggle fullscreen
 def toggle_fullscreen():
     window.toggle_fullscreen()
-    # time.sleep(5)
-    # if window.is_minimized():
-    #   window.maximize()
+
+
+# Function to clear all cache
+def clear_all_cache():
+    window.evaluate_js(
+        "localStorage.clear(); sessionStorage.clear(); window.location.reload(true);"
+    )
+    print("User cleared cache via Shift+F5")
 
 
 # Start the webview
@@ -143,9 +148,8 @@ thread = threading.Thread(
 
 try:
     thread.start()
-    keyboard.add_hotkey(
-        "f11", toggle_fullscreen
-    )  # Add F11 as a hotkey to toggle fullscreen
+    keyboard.add_hotkey("f11", toggle_fullscreen)
+    keyboard.add_hotkey("shift+f5", clear_all_cache)
     window.events.closed += (
         on_closed  # Attach the on_closed function to the closing event of the window
     )
