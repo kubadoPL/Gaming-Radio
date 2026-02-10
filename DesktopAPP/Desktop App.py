@@ -137,7 +137,7 @@ def clear_all_cache():
     window.evaluate_js(
         "localStorage.clear(); sessionStorage.clear(); window.location.reload(true);"
     )
-    print("User cleared cache via Shift+F5")
+    print("User cleared cache via Shift+F7")
 
 
 # Start the webview
@@ -149,7 +149,7 @@ thread = threading.Thread(
 try:
     thread.start()
     keyboard.add_hotkey("f11", toggle_fullscreen)
-    keyboard.add_hotkey("shift+f5", clear_all_cache)
+    keyboard.add_hotkey("shift+f7", clear_all_cache)
     window.events.closed += (
         on_closed  # Attach the on_closed function to the closing event of the window
     )
