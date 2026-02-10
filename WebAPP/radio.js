@@ -1418,8 +1418,10 @@ window.logoutDiscord = async function () {
 
     // Clean up
     localStorage.removeItem('RadioGaming-discordAuthToken');
-    // Clear all guild check caches
-    SHARE_GUILDS.forEach(g => localStorage.removeItem(`RadioGaming-guildCheck-${g.id}`));
+    // Clear all guild check caches for this user
+    if (discordUser) {
+        SHARE_GUILDS.forEach(g => localStorage.removeItem(`RadioGaming-guildCheck-${discordUser.id}-${g.id}`));
+    }
     discordAuthToken = null;
     discordUser = null;
 
@@ -1432,7 +1434,7 @@ window.logoutDiscord = async function () {
 // Discord Webhook Share System
 let lastDiscordShareTime = parseInt(localStorage.getItem('RadioGaming-lastDiscordShareTime')) || 0;
 const DISCORD_SHARE_COOLDOWN = 120000; // 120 seconds in ms
-const GUILD_CHECK_CACHE_DURATION = 300000; // 5 minutes cache
+const GUILD_CHECK_CACHE_DURATION = 120000; // 2 minutes cache (reduced for better responsiveness)
 
 // Guild list — each entry has a guild ID, webhook URL, and membership gating flag
 // Server name and icon are fetched live from Discord's API
@@ -1449,11 +1451,15 @@ const SHARE_GUILDS = [
     }
 ];
 
-async function checkUserInGuild(guildId) {
-    // Check cache first
-    const cacheKey = `RadioGaming-guildCheck-${guildId}`;
+async function checkUserInGuild(guildId, force = false) {
+    if (!discordAuthToken) return { inGuild: false, guildName: null, guildIcon: null };
+
+    // Check cache first (include user ID to prevent cross-account cache issues)
+    const userId = discordUser ? discordUser.id : 'anon';
+    const cacheKey = `RadioGaming-guildCheck-${userId}-${guildId}`;
     const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-    if (cached && (Date.now() - cached.timestamp < GUILD_CHECK_CACHE_DURATION)) {
+
+    if (!force && cached && (Date.now() - cached.timestamp < GUILD_CHECK_CACHE_DURATION)) {
         return cached;
     }
 
@@ -1590,7 +1596,7 @@ window.openShareModal = function () {
         guildList.appendChild(item);
 
         // Check guild membership async — also fetches real name/icon
-        checkUserInGuild(guild.id).then(result => {
+        checkUserInGuild(guild.id, true).then(result => {
             item.classList.remove('loading');
             const iconEl = item.querySelector('.share-guild-icon');
             const nameEl = item.querySelector('.share-guild-name');

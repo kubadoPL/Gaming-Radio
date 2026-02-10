@@ -177,7 +177,7 @@ def check_guild(guild_id):
 
     try:
         guilds_response = http_requests.get(
-            f"{DISCORD_API_URL}/users/@me/guilds",
+            f"{DISCORD_API_URL}/users/@me/guilds?limit=200",
             headers={"Authorization": f"Bearer {discord_token}"},
         )
         if guilds_response.status_code != 200:
