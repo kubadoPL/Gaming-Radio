@@ -504,7 +504,8 @@ async function fetchBestCover(query) {
 
         let bestChoice = { url: fallbackCover, score: -1, source: 'fallback' };
 
-        if (manualData && manualData.score > bestChoice.score) {
+        const MANUAL_MIN_SCORE = 0.6; // Only use manual cover if similarity is high enough
+        if (manualData && manualData.score >= MANUAL_MIN_SCORE && manualData.score > bestChoice.score) {
             bestChoice = { url: manualData.url, score: manualData.score, source: 'manual' };
         }
         if (spotifyData && spotifyData.score > bestChoice.score) {
