@@ -73,6 +73,11 @@ let audioCtx, analyser, dataArray, source, gainNode;
 let isVisualizerInitialized = false;
 let isVisualizerEnabled = localStorage.getItem('RadioGaming-visualizerEnabled') !== 'false';
 
+// Song History & Favorites
+let songHistory = JSON.parse(localStorage.getItem('RadioGaming-songHistory') || '[]');
+let songFavorites = JSON.parse(localStorage.getItem('RadioGaming-songFavorites') || '[]');
+let lastHistorySongTitle = '';
+
 window.toggleVisualizations = function () {
     isVisualizerEnabled = !isVisualizerEnabled;
     localStorage.setItem('RadioGaming-visualizerEnabled', isVisualizerEnabled);
@@ -519,10 +524,13 @@ async function fetchBestCover(query) {
 
         if (coverElem) coverElem.src = bestChoice.url;
         updateMediaSessionMetadata(query, bestChoice.url);
+        // Add to song history
+        addToSongHistory(query, bestChoice.url);
     } catch (error) {
         console.error('Error fetching best cover:', error);
         if (coverElem) coverElem.src = fallbackCover;
         updateMediaSessionMetadata(query, fallbackCover);
+        addToSongHistory(query, fallbackCover);
     }
 }
 
@@ -701,7 +709,6 @@ function initVisualizer() {
         gainNode.connect(audioCtx.destination);
 
         // Map audio volume to gainNode and set element volume to 1
-        // This ensures the visualizer gets full signal while user controls output volume
         gainNode.gain.value = previousVolume;
         audio.volume = 1;
 
@@ -750,13 +757,13 @@ function animateVisualizer() {
         window.lastTriggerValue = window.lastTriggerValue * 0.8 + triggerValue * 0.2;
         const v = window.lastTriggerValue;
 
+        // Pulse mode effects (cover glow, player glow)
         const scale = 1 + v * 0.08;
         const glowSize = 30 + v * 80;
         const borderGlow = 6 + v * 18;
         const intensity = 0.35 + v * 0.35;
         const brightness = 0.92 + v * 0.18;
 
-        // Optimization: only update DOM if values changed significantly
         if (Math.abs(scale - lastVisScale) > 0.001 || Math.abs(intensity - lastVisIntensity) > 0.01) {
             if (!cachedCover) cachedCover = document.getElementById('albumCover');
             if (!cachedPlayer) cachedPlayer = document.querySelector('.audio-player');
@@ -2118,3 +2125,179 @@ window.changeStation = function (source, name, metadataURL) {
     }
 };
 
+// ========================
+// SONG HISTORY & FAVORITES
+// ========================
+
+function addToSongHistory(title, coverUrl) {
+    if (!title || title === lastHistorySongTitle) return;
+    lastHistorySongTitle = title;
+
+    const currentStation = stationName ? stationName.textContent : 'Unknown';
+    const entry = {
+        title: title,
+        cover: coverUrl,
+        station: currentStation,
+        timestamp: Date.now()
+    };
+
+    // Remove duplicate if exists
+    songHistory = songHistory.filter(s => s.title !== title);
+
+    // Add to front
+    songHistory.unshift(entry);
+
+    // Keep only last 20
+    if (songHistory.length > 20) songHistory = songHistory.slice(0, 20);
+
+    localStorage.setItem('RadioGaming-songHistory', JSON.stringify(songHistory));
+    renderHistoryList();
+}
+
+function toggleFavorite(title) {
+    const idx = songFavorites.findIndex(s => s.title === title);
+    if (idx !== -1) {
+        songFavorites.splice(idx, 1);
+        showNotification('Removed from favorites', 'fas fa-heart-broken');
+    } else {
+        // Find in history
+        const song = songHistory.find(s => s.title === title);
+        if (song) {
+            songFavorites.unshift({ ...song });
+            showNotification('Added to favorites! ❤️', 'fas fa-heart');
+        }
+    }
+    localStorage.setItem('RadioGaming-songFavorites', JSON.stringify(songFavorites));
+    renderHistoryList();
+    renderFavoritesList();
+}
+
+function isFavorited(title) {
+    return songFavorites.some(s => s.title === title);
+}
+
+function renderHistoryList() {
+    const list = document.getElementById('history-list');
+    if (!list) return;
+
+    if (songHistory.length === 0) {
+        list.innerHTML = `<div class="history-empty"><i class="fas fa-music"></i><p>No songs played yet. Start listening!</p></div>`;
+        return;
+    }
+
+    list.innerHTML = songHistory.map((song, i) => {
+        const timeAgo = getTimeAgo(song.timestamp);
+        const fav = isFavorited(song.title);
+        const encodedTitle = encodeURIComponent(song.title);
+        return `
+            <div class="history-item" style="animation-delay: ${i * 0.05}s">
+                <img class="history-item-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                <div class="history-item-info">
+                    <div class="history-item-title" title="${song.title}">${song.title}</div>
+                    <div class="history-item-meta">
+                        <span class="history-item-station">${song.station}</span>
+                        <span>• ${timeAgo}</span>
+                    </div>
+                </div>
+                <div class="history-item-actions">
+                    <button class="history-action-btn ${fav ? 'favorited' : ''}" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
+                        title="${fav ? 'Remove from favorites' : 'Add to favorites'}">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                    <a class="history-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Search on Spotify">
+                        <i class="fab fa-spotify"></i>
+                    </a>
+                    <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function renderFavoritesList() {
+    const list = document.getElementById('favorites-list');
+    if (!list) return;
+
+    if (songFavorites.length === 0) {
+        list.innerHTML = `<div class="history-empty"><i class="fas fa-heart"></i><p>No favorites yet. Heart a song to save it!</p></div>`;
+        return;
+    }
+
+    list.innerHTML = songFavorites.map((song, i) => {
+        const timeAgo = getTimeAgo(song.timestamp);
+        const encodedTitle = encodeURIComponent(song.title);
+        return `
+            <div class="history-item" style="animation-delay: ${i * 0.05}s">
+                <img class="history-item-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                <div class="history-item-info">
+                    <div class="history-item-title" title="${song.title}">${song.title}</div>
+                    <div class="history-item-meta">
+                        <span class="history-item-station">${song.station}</span>
+                        <span>• ${timeAgo}</span>
+                    </div>
+                </div>
+                <div class="history-item-actions">
+                    <button class="history-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
+                        title="Remove from favorites">
+                        <i class="fas fa-heart"></i>
+                    </button>
+                    <a class="history-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Search on Spotify">
+                        <i class="fab fa-spotify"></i>
+                    </a>
+                    <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function getTimeAgo(timestamp) {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+// History Drawer Toggle
+window.toggleHistoryDrawer = function () {
+    const drawer = document.getElementById('history-drawer');
+    const overlay = document.getElementById('history-overlay');
+    if (!drawer || !overlay) return;
+
+    const isOpen = drawer.classList.contains('open');
+    if (isOpen) {
+        drawer.classList.remove('open');
+        overlay.classList.remove('open');
+    } else {
+        renderHistoryList();
+        renderFavoritesList();
+        drawer.classList.add('open');
+        overlay.classList.add('open');
+    }
+};
+
+window.switchHistoryTab = function (tab) {
+    const historyList = document.getElementById('history-list');
+    const favoritesList = document.getElementById('favorites-list');
+    const tabs = document.querySelectorAll('.history-tab');
+
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+
+    if (tab === 'history') {
+        historyList.style.display = 'flex';
+        favoritesList.style.display = 'none';
+    } else {
+        historyList.style.display = 'none';
+        favoritesList.style.display = 'flex';
+    }
+};
+
+// Initialize visualizer mode UI on load
+document.addEventListener('DOMContentLoaded', () => {
+    // History initial render
+    renderHistoryList();
+    renderFavoritesList();
+});
