@@ -207,20 +207,28 @@ audio {
 
 /* Dynamic song title with text stroke */
 #streamTitle {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 800;
     color: #fff;
     -webkit-text-fill-color: #fff;
     -webkit-text-stroke: 1px var(--active-station-color);
     text-shadow: 0 0 10px var(--active-station-glow);
-    line-height: 1.5;
+    line-height: 1.3;
     text-align: center;
     width: 100%;
-    padding: 12px 16px;
+    padding: 8px 16px;
     border-radius: 16px;
     transition: all 0.4s ease;
     margin-top: 120px;
     z-index: 11;
+    /* Prevent title from overlapping controls */
+    height: 40px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 
@@ -298,13 +306,15 @@ audio {
 
 /* Prominent play/pause button */
 #playPauseIcon {
-    font-size: 20px;
+    font-size: 18px;
     cursor: pointer;
-    width: 52px;
-    height: 52px;
+    width: 46px;
+    height: 46px;
+    aspect-ratio: 1 / 1;
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
     background: linear-gradient(135deg,
             var(--active-station-color) 0%,
             var(--active-station-color-secondary) 100%);
@@ -314,6 +324,8 @@ audio {
         0 8px 25px var(--active-station-glow),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
     position: relative;
+    flex-shrink: 0;
+    z-index: 10;
 }
 
 #playPauseIcon::after {
@@ -380,7 +392,8 @@ audio {
 .share-discord-icon {
     font-size: 18px;
     margin-right: 4px;
-    color: #5865F2; /* Discord Blurple */
+    color: #5865F2;
+    /* Discord Blurple */
 }
 
 .share-discord-icon:hover {
