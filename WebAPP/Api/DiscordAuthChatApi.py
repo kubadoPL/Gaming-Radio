@@ -83,7 +83,7 @@ def discord_login():
         f"?client_id={DISCORD_CLIENT_ID}"
         f"&redirect_uri={DISCORD_REDIRECT_URI}"
         f"&response_type=code"
-        f"&scope=identify"
+        f"&scope=identify%20guilds"
         f"&state={state}"
     )
     return jsonify({"oauth_url": oauth_url})
@@ -133,6 +133,7 @@ def discord_callback():
             "username": user_data["username"],
             "global_name": user_data.get("global_name", user_data["username"]),
             "avatar_url": avatar_url,
+            "discord_access_token": token_json["access_token"],
             "expires_at": (datetime.utcnow() + timedelta(days=7)).isoformat(),
         }
         return redirect(f"{frontend_url}?auth_token={session_token}")
@@ -151,6 +152,50 @@ def get_user():
         return jsonify({"error": "Invalid session"}), 401
 
     return jsonify({"authenticated": True, "user": user_sessions[token]})
+
+
+@chat_api.route("/discord/check-guild/<guild_id>")
+def check_guild(guild_id):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    token = auth_header.split(" ")[1]
+    if token not in user_sessions:
+        return jsonify({"error": "Invalid session"}), 401
+
+    session = user_sessions[token]
+    discord_token = session.get("discord_access_token")
+    if not discord_token:
+        return jsonify({"in_guild": False, "error": "No Discord token available"}), 200
+
+    try:
+        guilds_response = http_requests.get(
+            f"{DISCORD_API_URL}/users/@me/guilds",
+            headers={"Authorization": f"Bearer {discord_token}"},
+        )
+        if guilds_response.status_code != 200:
+            return jsonify({"in_guild": False, "error": "Failed to fetch guilds"}), 200
+
+        guilds = guilds_response.json()
+        matched_guild = next((g for g in guilds if g["id"] == guild_id), None)
+        if matched_guild:
+            icon_hash = matched_guild.get("icon")
+            icon_url = (
+                f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.png?size=128"
+                if icon_hash
+                else None
+            )
+            return jsonify(
+                {
+                    "in_guild": True,
+                    "guild_name": matched_guild.get("name"),
+                    "guild_icon": icon_url,
+                }
+            )
+        return jsonify({"in_guild": False})
+    except Exception as e:
+        return jsonify({"in_guild": False, "error": str(e)}), 200
 
 
 @chat_api.route("/chat/history/<station>")

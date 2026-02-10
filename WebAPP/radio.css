@@ -2996,3 +2996,329 @@ body::-webkit-scrollbar-thumb {
         padding: 4px;
     }
 }
+
+/* ========================
+   DISCORD SHARE MODAL
+   ======================== */
+
+.share-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: shareOverlayIn 0.25s ease-out;
+}
+
+.share-modal-overlay.hidden {
+    display: none;
+}
+
+@keyframes shareOverlayIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.share-modal {
+    background: linear-gradient(165deg, rgba(30, 25, 50, 0.98) 0%, rgba(15, 12, 30, 0.99) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    width: 380px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.8),
+        0 0 40px rgba(88, 101, 242, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    animation: shareModalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes shareModalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.share-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.share-modal-header i.fab {
+    font-size: 24px;
+    color: #5865F2;
+    filter: drop-shadow(0 0 8px rgba(88, 101, 242, 0.5));
+}
+
+.share-modal-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    flex: 1;
+}
+
+.share-modal-close {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.share-modal-close:hover {
+    background: rgba(255, 77, 77, 0.15);
+    border-color: rgba(255, 77, 77, 0.3);
+    color: #ff4d4d;
+    transform: rotate(90deg);
+}
+
+.share-modal-body {
+    padding: 16px 24px 24px;
+}
+
+.share-section {
+    margin-bottom: 8px;
+}
+
+.share-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+}
+
+.share-guild-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.share-guild-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.share-guild-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.1) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.share-guild-item:hover {
+    background: rgba(88, 101, 242, 0.1);
+    border-color: rgba(88, 101, 242, 0.3);
+    transform: translateX(4px);
+    box-shadow: 0 4px 20px rgba(88, 101, 242, 0.15);
+}
+
+.share-guild-item:hover::before {
+    opacity: 1;
+}
+
+.share-guild-item:active {
+    transform: translateX(2px) scale(0.98);
+}
+
+.share-guild-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(88, 101, 242, 0.3);
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.share-guild-icon.placeholder {
+    background: linear-gradient(135deg, #5865F2, #7289da);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.share-guild-info {
+    flex: 1;
+    min-width: 0;
+    z-index: 1;
+}
+
+.share-guild-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.share-guild-desc {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 2px;
+}
+
+.share-guild-arrow {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 12px;
+    transition: all 0.25s ease;
+    z-index: 1;
+}
+
+.share-guild-item:hover .share-guild-arrow {
+    color: #5865F2;
+    transform: translateX(4px);
+}
+
+.share-guild-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.share-guild-item.disabled .share-guild-desc {
+    color: #ff6b6b;
+}
+
+.share-guild-item.loading {
+    pointer-events: none;
+}
+
+.share-guild-item.loading .share-guild-arrow {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.share-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.share-divider::before,
+.share-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+.share-divider span {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.share-custom-webhook {
+    display: flex;
+    gap: 8px;
+}
+
+.share-webhook-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: #fff;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: all 0.25s ease;
+}
+
+.share-webhook-input::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.share-webhook-input:focus {
+    border-color: rgba(88, 101, 242, 0.5);
+    box-shadow: 0 0 15px rgba(88, 101, 242, 0.15);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.share-webhook-btn {
+    background: linear-gradient(135deg, #5865F2, #7289da);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.share-webhook-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(88, 101, 242, 0.4);
+}
+
+.share-webhook-btn:active {
+    transform: scale(0.95);
+}

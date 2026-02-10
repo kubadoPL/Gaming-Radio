@@ -1317,6 +1317,8 @@ window.logoutDiscord = async function () {
 
     // Clean up
     localStorage.removeItem('RadioGaming-discordAuthToken');
+    // Clear all guild check caches
+    SHARE_GUILDS.forEach(g => localStorage.removeItem(`RadioGaming-guildCheck-${g.id}`));
     discordAuthToken = null;
     discordUser = null;
 
@@ -1327,66 +1329,80 @@ window.logoutDiscord = async function () {
 };
 
 // Discord Webhook Share System
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1470563794424955069/Z5r9gtLBDyrzSYFUBQ_04bQwE5MaW7pzlTUfbcplEXpKEwo9lbGo2XPh8qpWkJJWaWMz'; // USER: Add your Discord Webhook URL here to enable sharing to a server
 let lastDiscordShareTime = parseInt(localStorage.getItem('RadioGaming-lastDiscordShareTime')) || 0;
 const DISCORD_SHARE_COOLDOWN = 120000; // 120 seconds in ms
+const GUILD_CHECK_CACHE_DURATION = 300000; // 5 minutes cache
 
-window.shareOnDiscord = async function () {
-    if (!discordAuthToken) {
-        showNotification('Please login with Discord to share!', 'fas fa-exclamation-triangle');
-        return;
+// Guild list — each entry has a guild ID, webhook URL, and membership gating flag
+// Server name and icon are fetched live from Discord's API
+const SHARE_GUILDS = [
+    {
+        id: '637696690853511184',
+        webhookUrl: 'https://discord.com/api/webhooks/1470563794424955069/Z5r9gtLBDyrzSYFUBQ_04bQwE5MaW7pzlTUfbcplEXpKEwo9lbGo2XPh8qpWkJJWaWMz',
+        requireGuildMembership: true
+    }
+];
+
+async function checkUserInGuild(guildId) {
+    // Check cache first
+    const cacheKey = `RadioGaming-guildCheck-${guildId}`;
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+    if (cached && (Date.now() - cached.timestamp < GUILD_CHECK_CACHE_DURATION)) {
+        return cached;
     }
 
-    const now = Date.now();
-    if (now - lastDiscordShareTime < DISCORD_SHARE_COOLDOWN) {
-        const remaining = Math.ceil((DISCORD_SHARE_COOLDOWN - (now - lastDiscordShareTime)) / 1000);
-        showNotification(`Please wait ${remaining} seconds before sharing again!`, 'fas fa-clock');
-        return;
-    }
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/discord/check-guild/${guildId}`, {
+            headers: {
+                'Authorization': `Bearer ${discordAuthToken}`
+            }
+        });
+        const data = await response.json();
+        const result = {
+            inGuild: data.in_guild === true,
+            guildName: data.guild_name || null,
+            guildIcon: data.guild_icon || null,
+            timestamp: Date.now()
+        };
 
-    const stationName = document.getElementById('StationNameInh1').textContent;
+        // Cache result
+        localStorage.setItem(cacheKey, JSON.stringify(result));
+
+        return result;
+    } catch (error) {
+        console.error('Guild check error:', error);
+        return { inGuild: false, guildName: null, guildIcon: null };
+    }
+}
+
+function getShareEmbedData() {
+    const stationNameText = document.getElementById('StationNameInh1').textContent;
     const songTitle = document.getElementById('streamTitle').textContent;
     const albumCover = document.getElementById('albumCover').src;
     const radioUrl = window.location.origin + window.location.pathname;
 
-    // Determine embed design based on station
     let embedColor = 7536895; // Default Purple (#7300ff)
     let webhookUser = "Radio GAMING";
     let webhookAvatar = "https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp";
 
-    if (stationName.includes('DARK')) {
-        embedColor = 2702538; // Blue (#293cca)
+    if (stationNameText.includes('DARK')) {
+        embedColor = 2702538;
         webhookUser = "Radio GAMING DARK";
         webhookAvatar = "https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp";
-    } else if (stationName.includes('MARON')) {
-        embedColor = 2566486; // Dark Blue (#272956)
+    } else if (stationNameText.includes('MARON')) {
+        embedColor = 2566486;
         webhookUser = "Radio GAMING MARON FM";
         webhookAvatar = "https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp";
     }
 
-    if (!songTitle || songTitle === 'Loading...' || songTitle === '') {
-        showNotification('Wait for a song to load before sharing!', 'fas fa-info-circle');
-        return;
-    }
+    return { stationNameText, songTitle, albumCover, radioUrl, embedColor, webhookUser, webhookAvatar };
+}
 
-    if (!DISCORD_WEBHOOK_URL) {
-        // If no webhook is configured, we can still "share" by posting to the integrated chat
-        if (discordAuthToken && discordUser) {
-            const chatInput = document.getElementById('chat-input');
-            if (chatInput) {
-                chatInput.value = "🎶 I'm currently listening to this! ";
-                toggleSongShare(true);
-                await sendChatMessage();
-                showNotification('Shared current song to the station chat!', 'fab fa-discord');
-                return;
-            }
-        }
-        showNotification('Discord Webhook not configured in radio.js!', 'fas fa-exclamation-triangle');
-        return;
-    }
+async function shareToWebhook(webhookUrl) {
+    const { stationNameText, songTitle, albumCover, radioUrl, embedColor, webhookUser, webhookAvatar } = getShareEmbedData();
 
     try {
-        const response = await fetch(DISCORD_WEBHOOK_URL, {
+        const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1399,7 +1415,7 @@ window.shareOnDiscord = async function () {
                         name: `${discordUser.global_name || discordUser.username} is sharing...`,
                         icon_url: discordUser.avatar_url
                     },
-                    title: `Listening to ${stationName}`,
+                    title: `Listening to ${stationNameText}`,
                     description: `🎵 Currently playing: **${songTitle}**\n\n[▶️ **Listen to Radio Gaming Also**](${radioUrl})`,
                     url: radioUrl,
                     color: embedColor,
@@ -1418,6 +1434,7 @@ window.shareOnDiscord = async function () {
         if (response.ok) {
             lastDiscordShareTime = Date.now();
             localStorage.setItem('RadioGaming-lastDiscordShareTime', lastDiscordShareTime.toString());
+            closeShareModal();
             showNotification('Successfully shared to Discord!', 'fab fa-discord');
         } else {
             const data = await response.json();
@@ -1428,6 +1445,138 @@ window.shareOnDiscord = async function () {
         console.error('Share on Discord error:', error);
         showNotification('Error connecting to Discord', 'fas fa-exclamation-triangle');
     }
+}
+
+window.openShareModal = function () {
+    if (!discordAuthToken) {
+        showNotification('Please login with Discord to share!', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    const now = Date.now();
+    if (now - lastDiscordShareTime < DISCORD_SHARE_COOLDOWN) {
+        const remaining = Math.ceil((DISCORD_SHARE_COOLDOWN - (now - lastDiscordShareTime)) / 1000);
+        showNotification(`Please wait ${remaining} seconds before sharing again!`, 'fas fa-clock');
+        return;
+    }
+
+    const songTitle = document.getElementById('streamTitle').textContent;
+    if (!songTitle || songTitle === 'Loading...' || songTitle === '') {
+        showNotification('Wait for a song to load before sharing!', 'fas fa-info-circle');
+        return;
+    }
+
+    // Populate guild list
+    const guildList = document.getElementById('share-guild-list');
+    guildList.innerHTML = '';
+
+    SHARE_GUILDS.forEach(guild => {
+        const item = document.createElement('div');
+        item.className = 'share-guild-item loading';
+        item.innerHTML = `
+            <div class="share-guild-icon placeholder"><i class="fab fa-discord"></i></div>
+            <div class="share-guild-info">
+                <div class="share-guild-name">Loading server...</div>
+                <div class="share-guild-desc">Checking membership...</div>
+            </div>
+            <i class="fas fa-spinner share-guild-arrow"></i>
+        `;
+        guildList.appendChild(item);
+
+        // Check guild membership async — also fetches real name/icon
+        checkUserInGuild(guild.id).then(result => {
+            item.classList.remove('loading');
+            const iconEl = item.querySelector('.share-guild-icon');
+            const nameEl = item.querySelector('.share-guild-name');
+            const desc = item.querySelector('.share-guild-desc');
+            const arrow = item.querySelector('.share-guild-arrow');
+
+            // Update name and icon from API response
+            if (result.guildName) {
+                nameEl.textContent = result.guildName;
+            } else {
+                nameEl.textContent = `Server ${guild.id}`;
+            }
+
+            if (result.guildIcon) {
+                const img = document.createElement('img');
+                img.className = 'share-guild-icon';
+                img.src = result.guildIcon;
+                img.alt = result.guildName || 'Server';
+                iconEl.replaceWith(img);
+            }
+
+            if (result.inGuild) {
+                desc.textContent = 'Click to share';
+                arrow.className = 'fas fa-chevron-right share-guild-arrow';
+                item.onclick = () => shareToGuild(guild);
+            } else {
+                item.classList.add('disabled');
+                desc.textContent = 'You must be a member of this server';
+                arrow.className = 'fas fa-lock share-guild-arrow';
+            }
+        });
+    });
+
+    // Show modal
+    const overlay = document.getElementById('share-modal-overlay');
+    overlay.classList.remove('hidden');
+};
+
+window.closeShareModal = function (event) {
+    // If called from overlay click, only close if clicking the overlay itself
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = document.getElementById('share-modal-overlay');
+    overlay.classList.add('hidden');
+};
+
+async function shareToGuild(guild) {
+    const item = document.querySelector(`.share-guild-item[data-sharing]`);
+    if (item) return; // Already sharing
+
+    // Find and mark the guild item as sharing
+    const guildItems = document.querySelectorAll('.share-guild-item');
+    guildItems.forEach(el => {
+        const nameEl = el.querySelector('.share-guild-name');
+        if (nameEl && nameEl.textContent === guild.name) {
+            el.setAttribute('data-sharing', 'true');
+            const desc = el.querySelector('.share-guild-desc');
+            const arrow = el.querySelector('.share-guild-arrow');
+            desc.textContent = 'Sharing...';
+            arrow.className = 'fas fa-spinner share-guild-arrow';
+            el.classList.add('loading');
+        }
+    });
+
+    await shareToWebhook(guild.webhookUrl);
+
+    // Clean up sharing state
+    guildItems.forEach(el => el.removeAttribute('data-sharing'));
+}
+
+window.shareToCustomWebhook = async function () {
+    const input = document.getElementById('custom-webhook-input');
+    const webhookUrl = input.value.trim();
+
+    if (!webhookUrl) {
+        showNotification('Please paste a webhook URL!', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    if (!webhookUrl.startsWith('https://discord.com/api/webhooks/') && !webhookUrl.startsWith('https://discordapp.com/api/webhooks/')) {
+        showNotification('Invalid Discord webhook URL!', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    const now = Date.now();
+    if (now - lastDiscordShareTime < DISCORD_SHARE_COOLDOWN) {
+        const remaining = Math.ceil((DISCORD_SHARE_COOLDOWN - (now - lastDiscordShareTime)) / 1000);
+        showNotification(`Please wait ${remaining} seconds before sharing again!`, 'fas fa-clock');
+        return;
+    }
+
+    await shareToWebhook(webhookUrl);
+    input.value = '';
 };
 
 // Chat Polling System (no WebSockets needed)

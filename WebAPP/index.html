@@ -156,7 +156,7 @@
                     <div id="timeDisplay">
                         <span id="currentTime">00:00</span> / <span id="liveIndicator">🟣LIVE</span>
                     </div>
-                    <i id="shareDiscordIcon" class="fab fa-discord share-discord-icon" onclick="shareOnDiscord()"
+                    <i id="shareDiscordIcon" class="fab fa-discord share-discord-icon" onclick="openShareModal()"
                         title="Share on Discord"></i>
                     <div class="volume-control">
                         <i id="volume-down" class="fas fa-volume-down volume-icon"></i>
@@ -321,6 +321,41 @@
             </div>
         </div>
     </footer>
+
+    <!-- Discord Share Modal -->
+    <div id="share-modal-overlay" class="share-modal-overlay hidden" onclick="closeShareModal(event)">
+        <div class="share-modal" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <i class="fab fa-discord"></i>
+                <h3>Share to Discord</h3>
+                <button class="share-modal-close" onclick="closeShareModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="share-modal-body">
+                <div class="share-section">
+                    <div class="share-section-label">Server Channels</div>
+                    <div id="share-guild-list" class="share-guild-list">
+                        <!-- Guild entries populated by JS -->
+                    </div>
+                </div>
+                <div class="share-divider">
+                    <span>or</span>
+                </div>
+                <div class="share-section">
+                    <div class="share-section-label">Custom Webhook</div>
+                    <div class="share-custom-webhook">
+                        <input type="text" id="custom-webhook-input" class="share-webhook-input"
+                            placeholder="Paste Discord webhook URL here..." autocomplete="off">
+                        <button id="share-custom-webhook-btn" class="share-webhook-btn"
+                            onclick="shareToCustomWebhook()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 
