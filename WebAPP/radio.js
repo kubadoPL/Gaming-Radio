@@ -1,5 +1,6 @@
 const albumCovers = {};
 const eventSources = new Map();
+const YOUTUBE_API_KEY = 'AIzaSyCKovpvlpiMKK6BgpndxXWx0l6YpacNjjM'; // USER: Add your YouTube Data API v3 key here
 
 function switchSection(sectionId) {
     const sections = document.querySelectorAll('.page-section');
@@ -202,7 +203,7 @@ function handleMainStreamMessage(event) {
         if (jsonData.streamTitle) {
             var cleanedTitle = cleanTitle(jsonData.streamTitle);
             if (streamTitleElement) streamTitleElement.textContent = cleanedTitle;
-            fetchSpotifyCover(cleanedTitle); // Fetch and display the Spotify cover
+            fetchBestCover(cleanedTitle); // Fetch and display the best cover from Spotify or YouTube
 
             // If we are still loading, this is a good sign we are ready
             const ls = document.querySelector('.loading-screen');
@@ -467,11 +468,62 @@ async function fetchAlbumCovers() {
 
 fetchAlbumCovers();
 
-async function fetchSpotifyCover(query) {
+async function fetchBestCover(query) {
     const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+    const coverElem = document.getElementById('albumCover');
+
+    try {
+        const [spotifyRes, youtubeRes] = await Promise.allSettled([
+            fetchSpotifyCoverData(query),
+            fetchYouTubeCoverData(query)
+        ]);
+
+        let spotifyData = spotifyRes.status === 'fulfilled' ? spotifyRes.value : null;
+        let youtubeData = youtubeRes.status === 'fulfilled' ? youtubeRes.value : null;
+        let manualData = findBestManualMatch(query);
+
+        let bestChoice = { url: fallbackCover, score: -1, source: 'fallback' };
+
+        if (manualData && manualData.score > bestChoice.score) {
+            bestChoice = { url: manualData.url, score: manualData.score, source: 'manual' };
+        }
+        if (spotifyData && spotifyData.score > bestChoice.score) {
+            bestChoice = { url: spotifyData.url, score: spotifyData.score, source: 'spotify' };
+        }
+        if (youtubeData && youtubeData.score > bestChoice.score) {
+            bestChoice = { url: youtubeData.url, score: youtubeData.score, source: 'youtube' };
+        }
+
+        console.log(`[Cover Search] "${query}" | Scores -> Manual: ${manualData ? manualData.score.toFixed(2) : 'N/A'}, Spotify: ${spotifyData ? spotifyData.score.toFixed(2) : 'N/A'}, YouTube: ${youtubeData ? youtubeData.score.toFixed(2) : 'N/A'} | Result: ${bestChoice.source} (${bestChoice.score.toFixed(2)})`);
+
+        if (coverElem) coverElem.src = bestChoice.url;
+        updateMediaSessionMetadata(query, bestChoice.url);
+    } catch (error) {
+        console.error('Error fetching best cover:', error);
+        if (coverElem) coverElem.src = fallbackCover;
+        updateMediaSessionMetadata(query, fallbackCover);
+    }
+}
+
+function findBestManualMatch(query) {
+    let bestUrl = null;
+    let highestScore = -1;
+
+    for (const [key, url] of Object.entries(albumCovers)) {
+        const score = getSimilarityScore(query, key);
+        if (score > highestScore) {
+            highestScore = score;
+            bestUrl = url;
+        }
+    }
+
+    return highestScore > 0 ? { url: bestUrl, score: highestScore } : null;
+}
+
+async function fetchSpotifyCoverData(query) {
     try {
         const accessToken = await getSpotifyAccessToken();
-        if (!accessToken) throw new Error("No token");
+        if (!accessToken) return null;
 
         const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`;
         const response = await fetch(url, {
@@ -479,24 +531,70 @@ async function fetchSpotifyCover(query) {
         });
         const data = await response.json();
 
-        let albumCover = fallbackCover;
         if (data.tracks && data.tracks.items.length > 0) {
-            const bestTrack = findBestTrackMatch(query, data.tracks.items);
-            const defaultCover = bestTrack.album.images[0].url;
-            albumCover = albumCovers[query] || defaultCover;
-        } else {
-            console.log('No cover found for: ' + query);
+            const bestMatchData = findBestTrackMatchWithScore(query, data.tracks.items);
+            return {
+                url: bestMatchData.track.album.images[0].url,
+                score: bestMatchData.score
+            };
         }
-
-        const coverElem = document.getElementById('albumCover');
-        if (coverElem) coverElem.src = albumCover;
-        updateMediaSessionMetadata(query, albumCover);
-    } catch (error) {
-        console.error('Error fetching Spotify cover:', error);
-        const coverElem = document.getElementById('albumCover');
-        if (coverElem) coverElem.src = fallbackCover;
-        updateMediaSessionMetadata(query, fallbackCover);
+    } catch (e) {
+        console.error('Spotify Fetch Error:', e);
     }
+    return null;
+}
+
+async function fetchYouTubeCoverData(query) {
+    if (!YOUTUBE_API_KEY) return null;
+
+    try {
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=5&key=${YOUTUBE_API_KEY}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.items && data.items.length > 0) {
+            let bestMatch = data.items[0];
+            let highestScore = -1;
+
+            data.items.forEach(item => {
+                const score = getSimilarityScore(query, item.snippet.title);
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = item;
+                }
+            });
+
+            return {
+                url: bestMatch.snippet.thumbnails.high ? bestMatch.snippet.thumbnails.high.url : bestMatch.snippet.thumbnails.default.url,
+                score: highestScore
+            };
+        }
+    } catch (e) {
+        console.error('YouTube Fetch Error:', e);
+    }
+    return null;
+}
+
+function findBestTrackMatchWithScore(query, tracks) {
+    let bestMatch = tracks[0];
+    let highestScore = -1;
+
+    tracks.forEach(track => {
+        const trackTitle = `${track.artists[0].name} - ${track.name}`;
+        const score = getSimilarityScore(query, trackTitle);
+
+        if (score > highestScore) {
+            highestScore = score;
+            bestMatch = track;
+        }
+    });
+
+    return { track: bestMatch, score: highestScore };
+}
+
+// Obsolete, replaced by fetchBestCover
+async function fetchSpotifyCover(query) {
+    return fetchBestCover(query);
 }
 
 function updateMediaSessionMetadata(title, artwork) {
@@ -907,21 +1005,36 @@ async function metaDataUrlToStationName(url) {
 
 async function fetchSpotifyCovertooltip(query, tooltipElement) {
     const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
-    try {
-        const accessToken = await getSpotifyAccessToken();
-        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`;
-        const response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + accessToken } });
-        const data = await response.json();
+    const img = tooltipElement.querySelector('.tooltip-cover');
 
-        let cover = fallbackCover;
-        if (data.tracks && data.tracks.items.length > 0) {
-            const bestTrack = findBestTrackMatch(query, data.tracks.items);
-            cover = albumCovers[query] || bestTrack.album.images[0].url;
+    try {
+        const [spotifyRes, youtubeRes] = await Promise.allSettled([
+            fetchSpotifyCoverData(query),
+            fetchYouTubeCoverData(query)
+        ]);
+
+        let spotifyData = spotifyRes.status === 'fulfilled' ? spotifyRes.value : null;
+        let youtubeData = youtubeRes.status === 'fulfilled' ? youtubeRes.value : null;
+        let manualData = findBestManualMatch(query);
+
+        let bestUrl = fallbackCover;
+        let highestScore = -1;
+
+        if (manualData && manualData.score > highestScore) {
+            highestScore = manualData.score;
+            bestUrl = manualData.url;
         }
-        const img = tooltipElement.querySelector('.tooltip-cover');
-        if (img) img.src = cover;
+        if (spotifyData && spotifyData.score > highestScore) {
+            highestScore = spotifyData.score;
+            bestUrl = spotifyData.url;
+        }
+        if (youtubeData && youtubeData.score > highestScore) {
+            highestScore = youtubeData.score;
+            bestUrl = youtubeData.url;
+        }
+
+        if (img) img.src = bestUrl;
     } catch (e) {
-        const img = tooltipElement.querySelector('.tooltip-cover');
         if (img) img.src = fallbackCover;
     }
 }
