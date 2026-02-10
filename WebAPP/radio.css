@@ -3677,6 +3677,11 @@ body::-webkit-scrollbar-thumb {
     background: rgba(255, 0, 0, 0.15);
 }
 
+.history-action-btn.chat-share-btn:hover {
+    color: var(--active-station-color);
+    background: var(--active-station-glow);
+}
+
 /* ========================
    RESPONSIVE ADJUSTMENTS
    ======================== */

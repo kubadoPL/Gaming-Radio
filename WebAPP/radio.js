@@ -1182,8 +1182,9 @@ let discordAuthToken = localStorage.getItem('RadioGaming-discordAuthToken');
 let discordUser = null;
 let currentChatStation = 'RADIOGAMING';
 let isSongShared = false;
+let sharedSongData = null; // Stores specific song data (from history) if sharing specific song
 
-window.toggleSongShare = function (forceState = null) {
+window.toggleSongShare = function (forceState = null, song = null) {
     if (forceState !== null) {
         isSongShared = forceState;
     } else {
@@ -1195,18 +1196,32 @@ window.toggleSongShare = function (forceState = null) {
     const previewText = preview.querySelector('.preview-song-name');
 
     if (isSongShared) {
-        const currentSong = document.getElementById('streamTitle').textContent;
-        if (!currentSong || currentSong === 'Loading...' || currentSong === '') {
-            showNotification('Wait for a song to load before sharing!', 'fas fa-info-circle');
-            isSongShared = false;
-            return;
+        let displayTitle = '';
+
+        if (song) {
+            sharedSongData = {
+                title: song.title,
+                artwork: song.cover,
+                station: song.station
+            };
+            displayTitle = song.title;
+        } else {
+            const currentSong = document.getElementById('streamTitle').textContent;
+            if (!currentSong || currentSong === 'Loading...' || currentSong === '') {
+                showNotification('Wait for a song to load before sharing!', 'fas fa-info-circle');
+                isSongShared = false;
+                return;
+            }
+            sharedSongData = null; // Use live data
+            displayTitle = currentSong;
         }
 
         shareBtn.classList.add('active');
         preview.classList.remove('hidden');
-        previewText.textContent = `Sharing: ${currentSong}`;
-        showNotification('Current song attached to your message!', 'fas fa-music');
+        previewText.textContent = `Sharing: ${displayTitle}`;
+        showNotification(`${song ? 'Selected' : 'Current'} song attached to your message!`, 'fas fa-music');
     } else {
+        sharedSongData = null;
         shareBtn.classList.remove('active');
         preview.classList.add('hidden');
     }
@@ -1983,11 +1998,20 @@ window.sendChatMessage = async function () {
     }
 
     try {
-        const songData = isSongShared ? {
-            title: document.getElementById('streamTitle').textContent,
-            artwork: document.getElementById('albumCover').src,
-            station: document.getElementById('StationNameInh1').textContent
-        } : null;
+        let songData = null;
+        if (isSongShared) {
+            if (sharedSongData) {
+                // Use specific song from history/favorites
+                songData = sharedSongData;
+            } else {
+                // Use currently playing song
+                songData = {
+                    title: document.getElementById('streamTitle').textContent,
+                    artwork: document.getElementById('albumCover').src,
+                    station: document.getElementById('StationNameInh1').textContent
+                };
+            }
+        }
 
         const response = await fetch(`${CHAT_API_BASE}/chat/send`, {
             method: 'POST',
@@ -2154,6 +2178,22 @@ function addToSongHistory(title, coverUrl) {
     renderHistoryList();
 }
 
+window.shareSongToChat = function (title, cover, station) {
+    if (!discordAuthToken) {
+        showNotification('Login with Discord to share in chat!', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    // Switch to chat section
+    switchSection('chat');
+
+    // Toggle sharing for this specific song
+    toggleSongShare(true, { title, cover, station });
+
+    // Close history drawer
+    if (typeof toggleHistoryDrawer === 'function') toggleHistoryDrawer();
+};
+
 function toggleFavorite(title) {
     const idx = songFavorites.findIndex(s => s.title === title);
     if (idx !== -1) {
@@ -2200,6 +2240,10 @@ function renderHistoryList() {
                     </div>
                 </div>
                 <div class="history-item-actions">
+                    <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')"
+                        title="Share to Chat">
+                        <i class="fas fa-comment-alt"></i>
+                    </button>
                     <button class="history-action-btn ${fav ? 'favorited' : ''}" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
                         title="${fav ? 'Remove from favorites' : 'Add to favorites'}">
                         <i class="fas fa-heart"></i>
@@ -2238,6 +2282,10 @@ function renderFavoritesList() {
                     </div>
                 </div>
                 <div class="history-item-actions">
+                    <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')"
+                        title="Share to Chat">
+                        <i class="fas fa-comment-alt"></i>
+                    </button>
                     <button class="history-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
                         title="Remove from favorites">
                         <i class="fas fa-heart"></i>
