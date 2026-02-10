@@ -1363,7 +1363,7 @@ window.openDiscordProfileModal = async function () {
             item.innerHTML = `
                 ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon" alt="Icon">` : '<i class="fab fa-discord"></i>'}
                 <div class="membership-info">
-                    <div class="membership-guild-name">${result.guildName || 'Unknown Server'}</div>
+                    <div class="membership-guild-name">${result.guildName || GUILD_DISPLAY_NAMES[guild.id] || `Server ${guild.id}`}</div>
                     <div class="membership-status-text">Official Server Member</div>
                 </div>
             `;
@@ -1372,7 +1372,7 @@ window.openDiscordProfileModal = async function () {
             item.innerHTML = `
                 ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon grayscale" alt="Icon">` : '<i class="fas fa-times-circle"></i>'}
                 <div class="membership-info">
-                    <div class="membership-guild-name">${result.guildName || 'Unknown Server'}</div>
+                    <div class="membership-guild-name">${result.guildName || GUILD_DISPLAY_NAMES[guild.id] || `Server ${guild.id}`}</div>
                     <div class="membership-status-text">Not a member</div>
                 </div>
             `;
@@ -1435,6 +1435,11 @@ window.logoutDiscord = async function () {
 let lastDiscordShareTime = parseInt(localStorage.getItem('RadioGaming-lastDiscordShareTime')) || 0;
 const DISCORD_SHARE_COOLDOWN = 120000; // 120 seconds in ms
 const GUILD_CHECK_CACHE_DURATION = 120000; // 2 minutes cache (reduced for better responsiveness)
+
+const GUILD_DISPLAY_NAMES = {
+    '637696690853511184': 'Supported Server 1',
+    '706179463288979519': 'Supported Server 2'
+};
 
 // Guild list — each entry has a guild ID, webhook URL, and membership gating flag
 // Server name and icon are fetched live from Discord's API
@@ -1607,12 +1612,7 @@ window.openShareModal = function () {
             if (result.guildName) {
                 nameEl.textContent = result.guildName;
             } else {
-                // Determine a friendly fallback name for the specific guilds
-                const serverNames = {
-                    '637696690853511184': 'Supported Server 1',
-                    '706179463288979519': 'Supported Server 2'
-                };
-                nameEl.textContent = serverNames[guild.id] || `Server ${guild.id}`;
+                nameEl.textContent = GUILD_DISPLAY_NAMES[guild.id] || `Server ${guild.id}`;
             }
 
             if (result.guildIcon) {
