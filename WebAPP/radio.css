@@ -1004,10 +1004,15 @@ body.is-fullscreen main {
 @media (max-width: 600px) {
     .header-content {
         height: 50px;
+        justify-content: flex-end;
     }
 
-    .logo span {
-        display: none;
+    .logo {
+        display: none !important;
+    }
+
+    h1#StationNameInh1 {
+        display: none !important;
     }
 
     .status-badge {
@@ -1038,6 +1043,12 @@ body.is-fullscreen main {
         width: 100%;
         max-width: 340px;
         padding: 24px 18px;
+    }
+
+    #playPauseIcon {
+        width: 38px;
+        height: 38px;
+        font-size: 14px;
     }
 
 
