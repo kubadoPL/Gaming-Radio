@@ -29,8 +29,17 @@ if use_discord:
 else:
     RPC = None
 
+# Persistence Path for localStorage, tokens, and settings
+storage_path = os.path.join(
+    os.getenv("APPDATA", os.path.expanduser("~")), "RadioGamingDesktop"
+)
+if not os.path.exists(storage_path):
+    os.makedirs(storage_path)
+
 window = webview.create_window(
-    "Radio Gaming Desktop", "https://radio-gaming.stream/", maximized=True
+    "Radio Gaming Desktop",
+    "https://radio-gaming.stream/",
+    maximized=True,
 )
 
 
@@ -140,7 +149,7 @@ try:
     window.events.closed += (
         on_closed  # Attach the on_closed function to the closing event of the window
     )
-    webview.start()
+    webview.start(storage_path=storage_path, private_mode=False)
 except KeyboardInterrupt:
     stop_event.set()  # Set the stop event to terminate the update_rpc_periodically thread
     sys.exit(0)
