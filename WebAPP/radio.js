@@ -1308,6 +1308,54 @@ function updateAuthUI(isLoggedIn) {
     }
 }
 
+window.openDiscordProfileModal = async function () {
+    if (!discordUser) return;
+
+    // Show modal
+    const overlay = document.getElementById('discord-profile-modal-overlay');
+    overlay.classList.remove('hidden');
+
+    // Populate data
+    document.getElementById('modal-discord-avatar').src = discordUser.avatar_url;
+    document.getElementById('modal-discord-name').textContent = discordUser.global_name || discordUser.username;
+    document.getElementById('modal-discord-username').textContent = `@${discordUser.username}`;
+
+    // Reset membership status UI
+    const membershipBadge = document.getElementById('guild-membership-status');
+    membershipBadge.className = 'membership-badge loading';
+    membershipBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Verifying Radio GAMING Server Membership...</span>';
+
+    // Check guild membership (637696690853511184)
+    const guildId = '637696690853511184';
+    const result = await checkUserInGuild(guildId);
+
+    if (result.inGuild) {
+        membershipBadge.className = 'membership-badge member';
+        membershipBadge.innerHTML = `
+            ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon" alt="Icon">` : '<i class="fab fa-discord"></i>'}
+            <div class="membership-info">
+                <div class="membership-guild-name">${result.guildName || 'Radio GAMING'}</div>
+                <div class="membership-status-text">Official Server Member</div>
+            </div>
+        `;
+    } else {
+        membershipBadge.className = 'membership-badge not-member';
+        membershipBadge.innerHTML = `
+            ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon grayscale" alt="Icon">` : '<i class="fas fa-times-circle"></i>'}
+            <div class="membership-info">
+                <div class="membership-guild-name">${result.guildName || 'Radio GAMING'}</div>
+                <div class="membership-status-text">Join to access more features!</div>
+            </div>
+        `;
+    }
+};
+
+window.closeDiscordProfileModal = function (event) {
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = document.getElementById('discord-profile-modal-overlay');
+    overlay.classList.add('hidden');
+};
+
 window.initiateDiscordLogin = async function () {
     try {
         const response = await fetch(`${CHAT_API_BASE}/discord/login`);

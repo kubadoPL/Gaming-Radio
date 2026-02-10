@@ -84,10 +84,11 @@
                             <i class="fab fa-discord"></i>
                             <span>Login</span>
                         </button>
-                        <div id="discord-user-info" class="discord-user hidden">
+                        <div id="discord-user-info" class="discord-user hidden" onclick="openDiscordProfileModal()">
                             <img id="discord-user-avatar" class="discord-avatar" src="" alt="Avatar">
                             <span id="discord-user-name"></span>
-                            <button class="discord-logout-btn" onclick="logoutDiscord()" title="Logout">
+                            <button class="discord-logout-btn" onclick="logoutDiscord(); event.stopPropagation()"
+                                title="Logout">
                                 <i class="fas fa-sign-out-alt"></i>
                             </button>
                         </div>
@@ -384,6 +385,47 @@
                         <button id="share-custom-webhook-btn" class="share-webhook-btn"
                             onclick="shareToCustomWebhook()">
                             <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discord Profile Modal -->
+    <div id="discord-profile-modal-overlay" class="share-modal-overlay hidden"
+        onclick="closeDiscordProfileModal(event)">
+        <div class="share-modal profile-modal" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <i class="fab fa-discord"></i>
+                <h3>Discord Profile</h3>
+                <button class="share-modal-close" onclick="closeDiscordProfileModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="share-modal-body">
+                <div class="profile-card">
+                    <div class="profile-banner"></div>
+                    <div class="profile-avatar-container">
+                        <img id="modal-discord-avatar" class="profile-modal-avatar" src="" alt="Avatar">
+                    </div>
+                    <div class="profile-content">
+                        <div id="modal-discord-name" class="profile-modal-name"></div>
+                        <div id="modal-discord-username" class="profile-modal-username"></div>
+
+                        <div class="profile-divider"></div>
+
+                        <div class="profile-section">
+                            <div class="profile-label">Server Membership</div>
+                            <div id="guild-membership-status" class="membership-badge loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span>Verifying Radio GAMING Server Membership...</span>
+                            </div>
+                        </div>
+
+                        <button class="profile-logout-btn" onclick="logoutDiscord(); closeDiscordProfileModal()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
                         </button>
                     </div>
                 </div>

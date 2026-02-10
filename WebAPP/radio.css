@@ -2023,7 +2023,7 @@ body::-webkit-scrollbar-thumb {
     .tooltip {
         width: 140px;
         padding: 10px;
-        bottom: 60%;
+        bottom: 50%;
     }
 
     .tooltip-track {
@@ -3703,4 +3703,166 @@ body::-webkit-scrollbar-thumb {
         height: 32px;
         justify-content: center;
     }
+}
+
+/* ========================
+   DISCORD PROFILE MODAL
+   ======================== */
+
+.profile-modal {
+    width: 340px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.profile-card {
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-banner {
+    height: 80px;
+    background: var(--active-station-color);
+    width: 100%;
+    opacity: 0.8;
+}
+
+.profile-avatar-container {
+    padding: 0 16px;
+    margin-top: -38px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.profile-modal-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 6px solid rgba(15, 12, 30, 0.99);
+    background: rgba(15, 12, 30, 0.99);
+}
+
+.profile-content {
+    padding: 16px;
+    text-align: left;
+}
+
+.profile-modal-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.profile-modal-username {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 12px;
+}
+
+.profile-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 16px 0;
+}
+
+.profile-section {
+    margin-bottom: 20px;
+}
+
+.profile-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.membership-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.membership-badge.loading {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.membership-badge.member {
+    background: rgba(88, 101, 242, 0.15);
+    border-color: rgba(88, 101, 242, 0.4);
+    color: #5865F2;
+    font-weight: 600;
+}
+
+.membership-badge.not-member {
+    background: rgba(255, 77, 77, 0.1);
+    border-color: rgba(255, 77, 77, 0.2);
+    color: #ff4d4d;
+}
+
+.membership-badge i {
+    font-size: 16px;
+}
+
+.membership-guild-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.membership-guild-icon.grayscale {
+    filter: grayscale(1) opacity(0.5);
+}
+
+.membership-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    gap: 1px;
+}
+
+.membership-guild-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.membership-status-text {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+}
+
+.profile-logout-btn {
+    width: 100%;
+    background: rgba(255, 77, 77, 0.1);
+    border: 1px solid rgba(255, 77, 77, 0.2);
+    color: #ff4d4d;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+    margin-top: 10px;
+}
+
+.profile-logout-btn:hover {
+    background: rgba(255, 77, 77, 0.2);
+    transform: translateY(-2px);
 }
