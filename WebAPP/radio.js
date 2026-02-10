@@ -484,7 +484,7 @@ async function getSpotifyAccessToken() {
 async function fetchAlbumCovers() {
     updateLoadingProgress(10, "Loading Artwork Data...");
     try {
-        const response = await fetch('https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/albumCovers.json');
+        const response = await fetch('https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/albumCovers.json?t=' + Date.now());
         const data = await response.json();
         Object.assign(albumCovers, data);
         console.log('Album covers fetched successfully:', albumCovers);
