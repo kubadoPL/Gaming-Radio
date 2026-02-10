@@ -1002,9 +1002,26 @@ body.is-fullscreen main {
 }
 
 @media (max-width: 600px) {
+    nav {
+        padding: 0 12px;
+    }
+
     .header-content {
-        height: 50px;
-        justify-content: flex-end;
+        height: 54px;
+        justify-content: space-between;
+        padding: 0;
+    }
+
+    nav ul {
+        gap: 8px;
+    }
+
+    nav ul li a {
+        padding: 8px 6px;
+    }
+
+    .header-right {
+        gap: 8px;
     }
 
     .logo {
