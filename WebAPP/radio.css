@@ -2023,7 +2023,7 @@ body::-webkit-scrollbar-thumb {
     .tooltip {
         width: 140px;
         padding: 10px;
-        bottom: 115%;
+        bottom: 60%;
     }
 
     .tooltip-track {

@@ -1580,28 +1580,70 @@ window.shareToCustomWebhook = async function () {
 
     await shareToWebhook(webhookUrl);
 
-    // Save webhook to localStorage on success
-    saveCustomWebhook(webhookUrl);
+    // Save webhook with metadata to localStorage on success
+    await saveCustomWebhook(webhookUrl);
     input.value = '';
     renderSavedWebhooks();
 };
 
 // Saved custom webhooks management
+// Each entry: { url, webhookName, guildId, guildName, guildIcon }
 function getSavedWebhooks() {
-    return JSON.parse(localStorage.getItem('RadioGaming-savedWebhooks') || '[]');
+    const raw = JSON.parse(localStorage.getItem('RadioGaming-savedWebhooks') || '[]');
+    // Migrate old format (plain URL strings) to object format
+    return raw.map(entry => {
+        if (typeof entry === 'string') {
+            return { url: entry, webhookName: null, guildId: null, guildName: null, guildIcon: null };
+        }
+        return entry;
+    });
 }
 
-function saveCustomWebhook(url) {
-    const saved = getSavedWebhooks();
-    // Don't save duplicates
-    if (!saved.includes(url)) {
-        saved.push(url);
-        localStorage.setItem('RadioGaming-savedWebhooks', JSON.stringify(saved));
+async function fetchWebhookInfo(webhookUrl) {
+    try {
+        const response = await fetch(webhookUrl, { method: 'GET' });
+        if (!response.ok) return null;
+        const data = await response.json();
+        return {
+            webhookName: data.name || null,
+            guildId: data.guild_id || null
+        };
+    } catch (error) {
+        console.error('Failed to fetch webhook info:', error);
+        return null;
     }
 }
 
+async function saveCustomWebhook(url) {
+    const saved = getSavedWebhooks();
+    // Don't save duplicates
+    if (saved.some(entry => entry.url === url)) return;
+
+    // Fetch webhook metadata
+    let webhookName = null;
+    let guildId = null;
+    let guildName = null;
+    let guildIcon = null;
+
+    const webhookInfo = await fetchWebhookInfo(url);
+    if (webhookInfo) {
+        webhookName = webhookInfo.webhookName;
+        guildId = webhookInfo.guildId;
+
+        // Try to get guild name/icon if we have a guild ID and auth token
+        if (guildId && discordAuthToken) {
+            const guildResult = await checkUserInGuild(guildId);
+            if (guildResult.guildName) guildName = guildResult.guildName;
+            if (guildResult.guildIcon) guildIcon = guildResult.guildIcon;
+        }
+    }
+
+    saved.push({ url, webhookName, guildId, guildName, guildIcon });
+    localStorage.setItem('RadioGaming-savedWebhooks', JSON.stringify(saved));
+}
+
 function removeCustomWebhook(url) {
-    const saved = getSavedWebhooks().filter(w => w !== url);
+    const saved = getSavedWebhooks().filter(w => w.url !== url);
     localStorage.setItem('RadioGaming-savedWebhooks', JSON.stringify(saved));
     renderSavedWebhooks();
 }
@@ -1614,38 +1656,77 @@ function renderSavedWebhooks() {
     const saved = getSavedWebhooks();
     if (saved.length === 0) return;
 
-    saved.forEach(url => {
-        // Extract a short label from the webhook URL (last segment of the path)
-        const urlParts = url.split('/');
-        const shortId = urlParts[urlParts.length - 2] || 'webhook';
-        const label = `Webhook ...${shortId.slice(-8)}`;
+    saved.forEach(entry => {
+        const displayName = entry.guildName || entry.webhookName || `Webhook ...${entry.url.split('/').slice(-2, -1)[0].slice(-8)}`;
+        const subtitle = entry.guildName && entry.webhookName
+            ? `#${entry.webhookName}`
+            : 'Click to share';
 
         const item = document.createElement('div');
         item.className = 'share-guild-item';
-        item.innerHTML = `
-            <div class="share-guild-icon placeholder"><i class="fas fa-link"></i></div>
-            <div class="share-guild-info">
-                <div class="share-guild-name">${label}</div>
-                <div class="share-guild-desc">Click to share</div>
-            </div>
-            <i class="fas fa-times share-guild-remove" title="Remove saved webhook"></i>
-            <i class="fas fa-chevron-right share-guild-arrow"></i>
-        `;
+
+        if (entry.guildIcon) {
+            item.innerHTML = `
+                <img class="share-guild-icon" src="${entry.guildIcon}" alt="${displayName}">
+                <div class="share-guild-info">
+                    <div class="share-guild-name">${displayName}</div>
+                    <div class="share-guild-desc">${subtitle}</div>
+                </div>
+                <i class="fas fa-times share-guild-remove" title="Remove saved webhook"></i>
+                <i class="fas fa-chevron-right share-guild-arrow"></i>
+            `;
+        } else {
+            item.innerHTML = `
+                <div class="share-guild-icon placeholder"><i class="fas fa-link"></i></div>
+                <div class="share-guild-info">
+                    <div class="share-guild-name">${displayName}</div>
+                    <div class="share-guild-desc">${subtitle}</div>
+                </div>
+                <i class="fas fa-times share-guild-remove" title="Remove saved webhook"></i>
+                <i class="fas fa-chevron-right share-guild-arrow"></i>
+            `;
+        }
 
         // Share on click (but not on remove button)
         item.addEventListener('click', (e) => {
             if (e.target.closest('.share-guild-remove')) return;
-            shareToWebhook(url);
+            shareToWebhook(entry.url);
         });
 
         // Remove button
         const removeBtn = item.querySelector('.share-guild-remove');
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            removeCustomWebhook(url);
+            removeCustomWebhook(entry.url);
         });
 
         container.appendChild(item);
+
+        // If missing metadata, try to fetch it in the background and update
+        if (!entry.guildName && !entry.webhookName) {
+            fetchWebhookInfo(entry.url).then(async (info) => {
+                if (!info) return;
+                entry.webhookName = info.webhookName;
+                entry.guildId = info.guildId;
+
+                if (info.guildId && discordAuthToken) {
+                    const guildResult = await checkUserInGuild(info.guildId);
+                    if (guildResult.guildName) entry.guildName = guildResult.guildName;
+                    if (guildResult.guildIcon) entry.guildIcon = guildResult.guildIcon;
+                }
+
+                // Update localStorage with enriched data
+                const allSaved = getSavedWebhooks();
+                const idx = allSaved.findIndex(s => s.url === entry.url);
+                if (idx !== -1) {
+                    allSaved[idx] = entry;
+                    localStorage.setItem('RadioGaming-savedWebhooks', JSON.stringify(allSaved));
+                }
+
+                // Re-render to show updated info
+                renderSavedWebhooks();
+            });
+        }
     });
 }
 
