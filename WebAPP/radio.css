@@ -328,6 +328,16 @@ audio {
     z-index: 10;
 }
 
+#playPauseIcon.loading i {
+    opacity: 0;
+    transform: scale(0.5);
+    position: absolute;
+}
+
+#playPauseIcon.loading .lds-ripple-small {
+    display: block;
+}
+
 #playPauseIcon::after {
     content: '';
     position: absolute;
@@ -1345,15 +1355,15 @@ body::-webkit-scrollbar-track {
     border-radius: 10px;
 }
 
-.loading-screen .lds-ripple {
+/* Ripple Animation Generic */
+.lds-ripple {
     display: inline-block;
     position: relative;
     width: 80px;
     height: 80px;
-    margin-bottom: -10px;
 }
 
-.loading-screen .lds-ripple div {
+.lds-ripple div {
     position: absolute;
     border: 4px solid #fff;
     opacity: 1;
@@ -1361,8 +1371,36 @@ body::-webkit-scrollbar-track {
     animation: lds-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
 }
 
-.loading-screen .lds-ripple div:nth-child(2) {
+.lds-ripple div:nth-child(2) {
     animation-delay: -0.5s;
+}
+
+/* Small variation for the play button */
+.lds-ripple-small {
+    display: none;
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.lds-ripple-small div {
+    position: absolute;
+    border: 3px solid #fff;
+    opacity: 1;
+    border-radius: 50%;
+    animation: lds-ripple-small 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+.lds-ripple-small div:nth-child(2) {
+    animation-delay: -0.5s;
+}
+
+.loading-screen .lds-ripple {
+    margin-bottom: -10px;
 }
 
 @keyframes lds-ripple {
@@ -1395,6 +1433,40 @@ body::-webkit-scrollbar-track {
         left: 0px;
         width: 72px;
         height: 72px;
+        opacity: 0;
+    }
+}
+
+@keyframes lds-ripple-small {
+    0% {
+        top: 17px;
+        left: 17px;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+
+    4.9% {
+        top: 17px;
+        left: 17px;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+
+    5% {
+        top: 17px;
+        left: 17px;
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+
+    100% {
+        top: 0px;
+        left: 0px;
+        width: 34px;
+        height: 34px;
         opacity: 0;
     }
 }

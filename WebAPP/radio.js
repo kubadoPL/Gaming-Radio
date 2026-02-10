@@ -173,22 +173,42 @@ function updateStatusBadge(status) {
         case 'online':
             badge.classList.add('online');
             text.textContent = 'ONLINE';
+            updatePlayPauseUI('playing');
             break;
         case 'loading':
         case 'waiting':
         case 'buffering':
             badge.classList.add('loading');
             text.textContent = 'LOADING';
+            updatePlayPauseUI('loading');
             break;
         case 'paused':
             badge.classList.add('paused');
             text.textContent = 'PAUSED';
+            updatePlayPauseUI('paused');
             break;
         case 'offline':
         case 'error':
             badge.classList.add('offline');
             text.textContent = 'OFFLINE';
+            updatePlayPauseUI('paused');
             break;
+    }
+}
+
+function updatePlayPauseUI(state) {
+    if (!playPauseIcon) return;
+    const icon = playPauseIcon.querySelector('i');
+    if (!icon) return;
+
+    playPauseIcon.classList.remove('loading');
+
+    if (state === 'playing') {
+        icon.className = 'fas fa-pause';
+    } else if (state === 'loading') {
+        playPauseIcon.classList.add('loading');
+    } else {
+        icon.className = 'fas fa-play';
     }
 }
 
@@ -607,13 +627,13 @@ function updateMediaSessionMetadata(title, artwork) {
         });
 
         navigator.mediaSession.setActionHandler('play', () => {
-            if (audio) { audio.play(); playPauseIcon.className = 'fas fa-pause'; }
+            if (audio) { audio.play(); updatePlayPauseUI('playing'); }
         });
         navigator.mediaSession.setActionHandler('pause', () => {
-            if (audio) { audio.pause(); playPauseIcon.className = 'fas fa-play'; }
+            if (audio) { audio.pause(); updatePlayPauseUI('paused'); }
         });
         navigator.mediaSession.setActionHandler('stop', () => {
-            if (audio) { audio.pause(); playPauseIcon.className = 'fas fa-play'; }
+            if (audio) { audio.pause(); updatePlayPauseUI('paused'); }
         });
     }
 }
@@ -650,11 +670,11 @@ function playPause() {
     if (audio.paused) {
         audio.load();
         audio.play();
-        playPauseIcon.className = 'fas fa-pause';
+        updatePlayPauseUI('loading');
         showNotification("Now Playing!");
     } else {
         audio.pause();
-        playPauseIcon.className = 'fas fa-play';
+        updatePlayPauseUI('paused');
         showNotification("Paused!");
     }
 
@@ -871,7 +891,7 @@ function changeStation(source, name, metadataURL) {
         audio.src = source;
         audio.load();
         audio.play().catch(e => console.error("Playback failed:", e));
-        playPauseIcon.className = 'fas fa-pause';
+        updatePlayPauseUI('loading');
 
         // Initialize/Resume visualizer
         if (!isVisualizerInitialized) {
