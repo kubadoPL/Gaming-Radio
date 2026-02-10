@@ -133,6 +133,12 @@ def discord_callback():
             "username": user_data["username"],
             "global_name": user_data.get("global_name", user_data["username"]),
             "avatar_url": avatar_url,
+            "banner_url": (
+                f"https://cdn.discordapp.com/banners/{user_data['id']}/{user_data['banner']}.png?size=600"
+                if user_data.get("banner")
+                else None
+            ),
+            "accent_color": user_data.get("accent_color"),
             "discord_access_token": token_json["access_token"],
             "expires_at": (datetime.utcnow() + timedelta(days=7)).isoformat(),
         }

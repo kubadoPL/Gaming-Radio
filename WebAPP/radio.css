@@ -476,7 +476,7 @@ audio {
 }
 
 .volume-slider {
-    width: 70px;
+    width: 100px;
     height: 4px;
     background: rgba(255, 255, 255, 0.15);
     cursor: pointer;
@@ -3715,14 +3715,19 @@ body::-webkit-scrollbar-thumb {
     overflow: hidden !important;
 }
 
+.profile-modal .share-modal-body {
+    padding: 0 !important;
+}
+
 .profile-card {
     background: transparent;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .profile-banner {
-    height: 80px;
+    height: 100px;
     background: var(--active-station-color);
     width: 100%;
     opacity: 0.8;
@@ -3730,17 +3735,20 @@ body::-webkit-scrollbar-thumb {
 
 .profile-avatar-container {
     padding: 0 16px;
-    margin-top: -38px;
+    margin-top: -45px;
     display: flex;
     justify-content: flex-start;
+    position: relative;
+    z-index: 2;
 }
 
 .profile-modal-avatar {
-    width: 80px;
-    height: 80px;
+    width: 85px;
+    height: 85px;
     border-radius: 50%;
-    border: 6px solid rgba(15, 12, 30, 0.99);
-    background: rgba(15, 12, 30, 0.99);
+    border: 5px solid #1a1631;
+    background: #1a1631;
+    object-fit: cover;
 }
 
 .profile-content {
@@ -3776,6 +3784,13 @@ body::-webkit-scrollbar-thumb {
     color: rgba(255, 255, 255, 0.4);
     text-transform: uppercase;
     letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.profile-guild-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     margin-bottom: 8px;
 }
 

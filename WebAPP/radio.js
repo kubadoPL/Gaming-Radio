@@ -344,7 +344,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    changeVolume(0.1);
+    const savedVolume = localStorage.getItem('RadioGaming-volume');
+    const initialVolume = savedVolume !== null ? parseFloat(savedVolume) : 0.1;
+    changeVolume(initialVolume);
+    const volumeSlider = document.querySelector('.volume-slider');
+    if (volumeSlider) volumeSlider.value = initialVolume;
 
     // Fetch Spotify token early for loading progress
     getSpotifyAccessToken();
@@ -796,15 +800,19 @@ function animateVisualizer() {
     }
 }
 
-let previousVolume = 0.1;
+let previousVolume = parseFloat(localStorage.getItem('RadioGaming-volume')) || 0.1;
 
 function changeVolume(value) {
+    const vol = parseFloat(value);
     if (gainNode) {
-        gainNode.gain.value = value;
+        gainNode.gain.value = vol;
     } else if (audio) {
-        audio.volume = value;
+        audio.volume = vol;
     }
-    previousVolume = value;
+    if (vol > 0) {
+        previousVolume = vol;
+        localStorage.setItem('RadioGaming-volume', vol);
+    }
 }
 
 // Restore volume when clicking the volume-up icon
@@ -1316,38 +1324,60 @@ window.openDiscordProfileModal = async function () {
     overlay.classList.remove('hidden');
 
     // Populate data
+    const modalBanner = document.querySelector('.profile-banner');
+    if (modalBanner) {
+        if (discordUser.banner_url) {
+            modalBanner.style.backgroundImage = `url(${discordUser.banner_url})`;
+            modalBanner.style.backgroundSize = 'cover';
+            modalBanner.style.backgroundPosition = 'center';
+            modalBanner.style.backgroundColor = 'transparent';
+        } else if (discordUser.accent_color) {
+            const hexColor = '#' + discordUser.accent_color.toString(16).padStart(6, '0');
+            modalBanner.style.backgroundImage = 'none';
+            modalBanner.style.backgroundColor = hexColor;
+        } else {
+            modalBanner.style.backgroundImage = 'none';
+            modalBanner.style.backgroundColor = 'var(--active-station-color)';
+        }
+    }
+
     document.getElementById('modal-discord-avatar').src = discordUser.avatar_url;
     document.getElementById('modal-discord-name').textContent = discordUser.global_name || discordUser.username;
     document.getElementById('modal-discord-username').textContent = `@${discordUser.username}`;
 
-    // Reset membership status UI
-    const membershipBadge = document.getElementById('guild-membership-status');
-    membershipBadge.className = 'membership-badge loading';
-    membershipBadge.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Verifying Radio GAMING Server Membership...</span>';
+    // Clear and reset guild list
+    const guildListContainer = document.getElementById('profile-guild-list');
+    guildListContainer.innerHTML = '';
 
-    // Check guild membership (637696690853511184)
-    const guildId = '637696690853511184';
-    const result = await checkUserInGuild(guildId);
+    // Check membership for all guilds in SHARE_GUILDS
+    SHARE_GUILDS.forEach(async (guild) => {
+        const item = document.createElement('div');
+        item.className = 'membership-badge loading';
+        item.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Checking...</span>';
+        guildListContainer.appendChild(item);
 
-    if (result.inGuild) {
-        membershipBadge.className = 'membership-badge member';
-        membershipBadge.innerHTML = `
-            ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon" alt="Icon">` : '<i class="fab fa-discord"></i>'}
-            <div class="membership-info">
-                <div class="membership-guild-name">${result.guildName || 'Radio GAMING'}</div>
-                <div class="membership-status-text">Official Server Member</div>
-            </div>
-        `;
-    } else {
-        membershipBadge.className = 'membership-badge not-member';
-        membershipBadge.innerHTML = `
-            ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon grayscale" alt="Icon">` : '<i class="fas fa-times-circle"></i>'}
-            <div class="membership-info">
-                <div class="membership-guild-name">${result.guildName || 'Radio GAMING'}</div>
-                <div class="membership-status-text">Join to access more features!</div>
-            </div>
-        `;
-    }
+        const result = await checkUserInGuild(guild.id);
+
+        if (result.inGuild) {
+            item.className = 'membership-badge member';
+            item.innerHTML = `
+                ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon" alt="Icon">` : '<i class="fab fa-discord"></i>'}
+                <div class="membership-info">
+                    <div class="membership-guild-name">${result.guildName || 'Unknown Server'}</div>
+                    <div class="membership-status-text">Official Server Member</div>
+                </div>
+            `;
+        } else {
+            item.className = 'membership-badge not-member';
+            item.innerHTML = `
+                ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon grayscale" alt="Icon">` : '<i class="fas fa-times-circle"></i>'}
+                <div class="membership-info">
+                    <div class="membership-guild-name">${result.guildName || 'Unknown Server'}</div>
+                    <div class="membership-status-text">Not a member</div>
+                </div>
+            `;
+        }
+    });
 };
 
 window.closeDiscordProfileModal = function (event) {
@@ -1410,6 +1440,11 @@ const SHARE_GUILDS = [
     {
         id: '637696690853511184',
         webhookUrl: 'https://discord.com/api/webhooks/1470563794424955069/Z5r9gtLBDyrzSYFUBQ_04bQwE5MaW7pzlTUfbcplEXpKEwo9lbGo2XPh8qpWkJJWaWMz',
+        requireGuildMembership: true
+    },
+    {
+        id: '706179463288979519',
+        webhookUrl: 'https://discord.com/api/webhooks/1470802278515605647/uEqVAqq3IxU5L20IQKeLnckAj1WyHWQOU36wsq4a94rzOwmr5cfZozUaOpoL6jcgGPws',
         requireGuildMembership: true
     }
 ];
