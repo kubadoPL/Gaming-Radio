@@ -1356,7 +1356,7 @@ window.openDiscordProfileModal = async function () {
         item.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Checking...</span>';
         guildListContainer.appendChild(item);
 
-        const result = await checkUserInGuild(guild.id);
+        const result = await checkUserInGuild(guild.id, true);
 
         if (result.inGuild) {
             item.className = 'membership-badge member';
@@ -1607,7 +1607,12 @@ window.openShareModal = function () {
             if (result.guildName) {
                 nameEl.textContent = result.guildName;
             } else {
-                nameEl.textContent = `Server ${guild.id}`;
+                // Determine a friendly fallback name for the specific guilds
+                const serverNames = {
+                    '637696690853511184': 'Supported Server 1',
+                    '706179463288979519': 'Supported Server 2'
+                };
+                nameEl.textContent = serverNames[guild.id] || `Server ${guild.id}`;
             }
 
             if (result.guildIcon) {
@@ -1650,10 +1655,11 @@ async function shareToGuild(guild) {
     if (item) return; // Already sharing
 
     // Find and mark the guild item as sharing
-    const guildItems = document.querySelectorAll('.share-guild-item');
     guildItems.forEach(el => {
+        // Find if this element matches the guild we are sharing to
+        // We can't rely on text name alone, let's look for the icon or name matches
         const nameEl = el.querySelector('.share-guild-name');
-        if (nameEl && nameEl.textContent === guild.name) {
+        if (nameEl && (nameEl.textContent === guild.id || el.innerHTML.includes(guild.webhookUrl))) {
             el.setAttribute('data-sharing', 'true');
             const desc = el.querySelector('.share-guild-desc');
             const arrow = el.querySelector('.share-guild-arrow');

@@ -171,37 +171,85 @@ def check_guild(guild_id):
         return jsonify({"error": "Invalid session"}), 401
 
     session = user_sessions[token]
-    discord_token = session.get("discord_access_token")
-    if not discord_token:
-        return jsonify({"in_guild": False, "error": "No Discord token available"}), 200
 
-    try:
-        guilds_response = http_requests.get(
-            f"{DISCORD_API_URL}/users/@me/guilds?limit=200",
-            headers={"Authorization": f"Bearer {discord_token}"},
+    # Use session cache if available and not expired (5 min cache)
+    now = datetime.utcnow()
+    guilds_cache = session.get("guilds_cache")
+    if guilds_cache and guilds_cache.get("expires_at") > now:
+        guilds = guilds_cache.get("guilds", [])
+    else:
+        discord_token = session.get("discord_access_token")
+        if not discord_token:
+            return jsonify({"in_guild": False, "error": "No Discord token"}), 200
+
+        try:
+            guilds_response = http_requests.get(
+                f"{DISCORD_API_URL}/users/@me/guilds?limit=200",
+                headers={"Authorization": f"Bearer {discord_token}"},
+                timeout=10,
+            )
+
+            if guilds_response.status_code == 429:
+                return (
+                    jsonify({"in_guild": False, "error": "Rate limited by Discord"}),
+                    200,
+                )
+
+            if guilds_response.status_code != 200:
+                return (
+                    jsonify(
+                        {
+                            "in_guild": False,
+                            "error": f"Discord API error: {guilds_response.status_code}",
+                        }
+                    ),
+                    200,
+                )
+
+            guilds = guilds_response.json()
+            if not isinstance(guilds, list):
+                return (
+                    jsonify(
+                        {
+                            "in_guild": False,
+                            "error": "Unexpected Discord response format",
+                        }
+                    ),
+                    200,
+                )
+
+            # Update cache
+            session["guilds_cache"] = {
+                "guilds": guilds,
+                "expires_at": now + timedelta(minutes=5),
+            }
+        except Exception as e:
+            return (
+                jsonify(
+                    {"in_guild": False, "error": f"Failed to fetch guilds: {str(e)}"}
+                ),
+                200,
+            )
+
+    # Search in the (now potentially cached) guilds list
+    matched_guild = next((g for g in guilds if str(g.get("id")) == str(guild_id)), None)
+
+    if matched_guild:
+        icon_hash = matched_guild.get("icon")
+        icon_url = (
+            f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.png?size=128"
+            if icon_hash
+            else None
         )
-        if guilds_response.status_code != 200:
-            return jsonify({"in_guild": False, "error": "Failed to fetch guilds"}), 200
+        return jsonify(
+            {
+                "in_guild": True,
+                "guild_name": matched_guild.get("name"),
+                "guild_icon": icon_url,
+            }
+        )
 
-        guilds = guilds_response.json()
-        matched_guild = next((g for g in guilds if g["id"] == guild_id), None)
-        if matched_guild:
-            icon_hash = matched_guild.get("icon")
-            icon_url = (
-                f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.png?size=128"
-                if icon_hash
-                else None
-            )
-            return jsonify(
-                {
-                    "in_guild": True,
-                    "guild_name": matched_guild.get("name"),
-                    "guild_icon": icon_url,
-                }
-            )
-        return jsonify({"in_guild": False})
-    except Exception as e:
-        return jsonify({"in_guild": False, "error": str(e)}), 200
+    return jsonify({"in_guild": False})
 
 
 @chat_api.route("/chat/history/<station>")
