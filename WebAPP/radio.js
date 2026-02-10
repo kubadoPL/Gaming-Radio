@@ -1019,19 +1019,25 @@ async function fetchSpotifyCovertooltip(query, tooltipElement) {
 
         let bestUrl = fallbackCover;
         let highestScore = -1;
+        let chosenSource = 'fallback';
 
         if (manualData && manualData.score > highestScore) {
             highestScore = manualData.score;
             bestUrl = manualData.url;
+            chosenSource = 'manual';
         }
         if (spotifyData && spotifyData.score > highestScore) {
             highestScore = spotifyData.score;
             bestUrl = spotifyData.url;
+            chosenSource = 'spotify';
         }
         if (youtubeData && youtubeData.score > highestScore) {
             highestScore = youtubeData.score;
             bestUrl = youtubeData.url;
+            chosenSource = 'youtube';
         }
+
+        console.log(`[Tooltip Search] "${query}" | Scores -> Manual: ${manualData ? manualData.score.toFixed(2) : 'N/A'}, Spotify: ${spotifyData ? spotifyData.score.toFixed(2) : 'N/A'}, YouTube: ${youtubeData ? youtubeData.score.toFixed(2) : 'N/A'} | Result: ${chosenSource} (${highestScore.toFixed(2)})`);
 
         if (img) img.src = bestUrl;
     } catch (e) {
