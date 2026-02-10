@@ -1365,6 +1365,7 @@ function updateCurrentStation() {
 }
 
 async function loadChatHistory() {
+    const messagesContainer = document.getElementById('chat-messages');
     try {
         const headers = {};
         if (discordAuthToken) {
@@ -1378,10 +1379,9 @@ async function loadChatHistory() {
             updateOnlineCountUI(data.online_count);
         }
 
-        if (data.messages && data.messages.length > 0) {
-            const messagesContainer = document.getElementById('chat-messages');
-            if (messagesContainer) {
-                // Clear welcome message
+        if (messagesContainer) {
+            if (data.messages && data.messages.length > 0) {
+                // Clear welcome message or loading indicator
                 messagesContainer.innerHTML = '';
                 data.messages.forEach(message => appendChatMessage(message, false));
 
@@ -1393,6 +1393,14 @@ async function loadChatHistory() {
 
                 // Track last message timestamp
                 lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
+            } else if (messagesContainer.querySelector('.chat-loading')) {
+                // No messages and we were loading - show welcome message
+                messagesContainer.innerHTML = `
+                    <div class="chat-welcome">
+                        <i class="fas fa-music"></i>
+                        <p>Welcome to the chat! Say hello to other listeners.</p>
+                    </div>
+                `;
             }
         }
 
@@ -1401,6 +1409,9 @@ async function loadChatHistory() {
         }
     } catch (error) {
         console.error('[CHAT] Error loading history:', error);
+        if (messagesContainer && messagesContainer.querySelector('.chat-loading')) {
+            messagesContainer.innerHTML = '<div class="chat-error"><i class="fas fa-exclamation-circle"></i> Failed to load chat history.</div>';
+        }
     }
 }
 

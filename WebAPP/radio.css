@@ -2415,6 +2415,22 @@ body::-webkit-scrollbar-thumb {
     animation: loadingPulse 1.5s infinite;
 }
 
+.chat-error {
+    padding: 60px 40px;
+    text-align: center;
+    color: #ff4d4d;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.chat-error i {
+    font-size: 24px;
+    opacity: 0.8;
+}
+
 
 /* Auth Required Prompt */
 .chat-auth-required {
