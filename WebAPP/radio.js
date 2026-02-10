@@ -1,6 +1,6 @@
 const albumCovers = {};
 const eventSources = new Map();
-const YOUTUBE_API_KEY = 'AIzaSyCKovpvlpiMKK6BgpndxXWx0l6YpacNjjM'; // USER: Add your YouTube Data API v3 key here
+const YOUTUBE_API_KEY = '';
 
 function switchSection(sectionId) {
     const sections = document.querySelectorAll('.page-section');
