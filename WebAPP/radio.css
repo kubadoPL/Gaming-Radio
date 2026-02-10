@@ -3220,6 +3220,22 @@ body::-webkit-scrollbar-thumb {
     transform: translateX(4px);
 }
 
+.share-guild-remove {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.share-guild-remove:hover {
+    color: #ff4d4d;
+    background: rgba(255, 77, 77, 0.15);
+    transform: scale(1.1);
+}
+
 .share-guild-item.disabled {
     opacity: 0.4;
     cursor: not-allowed;

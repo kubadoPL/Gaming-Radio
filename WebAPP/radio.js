@@ -1518,6 +1518,9 @@ window.openShareModal = function () {
         });
     });
 
+    // Render saved custom webhooks
+    renderSavedWebhooks();
+
     // Show modal
     const overlay = document.getElementById('share-modal-overlay');
     overlay.classList.remove('hidden');
@@ -1576,8 +1579,75 @@ window.shareToCustomWebhook = async function () {
     }
 
     await shareToWebhook(webhookUrl);
+
+    // Save webhook to localStorage on success
+    saveCustomWebhook(webhookUrl);
     input.value = '';
+    renderSavedWebhooks();
 };
+
+// Saved custom webhooks management
+function getSavedWebhooks() {
+    return JSON.parse(localStorage.getItem('RadioGaming-savedWebhooks') || '[]');
+}
+
+function saveCustomWebhook(url) {
+    const saved = getSavedWebhooks();
+    // Don't save duplicates
+    if (!saved.includes(url)) {
+        saved.push(url);
+        localStorage.setItem('RadioGaming-savedWebhooks', JSON.stringify(saved));
+    }
+}
+
+function removeCustomWebhook(url) {
+    const saved = getSavedWebhooks().filter(w => w !== url);
+    localStorage.setItem('RadioGaming-savedWebhooks', JSON.stringify(saved));
+    renderSavedWebhooks();
+}
+
+function renderSavedWebhooks() {
+    const container = document.getElementById('saved-webhooks-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const saved = getSavedWebhooks();
+    if (saved.length === 0) return;
+
+    saved.forEach(url => {
+        // Extract a short label from the webhook URL (last segment of the path)
+        const urlParts = url.split('/');
+        const shortId = urlParts[urlParts.length - 2] || 'webhook';
+        const label = `Webhook ...${shortId.slice(-8)}`;
+
+        const item = document.createElement('div');
+        item.className = 'share-guild-item';
+        item.innerHTML = `
+            <div class="share-guild-icon placeholder"><i class="fas fa-link"></i></div>
+            <div class="share-guild-info">
+                <div class="share-guild-name">${label}</div>
+                <div class="share-guild-desc">Click to share</div>
+            </div>
+            <i class="fas fa-times share-guild-remove" title="Remove saved webhook"></i>
+            <i class="fas fa-chevron-right share-guild-arrow"></i>
+        `;
+
+        // Share on click (but not on remove button)
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('.share-guild-remove')) return;
+            shareToWebhook(url);
+        });
+
+        // Remove button
+        const removeBtn = item.querySelector('.share-guild-remove');
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeCustomWebhook(url);
+        });
+
+        container.appendChild(item);
+    });
+}
 
 // Chat Polling System (no WebSockets needed)
 let chatPollingInterval = null;
