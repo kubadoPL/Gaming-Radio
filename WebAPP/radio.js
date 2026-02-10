@@ -1308,6 +1308,9 @@ function updateAuthUI(isLoggedIn) {
         if (chatAuthPrompt) chatAuthPrompt.classList.add('hidden');
         if (chatMain) chatMain.classList.remove('hidden');
         if (chatUserAvatar) chatUserAvatar.src = discordUser.avatar_url;
+
+        // If user info is fetched, we can pre-check guilds in background with cache
+        SHARE_GUILDS.forEach(guild => checkUserInGuild(guild.id));
     } else {
         if (loginBtn) loginBtn.classList.remove('hidden');
         if (userInfo) userInfo.classList.add('hidden');
@@ -1349,35 +1352,47 @@ window.openDiscordProfileModal = async function () {
     const guildListContainer = document.getElementById('profile-guild-list');
     guildListContainer.innerHTML = '';
 
-    // Check membership for all guilds in SHARE_GUILDS
-    SHARE_GUILDS.forEach(async (guild) => {
+    // Check membership for all guilds in SHARE_GUILDS - Serialized to avoid concurrent request issues
+    for (const guild of SHARE_GUILDS) {
         const item = document.createElement('div');
         item.className = 'membership-badge loading';
         item.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Checking...</span>';
         guildListContainer.appendChild(item);
 
-        const result = await checkUserInGuild(guild.id, true);
+        try {
+            const result = await checkUserInGuild(guild.id, true);
 
-        if (result.inGuild) {
-            item.className = 'membership-badge member';
-            item.innerHTML = `
+            if (result.inGuild) {
+                item.className = 'membership-badge member';
+                item.innerHTML = `
                 ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon" alt="Icon">` : '<i class="fab fa-discord"></i>'}
                 <div class="membership-info">
                     <div class="membership-guild-name">${result.guildName || GUILD_DISPLAY_NAMES[guild.id] || `Server ${guild.id}`}</div>
                     <div class="membership-status-text">Official Server Member</div>
                 </div>
             `;
-        } else {
-            item.className = 'membership-badge not-member';
-            item.innerHTML = `
+            } else {
+                item.className = 'membership-badge not-member';
+                item.innerHTML = `
                 ${result.guildIcon ? `<img src="${result.guildIcon}" class="membership-guild-icon grayscale" alt="Icon">` : '<i class="fas fa-times-circle"></i>'}
                 <div class="membership-info">
                     <div class="membership-guild-name">${result.guildName || GUILD_DISPLAY_NAMES[guild.id] || `Server ${guild.id}`}</div>
                     <div class="membership-status-text">Not a member</div>
                 </div>
             `;
+            }
+        } catch (err) {
+            console.error('Error checking guild:', guild.id, err);
+            item.className = 'membership-badge not-member';
+            item.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="membership-info">
+                    <div class="membership-guild-name">${GUILD_DISPLAY_NAMES[guild.id] || `Server ${guild.id}`}</div>
+                    <div class="membership-status-text">Connection error</div>
+                </div>
+            `;
         }
-    });
+    }
 };
 
 window.closeDiscordProfileModal = function (event) {
@@ -1587,53 +1602,69 @@ window.openShareModal = function () {
     const guildList = document.getElementById('share-guild-list');
     guildList.innerHTML = '';
 
-    SHARE_GUILDS.forEach(guild => {
-        const item = document.createElement('div');
-        item.className = 'share-guild-item loading';
-        item.innerHTML = `
-            <div class="share-guild-icon placeholder"><i class="fab fa-discord"></i></div>
-            <div class="share-guild-info">
-                <div class="share-guild-name">Loading server...</div>
-                <div class="share-guild-desc">Checking membership...</div>
-            </div>
-            <i class="fas fa-spinner share-guild-arrow"></i>
-        `;
-        guildList.appendChild(item);
+    if (!discordUser) {
+        showNotification('Loading user profile...', 'fas fa-spinner fa-spin');
+        // Close modal and wait if this happens
+        closeShareModal();
+        return;
+    }
 
-        // Check guild membership async — also fetches real name/icon
-        checkUserInGuild(guild.id, true).then(result => {
-            item.classList.remove('loading');
-            const iconEl = item.querySelector('.share-guild-icon');
-            const nameEl = item.querySelector('.share-guild-name');
-            const desc = item.querySelector('.share-guild-desc');
-            const arrow = item.querySelector('.share-guild-arrow');
+    // Check membership for all guilds sequentially to avoid race conditions
+    (async () => {
+        for (const guild of SHARE_GUILDS) {
+            const item = document.createElement('div');
+            item.className = 'share-guild-item loading';
+            item.innerHTML = `
+                <div class="share-guild-icon placeholder"><i class="fab fa-discord"></i></div>
+                <div class="share-guild-info">
+                    <div class="share-guild-name">Loading server...</div>
+                    <div class="share-guild-desc">Checking membership...</div>
+                </div>
+                <i class="fas fa-spinner share-guild-arrow"></i>
+            `;
+            guildList.appendChild(item);
 
-            // Update name and icon from API response
-            if (result.guildName) {
-                nameEl.textContent = result.guildName;
-            } else {
-                nameEl.textContent = GUILD_DISPLAY_NAMES[guild.id] || `Server ${guild.id}`;
-            }
+            try {
+                // Check guild membership - use force=true to ensure fresh state when opening modal
+                const result = await checkUserInGuild(guild.id, true);
 
-            if (result.guildIcon) {
-                const img = document.createElement('img');
-                img.className = 'share-guild-icon';
-                img.src = result.guildIcon;
-                img.alt = result.guildName || 'Server';
-                iconEl.replaceWith(img);
-            }
+                item.classList.remove('loading');
+                const iconEl = item.querySelector('.share-guild-icon');
+                const nameEl = item.querySelector('.share-guild-name');
+                const desc = item.querySelector('.share-guild-desc');
+                const arrow = item.querySelector('.share-guild-arrow');
 
-            if (result.inGuild) {
-                desc.textContent = 'Click to share';
-                arrow.className = 'fas fa-chevron-right share-guild-arrow';
-                item.onclick = () => shareToGuild(guild);
-            } else {
+                // Update name and icon from API response
+                nameEl.textContent = result.guildName || GUILD_DISPLAY_NAMES[guild.id] || `Server ${guild.id}`;
+
+                if (result.guildIcon) {
+                    const img = document.createElement('img');
+                    img.className = 'share-guild-icon';
+                    img.src = result.guildIcon;
+                    img.alt = result.guildName || 'Server';
+                    if (iconEl) iconEl.replaceWith(img);
+                }
+
+                if (result.inGuild) {
+                    desc.textContent = 'Click to share';
+                    arrow.className = 'fas fa-chevron-right share-guild-arrow';
+                    item.onclick = () => shareToGuild(guild);
+                } else {
+                    item.classList.add('disabled');
+                    desc.textContent = 'You must be a member of this server';
+                    arrow.className = 'fas fa-lock share-guild-arrow';
+                }
+            } catch (err) {
+                console.error('Share modal guild check error:', err);
+                item.classList.remove('loading');
                 item.classList.add('disabled');
-                desc.textContent = 'You must be a member of this server';
-                arrow.className = 'fas fa-lock share-guild-arrow';
+                const nameEl = item.querySelector('.share-guild-name');
+                const desc = item.querySelector('.share-guild-desc');
+                nameEl.textContent = GUILD_DISPLAY_NAMES[guild.id] || `Server ${guild.id}`;
+                desc.textContent = 'Failed to check membership';
             }
-        });
-    });
+        }
+    })();
 
     // Render saved custom webhooks
     renderSavedWebhooks();
@@ -1655,6 +1686,7 @@ async function shareToGuild(guild) {
     if (item) return; // Already sharing
 
     // Find and mark the guild item as sharing
+    const guildItems = document.querySelectorAll('.share-guild-item');
     guildItems.forEach(el => {
         // Find if this element matches the guild we are sharing to
         // We can't rely on text name alone, let's look for the icon or name matches
