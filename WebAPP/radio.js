@@ -744,21 +744,21 @@ function animateVisualizer() {
 
         // Focus on bass frequencies (drums)
         let bassSum = 0;
-        const bassBins = 4;
+        const bassBins = 6;
         for (let i = 0; i < bassBins; i++) {
             bassSum += dataArray[i];
         }
         let bassAverage = bassSum / bassBins;
 
-        const threshold = 235;
+        const threshold = 200;
         let triggerValue = 0;
 
         if (bassAverage > threshold) {
-            triggerValue = (bassAverage - threshold) / (255 - threshold);
+            triggerValue = Math.min(1, (bassAverage - threshold) / (255 - threshold) * 1.2);
         }
 
         if (!window.lastTriggerValue) window.lastTriggerValue = 0;
-        window.lastTriggerValue = window.lastTriggerValue * 0.8 + triggerValue * 0.2;
+        window.lastTriggerValue = window.lastTriggerValue * 0.75 + triggerValue * 0.25;
         const v = window.lastTriggerValue;
 
         // Pulse mode effects (cover glow, player glow)
