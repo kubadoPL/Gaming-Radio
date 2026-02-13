@@ -4,7 +4,7 @@
 
 Whether you're a casual gamer grinding through levels, a competitive esports enthusiast seeking focus, or simply an audiophile who appreciates a great soundtrack, **Radio GAMING** is built for you.
 
-![Radio Gaming Showcase](https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/Assets/Ads/Radio%20Showcase%20new.gif)
+![Radio Gaming Showcase](https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/refs/heads/main/Assets/Ads/Radio%20Showcase%20new2026.gif)
 
 ---
 
@@ -79,7 +79,7 @@ Don't just take my word for it. Experience the radio directly in your browser:
 
 Take Radio GAMING with you! Download the dedicated application for your preferred platform:
 
-*   **Desktop App**: [Download for Windows](https://radio-gaming.stream/inne/pages/download.html)
+*   **Desktop App**: [Download for Windows](https://radio-gaming.stream)
 
 *(You can also find the latest releases directly in this repository)*
 
