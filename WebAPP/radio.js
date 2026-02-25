@@ -1090,7 +1090,17 @@ function handleEventSource(metadataUrl, tooltipElement) {
             if (data.streamTitle) {
                 const cleaned = cleanTitle(data.streamTitle);
                 const trackElem = tooltipElement.querySelector('.tooltip-track');
-                if (trackElem) trackElem.textContent = cleaned;
+                if (trackElem) {
+                    trackElem.textContent = cleaned;
+                    if (isFavorited(cleaned)) {
+                        const heart = document.createElement('i');
+                        heart.className = 'fas fa-heart';
+                        heart.style.color = 'var(--active-station-color)';
+                        heart.style.marginLeft = '6px';
+                        heart.style.filter = 'drop-shadow(0 0 5px var(--active-station-glow))';
+                        trackElem.appendChild(heart);
+                    }
+                }
                 await fetchSpotifyCovertooltip(cleaned, tooltipElement);
             }
         } catch (e) { console.error(e); }
