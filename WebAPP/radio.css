@@ -2299,6 +2299,14 @@ body::-webkit-scrollbar-thumb {
     height: 32px;
     border-radius: 50%;
     border: 2px solid #5865F2;
+    transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+}
+
+.discord-avatar:hover {
+    transform: scale(1.15) rotate(5deg);
+    border-color: #fff;
+    box-shadow: 0 0 15px rgba(88, 101, 242, 0.6);
 }
 
 #discord-user-name {
@@ -2702,6 +2710,14 @@ body::-webkit-scrollbar-thumb {
     border-radius: 50%;
     border: 2px solid rgba(var(--active-station-glow-rgb), 0.3);
     flex-shrink: 0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+}
+
+.chat-message-avatar:hover {
+    transform: scale(1.1) rotate(-5deg);
+    border-color: var(--active-station-color);
+    box-shadow: 0 0 15px var(--active-station-glow);
 }
 
 .chat-message-content {
@@ -2755,6 +2771,14 @@ body::-webkit-scrollbar-thumb {
     height: 36px;
     border-radius: 50%;
     border: 2px solid var(--active-station-color);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+}
+
+.chat-user-badge .chat-avatar:hover {
+    transform: scale(1.15) rotate(8deg);
+    border-color: #fff;
+    box-shadow: 0 0 20px var(--active-station-glow);
 }
 
 .chat-input {
@@ -3811,6 +3835,14 @@ body::-webkit-scrollbar-thumb {
     border: 5px solid #1a1631;
     background: #1a1631;
     object-fit: cover;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.285);
+    cursor: pointer;
+}
+
+.profile-modal-avatar:hover {
+    transform: scale(1.08) rotate(3deg);
+    border-color: var(--active-station-color);
+    box-shadow: 0 0 40px var(--active-station-glow);
 }
 
 .profile-content {
