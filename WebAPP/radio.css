@@ -1110,7 +1110,37 @@ body.is-fullscreen main {
         font-size: 14px;
     }
 
+    .player-controls {
+        padding: 10px 12px;
+    }
 
+    .controls-center {
+        gap: 8px;
+    }
+
+    #timeDisplay {
+        font-size: 12px;
+        gap: 4px;
+    }
+
+    #liveIndicator {
+        padding: 3px 8px;
+        font-size: 10px;
+    }
+
+    .favorite-icon,
+    .share-discord-icon {
+        font-size: 16px;
+    }
+
+    .volume-control {
+        padding: 6px 10px;
+        gap: 8px;
+    }
+
+    .volume-slider {
+        width: 60px;
+    }
 
     #streamTitle {
         font-size: 14px;
