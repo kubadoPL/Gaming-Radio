@@ -2083,6 +2083,24 @@ function appendChatMessage(message, scrollToBottom = true) {
     const timestamp = new Date(message.timestamp);
     const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    // Improved detection for image-only messages (like from GIF picker)
+    const trimmedContent = message.content.trim();
+    const isImageOnly = trimmedContent.match(/^https?:\/\/.*?\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) ||
+        trimmedContent.match(/^https?:\/\/media\d?\.giphy\.com\/media\/[a-zA-Z0-9]+\/giphy\.gif$/) ||
+        trimmedContent.includes('tenor.com/view/');
+
+    let formattedContent;
+    if (isImageOnly) {
+        formattedContent = `<img src="${escapeHtml(trimmedContent)}" class="chat-inline-gif" alt="GIF">`;
+    } else {
+        // Escape content and find links
+        const escaped = escapeHtml(message.content);
+        formattedContent = escaped.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+            const displayUrl = url.length > 40 ? url.substring(0, 37) + '...' : url;
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link"><i class="fas fa-link"></i> ${displayUrl}</a>`;
+        });
+    }
+
     messageEl.innerHTML = `
         <img class="chat-message-avatar" src="${message.user.avatar_url}" alt="${message.user.username}">
         <div class="chat-message-content">
@@ -2090,7 +2108,9 @@ function appendChatMessage(message, scrollToBottom = true) {
                 <span class="chat-message-username">${message.user.global_name || message.user.username}</span>
                 <span class="chat-message-time">${timeStr}</span>
             </div>
-            <div class="chat-message-text">${escapeHtml(message.content)}</div>
+            <div class="chat-message-text">
+                ${formattedContent}
+            </div>
             ${message.song_data ? `
             <div class="song-embed">
                 <img class="song-embed-cover" src="${message.song_data.artwork}" alt="Album Cover">
@@ -2128,14 +2148,14 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-window.sendChatMessage = async function () {
+window.sendChatMessage = async function (overrideMessage = null) {
     const input = document.getElementById('chat-input');
     if (!input) return;
 
-    const message = input.value.trim();
+    const message = overrideMessage || input.value.trim();
     if (!message) return;
 
-    if (message.length > 200) {
+    if (!overrideMessage && message.length > 200) {
         showNotification(`Message is too long! ${message.length}/200 letters`, 'fas fa-exclamation-triangle');
         return;
     }
@@ -2217,6 +2237,125 @@ document.addEventListener('input', (e) => {
                 counterElem.classList.remove('error');
             }
         }
+    }
+});
+
+// ========================
+// GIPHY GIF PICKER SYSTEM
+// ========================
+
+const GIPHY_API_KEY = 'tLhYN4vY42Wcs46JPzUcFcn7q8QIf4J0'; // Public beta key (may be rate limited)
+let isGifPickerOpen = false;
+let gifResultsCache = {}; // Cache object: { query: { data, timestamp } }
+const GIF_CACHE_STALE_TIME = 5 * 60 * 1000; // 5 minutes
+
+window.toggleGifPicker = function () {
+    const picker = document.getElementById('chat-gif-picker');
+    const btn = document.getElementById('chat-gif-btn');
+    if (!picker) return;
+
+    isGifPickerOpen = !isGifPickerOpen;
+
+    if (isGifPickerOpen) {
+        picker.classList.remove('hidden');
+        btn.classList.add('active');
+        fetchGiphyGifs(); // Load trending by default
+
+        // Auto focus search
+        setTimeout(() => document.getElementById('gif-search-input').focus(), 100);
+    } else {
+        picker.classList.add('hidden');
+        btn.classList.remove('active');
+    }
+};
+
+async function fetchGiphyGifs(query = '') {
+    const resultsContainer = document.getElementById('gif-results');
+    if (!resultsContainer) return;
+
+    const normalizedQuery = query.trim().toLowerCase();
+    const cacheKey = normalizedQuery || 'trending_default';
+    const now = Date.now();
+
+    // Check cache
+    if (gifResultsCache[cacheKey] && (now - gifResultsCache[cacheKey].timestamp < GIF_CACHE_STALE_TIME)) {
+        console.log(`[GIPHY] Loading from cache: "${cacheKey}"`);
+        displayGifs(gifResultsCache[cacheKey].data);
+        return;
+    }
+
+    resultsContainer.innerHTML = '<div class="chat-loading">Loading GIFs...</div>';
+
+    try {
+        const endpoint = normalizedQuery
+            ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(normalizedQuery)}&limit=20&rating=g`
+            : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20&rating=g`;
+
+        const response = await fetch(endpoint);
+        const data = await response.json();
+
+        if (data.data) {
+            // Store in cache
+            gifResultsCache[cacheKey] = {
+                data: data.data,
+                timestamp: now
+            };
+            displayGifs(data.data);
+        } else {
+            resultsContainer.innerHTML = '<div class="chat-error">No GIFs found.</div>';
+        }
+    } catch (error) {
+        console.error('Giphy API Error:', error);
+        resultsContainer.innerHTML = '<div class="chat-error">Failed to load GIFs.</div>';
+    }
+}
+
+function displayGifs(gifs) {
+    const resultsContainer = document.getElementById('gif-results');
+    if (!resultsContainer) return;
+
+    resultsContainer.innerHTML = '';
+
+    if (gifs.length > 0) {
+        gifs.forEach(gif => {
+            const img = document.createElement('img');
+            const url = gif.images.fixed_height.url;
+            img.src = url;
+            img.alt = gif.title;
+            img.onclick = () => selectGif(url);
+            resultsContainer.appendChild(img);
+        });
+    } else {
+        resultsContainer.innerHTML = '<div class="chat-error">No GIFs found.</div>';
+    }
+}
+
+function selectGif(url) {
+    // Send message directly with the GIF URL
+    sendChatMessage(url);
+    if (isGifPickerOpen) toggleGifPicker();
+}
+
+// Search input listener
+document.addEventListener('DOMContentLoaded', () => {
+    const gifInput = document.getElementById('gif-search-input');
+    if (gifInput) {
+        let debounceTimer;
+        gifInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                fetchGiphyGifs(e.target.value);
+            }, 500);
+        });
+    }
+});
+
+// Close picker on outside click
+window.addEventListener('mousedown', (e) => {
+    const picker = document.getElementById('chat-gif-picker');
+    const btn = document.getElementById('chat-gif-btn');
+    if (isGifPickerOpen && picker && !picker.contains(e.target) && !btn.contains(e.target)) {
+        toggleGifPicker();
     }
 });
 

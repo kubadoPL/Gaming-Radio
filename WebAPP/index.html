@@ -240,6 +240,17 @@
                         </div>
                     </div>
 
+                    <!-- GIF Picker Container -->
+                    <div id="chat-gif-picker" class="chat-gif-picker hidden">
+                        <div class="gif-picker-header">
+                            <input type="text" id="gif-search-input" placeholder="Search GIPHY..." autocomplete="off">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div id="gif-results" class="gif-results">
+                            <!-- GIFs populate here -->
+                        </div>
+                    </div>
+
                     <div class="chat-input-container">
                         <div class="chat-user-badge">
                             <img id="chat-user-avatar" class="chat-avatar" src="" alt="">
@@ -253,6 +264,9 @@
                                 maxlength="205" autocomplete="off">
                             <div id="chat-char-count" class="chat-char-count">0/200</div>
                         </div>
+                        <button id="chat-gif-btn" class="chat-gif-btn" onclick="toggleGifPicker()" title="Send a GIF">
+                            <i class="fas fa-sticky-note"></i>
+                        </button>
                         <button id="chat-share-song-btn" class="chat-share-song-btn" onclick="toggleSongShare()"
                             title="Reference current song">
                             <i class="fas fa-music"></i>
