@@ -401,7 +401,6 @@ audio {
 
 .share-discord-icon {
     font-size: 18px;
-    margin-right: 4px;
     color: #5865F2;
     /* Discord Blurple */
 }
@@ -409,6 +408,39 @@ audio {
 .share-discord-icon:hover {
     color: #fff;
     filter: drop-shadow(0 0 8px #5865F2);
+}
+
+.favorite-icon {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 0.6;
+    font-size: 18px;
+    color: #fff;
+}
+
+.favorite-icon:hover {
+    opacity: 1;
+    transform: scale(1.2);
+    color: #ff4d4d;
+}
+
+.favorite-icon.favorited {
+    opacity: 1;
+    color: #ff4d4d !important;
+    filter: drop-shadow(0 0 10px rgba(255, 77, 77, 0.5));
+}
+
+.favorite-icon.favorited:hover {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 15px rgba(255, 77, 77, 0.8));
+}
+
+.controls-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex: 1;
 }
 
 /* Time display with accent styling */

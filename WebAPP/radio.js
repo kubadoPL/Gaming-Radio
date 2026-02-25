@@ -229,6 +229,7 @@ function handleMainStreamMessage(event) {
             var cleanedTitle = cleanTitle(jsonData.streamTitle);
             if (streamTitleElement) streamTitleElement.textContent = cleanedTitle;
             fetchBestCover(cleanedTitle); // Fetch and display the best cover from Spotify or YouTube
+            updateFavoriteIcon(cleanedTitle); // Update the heart icon state for the new song
 
             // If we are still loading, this is a good sign we are ready
             const ls = document.querySelector('.loading-screen');
@@ -2332,12 +2333,58 @@ function toggleFavorite(title) {
         if (song) {
             songFavorites.unshift({ ...song });
             showNotification('Added to favorites! ❤️', 'fas fa-heart');
+        } else {
+            // If not in history (e.g. current song just started), add it now
+            const currentTitle = document.getElementById('streamTitle').textContent;
+            if (title === currentTitle) {
+                const currentStation = document.getElementById('StationNameInh1').textContent;
+                const currentCover = document.getElementById('albumCover').src;
+                songFavorites.unshift({
+                    title: title,
+                    cover: currentCover,
+                    station: currentStation,
+                    timestamp: Date.now()
+                });
+                showNotification('Added to favorites! ❤️', 'fas fa-heart');
+            }
         }
     }
     localStorage.setItem('RadioGaming-songFavorites', JSON.stringify(songFavorites));
     renderHistoryList();
     renderFavoritesList();
+
+    // Update main player icon if this is the current song
+    const currentTitle = document.getElementById('streamTitle') ? document.getElementById('streamTitle').textContent : '';
+    if (title === currentTitle) {
+        updateFavoriteIcon(title);
+    }
 }
+
+window.toggleCurrentFavorite = function () {
+    const songTitle = document.getElementById('streamTitle') ? document.getElementById('streamTitle').textContent : '';
+    if (!songTitle || songTitle === 'Loading...' || songTitle === '') {
+        showNotification('Wait for a song to load!', 'fas fa-info-circle');
+        return;
+    }
+    toggleFavorite(songTitle);
+};
+
+window.updateFavoriteIcon = function (title) {
+    const icon = document.getElementById('favoriteIcon');
+    if (!icon) return;
+
+    if (isFavorited(title)) {
+        icon.classList.add('favorited');
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+        icon.title = 'Remove from Favorites';
+    } else {
+        icon.classList.remove('favorited');
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+        icon.title = 'Add to Favorites';
+    }
+};
 
 function isFavorited(title) {
     return songFavorites.some(s => s.title === title);

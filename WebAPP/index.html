@@ -158,11 +158,15 @@
                             <div></div>
                         </div>
                     </div>
-                    <div id="timeDisplay">
-                        <span id="currentTime">00:00</span> / <span id="liveIndicator">🟣LIVE</span>
+                    <div class="controls-center">
+                        <div id="timeDisplay">
+                            <span id="currentTime">00:00</span> / <span id="liveIndicator">🟣LIVE</span>
+                        </div>
+                        <i id="favoriteIcon" class="far fa-heart favorite-icon" onclick="toggleCurrentFavorite()"
+                            title="Add to Favorites"></i>
+                        <i id="shareDiscordIcon" class="fab fa-discord share-discord-icon" onclick="openShareModal()"
+                            title="Share on Discord"></i>
                     </div>
-                    <i id="shareDiscordIcon" class="fab fa-discord share-discord-icon" onclick="openShareModal()"
-                        title="Share on Discord"></i>
                     <div class="volume-control">
                         <i id="volume-down" class="fas fa-volume-down volume-icon"></i>
                         <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="0.1"
