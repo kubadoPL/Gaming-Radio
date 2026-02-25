@@ -1954,10 +1954,20 @@ function stopChatPolling() {
 }
 
 function updateCurrentStation() {
-
     const stationNameElem = document.getElementById('StationNameInh1');
     const stationName = stationNameElem ? stationNameElem.textContent : 'Radio GAMING';
-    currentChatStation = stationName.replace(/\s+/g, '').toUpperCase();
+    const newStationId = stationName.replace(/\s+/g, '').toUpperCase();
+
+    if (currentChatStation !== newStationId) {
+        currentChatStation = newStationId;
+        lastMessageTimestamp = null;
+
+        // Clear messages and show loading if we're switching
+        const messagesContainer = document.getElementById('chat-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '<div class="chat-loading">Loading channel...</div>';
+        }
+    }
 
     // Update chat UI
     const chatStationLabel = document.getElementById('chat-current-station');
