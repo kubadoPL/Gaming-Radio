@@ -306,10 +306,10 @@ audio {
 
 /* Prominent play/pause button */
 #playPauseIcon {
-    font-size: 18px;
+    font-size: 15px;
     cursor: pointer;
-    width: 46px;
-    height: 46px;
+    width: 38px;
+    height: 38px;
     aspect-ratio: 1 / 1;
     display: flex;
     align-items: center;
@@ -421,18 +421,18 @@ audio {
 .favorite-icon:hover {
     opacity: 1;
     transform: scale(1.2);
-    color: #ff4d4d;
+    color: var(--active-station-color-secondary);
 }
 
 .favorite-icon.favorited {
     opacity: 1;
-    color: #ff4d4d !important;
-    filter: drop-shadow(0 0 10px rgba(255, 77, 77, 0.5));
+    color: var(--active-station-color) !important;
+    filter: drop-shadow(0 0 10px var(--active-station-glow));
 }
 
 .favorite-icon.favorited:hover {
     transform: scale(1.1);
-    filter: drop-shadow(0 0 15px rgba(255, 77, 77, 0.8));
+    filter: drop-shadow(0 0 15px var(--active-station-glow));
 }
 
 .controls-center {
@@ -3721,12 +3721,12 @@ body::-webkit-scrollbar-thumb {
 }
 
 .history-action-btn.favorited {
-    color: #ff4d6d;
-    background: rgba(255, 77, 109, 0.15);
+    color: var(--active-station-color);
+    background: rgba(var(--active-station-glow-rgb), 0.15);
 }
 
 .history-action-btn.favorited:hover {
-    background: rgba(255, 77, 109, 0.25);
+    background: rgba(var(--active-station-glow-rgb), 0.25);
 }
 
 .history-action-btn.spotify-btn:hover {
