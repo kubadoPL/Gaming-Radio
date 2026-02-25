@@ -2687,7 +2687,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // DATA PERSISTENCE (EX/IM)
 // ========================
 
-window.exportUserData = function () {
+window.exportUserData = async function () {
     const userData = {};
     const prefix = 'RadioGaming-';
 
@@ -2703,17 +2703,43 @@ window.exportUserData = function () {
         return;
     }
 
-    const blob = new Blob([JSON.stringify(userData, null, 4)], { type: 'application/json' });
+    const content = JSON.stringify(userData, null, 4);
+    const fileName = `RadioGaming-Backup-${new Date().toISOString().split('T')[0]}.json`;
+
+    // Try to use File System Access API for "Save As" experience (Chrome/Edge/Opera)
+    if ('showSaveFilePicker' in window) {
+        try {
+            const handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{
+                    description: 'JSON Backup',
+                    accept: { 'application/json': ['.json'] },
+                }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(content);
+            await writable.close();
+            showNotification("Data saved successfully!", "fas fa-file-export");
+            return;
+        } catch (err) {
+            // If user cancels, just stop
+            if (err.name === 'AbortError') return;
+            console.warn("FilePicker failed or not supported, falling back to download.", err);
+        }
+    }
+
+    // Fallback for Firefox and older browsers
+    const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `RadioGaming-Backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showNotification("Data exported successfully!", "fas fa-file-export");
+    showNotification("Data exported (check downloads)!", "fas fa-file-export");
 };
 
 window.importUserData = function (event) {
