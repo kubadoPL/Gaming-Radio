@@ -59,6 +59,7 @@ let audio, streamTitleElement, playPauseIcon, stationName, eventSource, currentE
 let globalCurrentColor = "#7300ff"; // Default color for the loading screen and scrollbar
 let fetching = false; // Flag to prevent multiple fetches
 let tokenPromise = null; // Shared promise for token fetching
+let giphyTokenPromise = null; // Shared promise for Giphy token fetching
 let cooldown = false;
 let IsChangingStation = false; // Flag to prevent multiple station changes
 var notificationTimeout;
@@ -351,8 +352,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const volumeSlider = document.querySelector('.volume-slider');
     if (volumeSlider) volumeSlider.value = initialVolume;
 
-    // Fetch Spotify token early for loading progress
+    // Fetch Spotify and Giphy tokens early for loading progress
     getSpotifyAccessToken();
+    getGiphyAccessToken();
 
     // Mute/Restore icons setup
     const volDown = document.getElementById('volume-down');
@@ -480,6 +482,54 @@ async function getSpotifyAccessToken() {
     })();
 
     return tokenPromise;
+}
+
+async function getGiphyAccessToken() {
+    const now = Date.now();
+    let cachedToken = localStorage.getItem('RadioGaming-giphyAccessToken');
+    let tokenExpiresAt = parseInt(localStorage.getItem('RadioGaming-giphyTokenExpiresAt'), 10) || 0;
+
+    // Use cached token if valid
+    if (cachedToken && now < tokenExpiresAt) {
+        return cachedToken;
+    }
+
+    // If already fetching, return the existing promise
+    if (giphyTokenPromise) {
+        return giphyTokenPromise;
+    }
+
+    // Create a new promise for fetching the token
+    giphyTokenPromise = (async () => {
+        const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/giphy/token';
+
+        try {
+            const response = await fetch(tokenUrl);
+            const data = await response.json();
+
+            if (response.ok) {
+                const newToken = data.access_token;
+                const expiresIn = data.expires_in || 3600;
+                const createdAt = new Date(data.created_at).getTime();
+                const newExpiry = createdAt + expiresIn * 1000 - 60000;
+
+                localStorage.setItem('RadioGaming-giphyAccessToken', newToken);
+                localStorage.setItem('RadioGaming-giphyTokenExpiresAt', newExpiry.toString());
+
+                console.log(`New Giphy token fetched. Expires at ${new Date(newExpiry).toLocaleString()}.`);
+                return newToken;
+            } else {
+                throw new Error('Failed to fetch Giphy access token');
+            }
+        } catch (error) {
+            console.error('Giphy Auth Error:', error);
+            return null;
+        } finally {
+            giphyTokenPromise = null; // Clear promise after completion
+        }
+    })();
+
+    return giphyTokenPromise;
 }
 
 async function fetchAlbumCovers() {
@@ -2240,11 +2290,7 @@ document.addEventListener('input', (e) => {
     }
 });
 
-// ========================
-// GIPHY GIF PICKER SYSTEM
-// ========================
-
-const GIPHY_API_KEY = 'tLhYN4vY42Wcs46JPzUcFcn7q8QIf4J0'; // Public beta key (may be rate limited)
+// Giphy token is now fetched dynamically from K5ApiManager
 let isGifPickerOpen = false;
 let gifResultsCache = {}; // Cache object: { query: { data, timestamp } }
 const GIF_CACHE_STALE_TIME = 5 * 60 * 1000; // 5 minutes
@@ -2287,9 +2333,12 @@ async function fetchGiphyGifs(query = '') {
     resultsContainer.innerHTML = '<div class="chat-loading">Loading GIFs...</div>';
 
     try {
+        const giphyApiKey = await getGiphyAccessToken();
+        if (!giphyApiKey) throw new Error("Could not acquire Giphy API token");
+
         const endpoint = normalizedQuery
-            ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(normalizedQuery)}&limit=20&rating=g`
-            : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20&rating=g`;
+            ? `https://api.giphy.com/v1/gifs/search?api_key=${giphyApiKey}&q=${encodeURIComponent(normalizedQuery)}&limit=20&rating=g`
+            : `https://api.giphy.com/v1/gifs/trending?api_key=${giphyApiKey}&limit=20&rating=g`;
 
         const response = await fetch(endpoint);
         const data = await response.json();
