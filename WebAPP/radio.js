@@ -2682,3 +2682,78 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistoryList();
     renderFavoritesList();
 });
+
+// ========================
+// DATA PERSISTENCE (EX/IM)
+// ========================
+
+window.exportUserData = function () {
+    const userData = {};
+    const prefix = 'RadioGaming-';
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith(prefix)) {
+            userData[key] = localStorage.getItem(key);
+        }
+    }
+
+    if (Object.keys(userData).length === 0) {
+        showNotification("No data to export!", "fas fa-info-circle");
+        return;
+    }
+
+    const blob = new Blob([JSON.stringify(userData, null, 4)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RadioGaming-Backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showNotification("Data exported successfully!", "fas fa-file-export");
+};
+
+window.importUserData = function (event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            const keys = Object.keys(data);
+
+            if (keys.length === 0) {
+                showNotification("Invalid backup file!", "fas fa-exclamation-triangle");
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to import ${keys.length} items? This will merge with your existing data.`)) {
+                event.target.value = '';
+                return;
+            }
+
+            keys.forEach(key => {
+                if (key.startsWith('RadioGaming-')) {
+                    localStorage.setItem(key, data[key]);
+                }
+            });
+
+            showNotification("Data imported! Reloading...", "fas fa-check-circle");
+
+            // Reload page to re-initialize everything with new data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+
+        } catch (err) {
+            console.error("Import error:", err);
+            showNotification("Failed to parse JSON file!", "fas fa-exclamation-circle");
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Reset input
+};
