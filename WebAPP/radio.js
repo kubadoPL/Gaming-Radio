@@ -2228,6 +2228,11 @@ async function pollNewMessages() {
                 // Only append if we don't already have this message
                 if (!document.getElementById(`msg-${message.id}`)) {
                     appendChatMessage(message);
+                } else {
+                    // Update reactions on existing messages
+                    if (message.reactions) {
+                        updateReactionsUI(message.id, message.reactions, message.reaction_users);
+                    }
                 }
             });
 
@@ -2365,6 +2370,7 @@ function appendChatMessage(message, scrollToBottom = true) {
     const messageEl = document.createElement('div');
     messageEl.className = 'chat-message';
     messageEl.id = `msg-${message.id}`;
+    messageEl.dataset.messageId = message.id;
 
     const timestamp = new Date(message.timestamp);
     const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -2387,6 +2393,9 @@ function appendChatMessage(message, scrollToBottom = true) {
         });
     }
 
+    // Build reactions HTML
+    const reactionsHtml = buildReactionsHtml(message);
+
     messageEl.innerHTML = `
         <img class="chat-message-avatar" src="${message.user.avatar_url}" alt="${message.user.username}">
         <div class="chat-message-content">
@@ -2406,7 +2415,13 @@ function appendChatMessage(message, scrollToBottom = true) {
                 </div>
             </div>
             ` : ''}
+            <div class="chat-reactions-bar" id="reactions-${message.id}">
+                ${reactionsHtml}
+            </div>
         </div>
+        <button class="chat-reaction-add-btn" onclick="openEmojiPicker('${message.id}', this)" title="Dodaj reakcję">
+            <i class="far fa-smile"></i>
+        </button>
     `;
 
     messagesContainer.appendChild(messageEl);
@@ -2426,6 +2441,243 @@ function appendChatMessage(message, scrollToBottom = true) {
             }
         });
     });
+}
+
+// ========================
+// EMOJI REACTIONS SYSTEM
+// ========================
+
+const EMOJI_CATEGORIES = {
+    'Często używane': ['😂', '❤️', '🔥', '👍', '👀', '😭', '🥺', '✨', '💀', '🙏', '😍', '🤣', '😊', '🎉', '💯', '😎'],
+    'Buźki': ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖'],
+    'Gesty': ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🙏', '💪'],
+    'Serca': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟'],
+    'Zwierzęta': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦅', '🦉', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐙', '🦑', '🐠', '🐬', '🐳', '🦈'],
+    'Jedzenie': ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍒', '🍑', '🍍', '🥝', '🍅', '🥑', '🍔', '🍟', '🍕', '🌮', '🌯', '🍜', '🍣', '🍦', '🍩', '🍪', '🎂', '🍰', '🧁', '☕', '🍺', '🍷', '🥤'],
+    'Aktywności': ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥊', '🎮', '🕹️', '🎲', '🎯', '🎳', '🎸', '🎹', '🎤', '🎧', '🎬', '🎨', '🎭', '🏆', '🥇', '🥈', '🥉', '🎖️', '🏅'],
+    'Podróże': ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '✈️', '🚀', '🛸', '🚁', '⛵', '🚢', '🏠', '🏢', '🏰', '🗼', '🗽', '🌉', '🌍', '🌎', '🌏'],
+    'Symbole': ['⭐', '🌟', '✨', '💫', '🔥', '💥', '🎵', '🎶', '💯', '💢', '💬', '👁️‍🗨️', '🔔', '🎪', '🎫', '🏷️', '📌', '🔑', '🗡️', '⚡', '☀️', '🌙', '⛅', '🌈', '❄️', '💧', '🌊']
+};
+
+let activeEmojiPicker = null; // {messageId, element}
+
+function buildReactionsHtml(message) {
+    const reactions = message.reactions || {};
+    const reactionUsers = message.reaction_users || {};
+    const currentUserId = discordUser ? discordUser.id : null;
+
+    if (Object.keys(reactions).length === 0) return '';
+
+    let html = '';
+    for (const [emoji, userIds] of Object.entries(reactions)) {
+        if (userIds.length === 0) continue;
+        const isActive = currentUserId && userIds.includes(currentUserId);
+        const names = userIds.map(uid => {
+            const u = reactionUsers[uid];
+            return u ? u.username : 'Unknown';
+        }).join(', ');
+
+        html += `<button class="chat-reaction-pill ${isActive ? 'active' : ''}" 
+                    onclick="toggleReaction('${message.id}', '${emoji}')"
+                    title="${names}">
+                    <span class="chat-reaction-emoji">${emoji}</span>
+                    <span class="chat-reaction-count">${userIds.length}</span>
+                </button>`;
+    }
+
+    // Add inline "+" button to add more reactions
+    html += `<button class="chat-reaction-add-inline" onclick="openEmojiPicker('${message.id}', this)" title="Dodaj reakcję">
+                <i class="fas fa-plus"></i>
+             </button>`;
+
+    return html;
+}
+
+function updateReactionsUI(messageId, reactions, reactionUsers) {
+    const bar = document.getElementById(`reactions-${messageId}`);
+    if (!bar) return;
+
+    const currentUserId = discordUser ? discordUser.id : null;
+
+    if (!reactions || Object.keys(reactions).length === 0) {
+        bar.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+    for (const [emoji, userIds] of Object.entries(reactions)) {
+        if (userIds.length === 0) continue;
+        const isActive = currentUserId && userIds.includes(currentUserId);
+        const names = userIds.map(uid => {
+            const u = reactionUsers ? reactionUsers[uid] : null;
+            return u ? u.username : 'Unknown';
+        }).join(', ');
+
+        html += `<button class="chat-reaction-pill ${isActive ? 'active' : ''}" 
+                    onclick="toggleReaction('${messageId}', '${emoji}')"
+                    title="${names}">
+                    <span class="chat-reaction-emoji">${emoji}</span>
+                    <span class="chat-reaction-count">${userIds.length}</span>
+                </button>`;
+    }
+
+    html += `<button class="chat-reaction-add-inline" onclick="openEmojiPicker('${messageId}', this)" title="Dodaj reakcję">
+                <i class="fas fa-plus"></i>
+             </button>`;
+
+    bar.innerHTML = html;
+}
+
+async function toggleReaction(messageId, emoji) {
+    if (!discordAuthToken) {
+        showNotification('Zaloguj się, aby reagować', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/chat/react`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${discordAuthToken}`
+            },
+            body: JSON.stringify({
+                message_id: messageId,
+                emoji: emoji
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            updateReactionsUI(messageId, data.reactions, data.reaction_users);
+        } else {
+            console.error('[CHAT] React error:', data.error);
+        }
+    } catch (error) {
+        console.error('[CHAT] React error:', error);
+    }
+}
+
+function openEmojiPicker(messageId, btnElement) {
+    // Close existing picker
+    closeEmojiPicker();
+
+    if (!discordAuthToken) {
+        showNotification('Zaloguj się, aby reagować', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    const msgEl = document.getElementById(`msg-${messageId}`);
+    if (!msgEl) return;
+
+    const picker = document.createElement('div');
+    picker.className = 'chat-emoji-picker';
+    picker.id = 'active-emoji-picker';
+    picker.innerHTML = `
+        <div class="emoji-picker-header">
+            <input type="text" class="emoji-picker-search" placeholder="Szukaj emoji..." id="emoji-picker-search-input">
+        </div>
+        <div class="emoji-picker-categories" id="emoji-categories-bar"></div>
+        <div class="emoji-picker-grid" id="emoji-picker-grid"></div>
+    `;
+
+    msgEl.appendChild(picker);
+    activeEmojiPicker = { messageId, element: picker };
+
+    // Render categories bar
+    const catBar = picker.querySelector('#emoji-categories-bar');
+    const catKeys = Object.keys(EMOJI_CATEGORIES);
+    const catIcons = ['⭐', '😀', '👋', '❤️', '🐶', '🍎', '⚽', '✈️', '🔥'];
+    catKeys.forEach((catName, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'emoji-category-btn' + (i === 0 ? ' active' : '');
+        btn.textContent = catIcons[i] || '📁';
+        btn.title = catName;
+        btn.onclick = () => {
+            catBar.querySelectorAll('.emoji-category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            scrollToCategory(catName);
+        };
+        catBar.appendChild(btn);
+    });
+
+    // Render all emojis
+    renderEmojiGrid(messageId);
+
+    // Focus search
+    setTimeout(() => {
+        const searchInput = picker.querySelector('#emoji-picker-search-input');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.addEventListener('input', (e) => {
+                renderEmojiGrid(messageId, e.target.value.toLowerCase());
+            });
+        }
+    }, 50);
+
+    // Prevent click from closing immediately
+    setTimeout(() => {
+        document.addEventListener('mousedown', handleEmojiPickerOutsideClick);
+    }, 10);
+}
+
+function renderEmojiGrid(messageId, filter = '') {
+    const grid = document.getElementById('emoji-picker-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    for (const [catName, emojis] of Object.entries(EMOJI_CATEGORIES)) {
+        const filteredEmojis = filter
+            ? emojis.filter(e => e.includes(filter))
+            : emojis;
+
+        if (filteredEmojis.length === 0) continue;
+
+        if (!filter) {
+            const label = document.createElement('div');
+            label.className = 'emoji-category-label';
+            label.textContent = catName;
+            label.id = `emoji-cat-${catName.replace(/\s/g, '-')}`;
+            grid.appendChild(label);
+        }
+
+        filteredEmojis.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.className = 'emoji-picker-item';
+            btn.textContent = emoji;
+            btn.onclick = () => {
+                toggleReaction(messageId, emoji);
+                closeEmojiPicker();
+            };
+            grid.appendChild(btn);
+        });
+    }
+
+    if (grid.children.length === 0) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.3); padding: 20px; font-size: 13px;">Nie znaleziono emoji</div>';
+    }
+}
+
+function scrollToCategory(catName) {
+    const label = document.getElementById(`emoji-cat-${catName.replace(/\s/g, '-')}`);
+    if (label) {
+        label.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function closeEmojiPicker() {
+    const picker = document.getElementById('active-emoji-picker');
+    if (picker) picker.remove();
+    activeEmojiPicker = null;
+    document.removeEventListener('mousedown', handleEmojiPickerOutsideClick);
+}
+
+function handleEmojiPickerOutsideClick(e) {
+    const picker = document.getElementById('active-emoji-picker');
+    if (picker && !picker.contains(e.target) && !e.target.closest('.chat-reaction-add-btn') && !e.target.closest('.chat-reaction-add-inline')) {
+        closeEmojiPicker();
+    }
 }
 
 function escapeHtml(text) {

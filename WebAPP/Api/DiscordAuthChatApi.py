@@ -419,6 +419,8 @@ def send_message():
         "timestamp": now.isoformat() + "Z",
         "station": station,
         "song_data": data.get("song_data"),  # optional song embed
+        "reactions": {},  # emoji -> [user_ids]
+        "reaction_users": {},  # user_id -> {username, avatar_url}
     }
 
     chat_messages[station].append(msg_obj)
@@ -426,6 +428,82 @@ def send_message():
         chat_messages[station].pop(0)
 
     return jsonify({"success": True, "message": msg_obj})
+
+
+@chat_api.route("/chat/react", methods=["POST"])
+def react_to_message():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    token = auth_header.split(" ")[1]
+    if token not in user_sessions:
+        return jsonify({"error": "Invalid session"}), 401
+
+    data = request.json
+    message_id = data.get("message_id", "")
+    emoji = data.get("emoji", "").strip()
+
+    if not message_id or not emoji:
+        return jsonify({"error": "Missing message_id or emoji"}), 400
+
+    # Limit emoji length (prevent abuse)
+    if len(emoji) > 10:
+        return jsonify({"error": "Invalid emoji"}), 400
+
+    user = user_sessions[token]
+    user_id = user["id"]
+
+    # Find the message across all stations
+    target_msg = None
+    for station_key, msgs in chat_messages.items():
+        for msg in msgs:
+            if msg["id"] == message_id:
+                target_msg = msg
+                break
+        if target_msg:
+            break
+
+    if not target_msg:
+        return jsonify({"error": "Message not found"}), 404
+
+    # Initialize reactions if missing (for old messages)
+    if "reactions" not in target_msg:
+        target_msg["reactions"] = {}
+    if "reaction_users" not in target_msg:
+        target_msg["reaction_users"] = {}
+
+    # Toggle reaction
+    if emoji not in target_msg["reactions"]:
+        target_msg["reactions"][emoji] = []
+
+    if user_id in target_msg["reactions"][emoji]:
+        # Remove reaction
+        target_msg["reactions"][emoji].remove(user_id)
+        if not target_msg["reactions"][emoji]:
+            del target_msg["reactions"][emoji]
+        action = "removed"
+    else:
+        # Add reaction (max 20 different emojis per message)
+        if emoji not in target_msg["reactions"] and len(target_msg["reactions"]) >= 20:
+            return jsonify({"error": "Maximum reactions reached"}), 400
+        target_msg["reactions"][emoji].append(user_id)
+        action = "added"
+
+    # Store user info for display
+    target_msg["reaction_users"][user_id] = {
+        "username": user.get("global_name") or user.get("username"),
+        "avatar_url": user.get("avatar_url"),
+    }
+
+    return jsonify(
+        {
+            "success": True,
+            "action": action,
+            "reactions": target_msg["reactions"],
+            "reaction_users": target_msg["reaction_users"],
+        }
+    )
 
 
 app.register_blueprint(chat_api, url_prefix="/DiscordAuthChatApi")
