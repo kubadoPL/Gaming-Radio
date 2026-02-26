@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(function () {
         console.log("Updating all online users 6 sec after page load");
         updateAllOnlineUsers();
-        setInterval(updateAllOnlineUsers, 40000);
+        setInterval(updateAllOnlineUsers, 10000); // Poll every 10 seconds for faster Chat API updates
     }, 6000);
 
     // Audio time update listener
@@ -1198,12 +1198,16 @@ function getStationId(sName) {
 async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
     try {
         const stationId = getStationId(sName);
-        const cacheKey = `combinedOnlineCount_${stationId}`;
-        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
 
-        if (cached && (Date.now() - cached.timestamp < 40 * 1000)) {
-            updateTooltip(tooltipElement, cached.count, sName);
-            return;
+        // ZenoFM Cache (40s)
+        const zenoCacheKey = `zenoCount_${stationId}`;
+        const zenoCached = JSON.parse(localStorage.getItem(zenoCacheKey) || 'null');
+
+        let zenoCount = 0;
+        let shouldFetchZeno = !zenoCached || (Date.now() - zenoCached.timestamp > 40 * 1000);
+
+        if (!shouldFetchZeno) {
+            zenoCount = zenoCached.count;
         }
 
         const headers = {};
@@ -1211,35 +1215,36 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        // Fetch from BOTH ZenoFM (total listeners) and Chat API (active users)
-        const [zenoRes, chatRes] = await Promise.allSettled([
-            fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationId),
-            fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?since=${Date.now()}`, { headers })
-        ]);
+        // Fetch Logic
+        const fetchPromises = [
+            fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?since=${Date.now()}`, { headers }).then(r => r.json())
+        ];
 
-        let zenoCount = 0;
-        let chatCount = 0;
-
-        if (zenoRes.status === 'fulfilled') {
-            const zenoData = await zenoRes.value.json();
-            zenoCount = zenoData.total_sum || 0;
-            console.log(`[OnlineCountDebug] ${sName} (ZenoFM):`, zenoCount);
-        } else {
-            console.warn(`[OnlineCountDebug] ${sName} (ZenoFM) Fetch Failed`);
+        if (shouldFetchZeno) {
+            fetchPromises.push(fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationId).then(r => r.json()));
         }
 
-        if (chatRes.status === 'fulfilled') {
-            const chatData = await chatRes.value.json();
-            chatCount = chatData.online_count !== undefined ? chatData.online_count : 0;
-            console.log(`[OnlineCountDebug] ${sName} (Chat API):`, chatCount);
-        } else {
-            console.warn(`[OnlineCountDebug] ${sName} (Chat API) Fetch Failed`);
+        const results = await Promise.allSettled(fetchPromises);
+
+        // Handle Chat Data (always the first promise)
+        let chatCount = 0;
+        if (results[0].status === 'fulfilled') {
+            chatCount = results[0].value.online_count !== undefined ? results[0].value.online_count : 0;
+            console.log(`[OnlineCountDebug] ${sName} (Chat API - Realtime):`, chatCount);
+        }
+
+        // Handle Zeno Data (if requested, it's the second promise)
+        if (shouldFetchZeno && results[1] && results[1].status === 'fulfilled') {
+            zenoCount = results[1].value.total_sum || 0;
+            localStorage.setItem(zenoCacheKey, JSON.stringify({ count: zenoCount, timestamp: Date.now() }));
+            console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Refreshed):`, zenoCount);
+        } else if (!shouldFetchZeno) {
+            console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Cached):`, zenoCount);
         }
 
         const finalCount = Math.max(zenoCount, chatCount);
         console.log(`[OnlineCountDebug] ${sName} -> Final Selected Count:`, finalCount);
 
-        localStorage.setItem(cacheKey, JSON.stringify({ count: finalCount, timestamp: Date.now() }));
         updateTooltip(tooltipElement, finalCount, sName);
     } catch (e) {
         console.error(`[OnlineCountDebug] Error fetching count for ${sName}:`, e);
