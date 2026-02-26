@@ -3210,6 +3210,115 @@ body::-webkit-scrollbar-thumb {
     box-shadow: 0 0 20px rgba(var(--active-station-glow-rgb), 0.2);
 }
 
+/* Mention Suggestions */
+.chat-mention-suggestions {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 0;
+    right: 0;
+    background: rgba(15, 12, 28, 0.98);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    z-index: 2000;
+    max-height: 240px;
+    overflow-y: auto;
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.6),
+        0 0 30px rgba(var(--active-station-glow-rgb), 0.15);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: mentionsIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chat-mention-suggestions.hidden {
+    display: none;
+}
+
+@keyframes mentionsIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.mention-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.mention-item:hover,
+.mention-item.selected {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+}
+
+.mention-item.selected {
+    background: rgba(var(--active-station-glow-rgb), 0.15);
+    border-color: var(--active-station-color);
+}
+
+.mention-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.mention-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.mention-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.mention-handle {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+}
+
+.mention-item.special {
+    background: rgba(var(--active-station-glow-rgb), 0.05);
+}
+
+.mention-icon-wrapper {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--active-station-color-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+}
+
+.mention-item.special .mention-name {
+    color: var(--active-station-color-secondary);
+}
+
 /* Message Embed Support */
 .song-embed {
     margin-top: 10px;

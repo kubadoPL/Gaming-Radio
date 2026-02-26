@@ -2334,7 +2334,7 @@ async function loadChatHistory() {
             if (data.messages && data.messages.length > 0) {
                 // Clear welcome message or loading indicator
                 messagesContainer.innerHTML = '';
-                data.messages.forEach(message => appendChatMessage(message, false));
+                data.messages.forEach(message => appendChatMessage(message, false, false));
 
                 // Scroll to bottom after the section transition and DOM update
                 setTimeout(() => {
@@ -2395,12 +2395,17 @@ async function pollNewMessages() {
             updateOnlineCountUI(data.online_count, data.online_users);
         }
 
-        // Only process and append messages if the chat is actually open
-        if (isChatVisible && data.messages && data.messages.length > 0) {
+        // Process messages
+        if (data.messages && data.messages.length > 0) {
             data.messages.forEach(message => {
                 // Only append if we don't already have this message
                 if (!document.getElementById(`msg-${message.id}`)) {
-                    appendChatMessage(message);
+                    if (isChatVisible) {
+                        appendChatMessage(message, true, true);
+                    } else {
+                        // Background notification check
+                        checkMessageForMention(message);
+                    }
                 } else {
                     // Update reactions on existing messages
                     if (message.reactions) {
@@ -2531,8 +2536,32 @@ function renderOnlineUsers() {
         container.appendChild(item);
     });
 }
+function checkMessageForMention(message) {
+    if (!discordUser || message.user.id === discordUser.id || !message.content) return false;
 
-function appendChatMessage(message, scrollToBottom = true) {
+    const currentUsername = discordUser.username;
+    const currentGlobalName = discordUser.global_name;
+
+    const mentionRegex = /@[a-zA-Z0-9_.]+/g;
+    const matches = message.content.match(mentionRegex);
+    if (!matches) return false;
+
+    const hasMeMention = matches.some(mention => {
+        const name = mention.substring(1);
+        return mention.equalsIgnoreCase('@everyone') ||
+            mention.equalsIgnoreCase('@here') ||
+            (currentUsername && name.equalsIgnoreCase(currentUsername)) ||
+            (currentGlobalName && name.equalsIgnoreCase(currentGlobalName));
+    });
+
+    if (hasMeMention) {
+        showNotification(`${message.user.global_name || message.user.username} mentioned you in chat!`, 'fas fa-at');
+        return true;
+    }
+    return false;
+}
+
+function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     const messagesContainer = document.getElementById('chat-messages');
     if (!messagesContainer) return;
 
@@ -2580,12 +2609,13 @@ function appendChatMessage(message, scrollToBottom = true) {
             return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link"><i class="fas fa-link"></i> ${displayUrl}</a>`;
         });
 
-        // Mentions (@user or @everyone)
-        content = content.replace(/(@everyone|@[a-zA-Z0-9_.]+)/g, (mention) => {
+        // Mentions (@user, @everyone or @here)
+        content = content.replace(/@[a-zA-Z0-9_.]+/g, (mention) => {
             const name = mention.substring(1);
             const isMe = (currentUsername && name.equalsIgnoreCase(currentUsername)) ||
                 (currentGlobalName && name.equalsIgnoreCase(currentGlobalName)) ||
-                mention === '@everyone';
+                mention.equalsIgnoreCase('@everyone') ||
+                mention.equalsIgnoreCase('@here');
 
             if (isMe) {
                 hasMeMention = true;
@@ -2643,7 +2673,7 @@ function appendChatMessage(message, scrollToBottom = true) {
     messagesContainer.appendChild(messageEl);
 
     // Notify if mentioned but not by myself
-    if (hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
+    if (showNotify && hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
         showNotification(`${message.user.global_name || message.user.username} mentioned you in chat!`, 'fas fa-at');
     }
 
@@ -3212,6 +3242,178 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+// ========================
+// MENTION SUGGESTIONS
+// ========================
+let currentMentionIndex = -1;
+let filteredMentions = [];
+
+function handleChatMentionInput(e) {
+    const input = e.target;
+    if (input.id !== 'chat-input') return;
+
+    const value = input.value;
+    const cursorPosition = input.selectionStart;
+
+    // Find the last '@' before the cursor
+    const textBeforeCursor = value.substring(0, cursorPosition);
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (atIndex !== -1) {
+        // Check if there's a space before '@' or it's the start
+        if (atIndex === 0 || textBeforeCursor[atIndex - 1] === ' ') {
+            const query = textBeforeCursor.substring(atIndex + 1);
+            // Query should be the word currently being typed
+            const textAfterAt = value.substring(atIndex + 1);
+            const nextSpace = textAfterAt.split(' ')[0];
+
+            // Query is everything from @ to the first space
+            const currentWord = query.split(' ')[0];
+
+            if (cursorPosition <= atIndex + 1 + currentWord.length && !currentWord.includes('\n')) {
+                updateMentionSuggestions(currentWord, atIndex);
+                return;
+            }
+        }
+    }
+    hideMentionSuggestions();
+}
+
+function updateMentionSuggestions(query, atIndex) {
+    const container = document.getElementById('chat-mention-suggestions');
+    if (!container) return;
+
+    const users = window.currentOnlineUsers || [];
+    const special = [
+        { username: 'everyone', global_name: 'everyone', isSpecial: true, icon: 'fas fa-users' },
+        { username: 'here', global_name: 'here', isSpecial: true, icon: 'fas fa-location-arrow' }
+    ];
+
+    const lowerQuery = query.toLowerCase();
+    filteredMentions = [
+        ...special.filter(s => s.username.includes(lowerQuery)),
+        ...users.filter(u =>
+            u.username.toLowerCase().includes(lowerQuery) ||
+            (u.global_name && u.global_name.toLowerCase().includes(lowerQuery))
+        )
+    ];
+
+    // Limit results
+    filteredMentions = filteredMentions.slice(0, 8);
+
+    if (filteredMentions.length === 0) {
+        hideMentionSuggestions();
+        return;
+    }
+
+    // Reset index if query changed
+    if (container.dataset.lastQuery !== query) {
+        currentMentionIndex = 0;
+        container.dataset.lastQuery = query;
+    }
+
+    container.innerHTML = '';
+    filteredMentions.forEach((mention, index) => {
+        const item = document.createElement('div');
+        item.className = 'mention-item' + (mention.isSpecial ? ' special' : '');
+        if (index === currentMentionIndex) item.classList.add('selected');
+
+        const avatarHtml = mention.isSpecial
+            ? `<i class="mention-icon-wrapper"><i class="${mention.icon}"></i></i>`
+            : `<img src="${mention.avatar_url}" class="mention-avatar">`;
+
+        item.innerHTML = `
+            ${avatarHtml}
+            <div class="mention-info">
+                <span class="mention-name">${mention.global_name || mention.username}</span>
+                <span class="mention-handle">@${mention.username}</span>
+            </div>
+        `;
+
+        item.onmousedown = (e) => {
+            e.preventDefault(); // Prevent input blur
+            selectMention(mention.username, atIndex);
+        };
+        container.appendChild(item);
+    });
+
+    container.classList.remove('hidden');
+    container.dataset.atIndex = atIndex;
+}
+
+function hideMentionSuggestions() {
+    const container = document.getElementById('chat-mention-suggestions');
+    if (container) {
+        container.classList.add('hidden');
+        container.dataset.lastQuery = '';
+    }
+    currentMentionIndex = -1;
+}
+
+function selectMention(username, atIndex) {
+    const input = document.getElementById('chat-input');
+    if (!input) return;
+
+    const value = input.value;
+    const beforeAt = value.substring(0, atIndex);
+
+    const textAfterAt = value.substring(atIndex + 1);
+    const spaceIndex = textAfterAt.indexOf(' ');
+    const endPosition = spaceIndex === -1 ? value.length : atIndex + 1 + spaceIndex;
+
+    const afterMention = value.substring(endPosition);
+
+    input.value = `${beforeAt}@${username} ${afterMention.startsWith(' ') ? afterMention.substring(1) : afterMention}`;
+    input.focus();
+
+    const newCursorPos = beforeAt.length + username.length + 2;
+    input.setSelectionRange(newCursorPos, newCursorPos);
+
+    hideMentionSuggestions();
+    input.dispatchEvent(new Event('input'));
+}
+
+function handleMentionKeyDown(e) {
+    const container = document.getElementById('chat-mention-suggestions');
+    if (!container || container.classList.contains('hidden')) return false;
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        currentMentionIndex = (currentMentionIndex + 1) % filteredMentions.length;
+        updateMentionSuggestionsUI();
+        return true;
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        currentMentionIndex = (currentMentionIndex - 1 + filteredMentions.length) % filteredMentions.length;
+        updateMentionSuggestionsUI();
+        return true;
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+        if (currentMentionIndex !== -1) {
+            e.preventDefault();
+            const atIndex = parseInt(container.dataset.atIndex);
+            selectMention(filteredMentions[currentMentionIndex].username, atIndex);
+            return true;
+        }
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        hideMentionSuggestions();
+        return true;
+    }
+    return false;
+}
+
+function updateMentionSuggestionsUI() {
+    const container = document.getElementById('chat-mention-suggestions');
+    if (!container) return;
+    const items = container.querySelectorAll('.mention-item');
+    items.forEach((item, index) => {
+        item.classList.toggle('selected', index === currentMentionIndex);
+        if (index === currentMentionIndex) {
+            item.scrollIntoView({ block: 'nearest' });
+        }
+    });
+}
+
 window.sendChatMessage = async function (overrideMessage = null) {
     const input = document.getElementById('chat-input');
     if (!input) return;
@@ -3287,7 +3489,7 @@ window.sendChatMessage = async function (overrideMessage = null) {
             if (counterElem) counterElem.textContent = '0/200';
             // Append message immediately for instant feedback
             if (!document.getElementById(`msg-${data.message.id}`)) {
-                appendChatMessage(data.message);
+                appendChatMessage(data.message, true, false); // Don't notify self
             }
         } else {
             showNotification(data.error || 'Failed to send message', 'fas fa-exclamation-triangle');
@@ -3298,9 +3500,12 @@ window.sendChatMessage = async function (overrideMessage = null) {
     }
 };
 
-// Handle Enter key for sending messages
+// Handle keydown for chat input
 document.addEventListener('keydown', (e) => {
     if (e.target.id === 'chat-input') {
+        // First check for mentions autocomplete
+        if (handleMentionKeyDown(e)) return;
+
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendChatMessage();
@@ -3308,10 +3513,14 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Character counter for chat
+// Handle input for chat input (char counter and mentions)
 document.addEventListener('input', (e) => {
     if (e.target.id === 'chat-input') {
         const input = e.target;
+
+        // Handle mentions
+        handleChatMentionInput(e);
+
         const count = input.value.length;
         const counterElem = document.getElementById('chat-char-count');
 
@@ -3446,12 +3655,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Close picker on outside click
+// Close pickers on outside click
 window.addEventListener('mousedown', (e) => {
-    const picker = document.getElementById('chat-gif-picker');
-    const btn = document.getElementById('chat-gif-btn');
-    if (isGifPickerOpen && picker && !picker.contains(e.target) && !btn.contains(e.target)) {
+    const gifPicker = document.getElementById('chat-gif-picker');
+    const gifBtn = document.getElementById('chat-gif-btn');
+    if (isGifPickerOpen && gifPicker && !gifPicker.contains(e.target) && !gifBtn.contains(e.target)) {
         toggleGifPicker();
+    }
+
+    const mentionPicker = document.getElementById('chat-mention-suggestions');
+    if (mentionPicker && !mentionPicker.contains(e.target) && e.target.id !== 'chat-input') {
+        hideMentionSuggestions();
     }
 });
 
