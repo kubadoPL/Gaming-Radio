@@ -1189,46 +1189,87 @@ function handleEventSource(metadataUrl, tooltipElement) {
 async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
     try {
         const normalized = sName.replace(/\s+/g, '').toUpperCase();
-        const cacheKey = `listenerCount_${normalized}`;
+        const cacheKey = `combinedOnlineCount_${normalized}`;
         const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
 
-        if (cached && (Date.now() - cached.timestamp < 2 * 60 * 1000)) {
-            console.log(`[Live Listeners] ${sName}: ${cached.listenerCount} (cached)`);
-            updateTooltip(tooltipElement, cached.listenerCount, sName);
+        if (cached && (Date.now() - cached.timestamp < 40 * 1000)) {
+            updateTooltip(tooltipElement, cached.count, sName);
             return;
         }
 
-        console.log(`[Live Listeners] Fetching count for ${sName}...`);
-        const res = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + normalized);
-        const data = await res.json();
-        const count = data.total_sum;
+        const headers = {};
+        if (discordAuthToken) {
+            headers['Authorization'] = `Bearer ${discordAuthToken}`;
+        }
 
-        console.log(`[Live Listeners] ${sName}: ${count} listeners`);
-        localStorage.setItem(cacheKey, JSON.stringify({ listenerCount: count, timestamp: Date.now() }));
-        updateTooltip(tooltipElement, count, sName);
+        // Fetch from BOTH ZenoFM (total listeners) and Chat API (active users)
+        const [zenoRes, chatRes] = await Promise.allSettled([
+            fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + normalized),
+            fetch(`${CHAT_API_BASE}/chat/poll/${normalized}?since=${Date.now()}`, { headers })
+        ]);
+
+        let zenoCount = 0;
+        let chatCount = 0;
+
+        if (zenoRes.status === 'fulfilled') {
+            const zenoData = await zenoRes.value.json();
+            zenoCount = zenoData.total_sum || 0;
+        }
+
+        if (chatRes.status === 'fulfilled') {
+            const chatData = await chatRes.value.json();
+            chatCount = chatData.online_count !== undefined ? chatData.online_count : 0;
+        }
+
+        // Use the higher value: if chat users > listeners, show chat count. Otherwise show listeners.
+        const finalCount = Math.max(zenoCount, chatCount);
+
+        localStorage.setItem(cacheKey, JSON.stringify({ count: finalCount, timestamp: Date.now() }));
+        updateTooltip(tooltipElement, finalCount, sName);
     } catch (e) {
-        console.error(`[Live Listeners] Error fetching count for ${sName}:`, e);
+        console.error(`[Combined Online] Error fetching count for ${sName}:`, e);
         updateTooltip(tooltipElement, null, sName, true);
     }
 }
 
 function updateTooltip(tooltipElement, count, sName, isError = false) {
-    const userElem = tooltipElement.querySelector('.tooltip-Online-Users');
-    if (!userElem) return;
+    // Update tooltip UI
+    if (tooltipElement) {
+        const userElem = tooltipElement.querySelector('.tooltip-Online-Users');
+        if (userElem) {
+            if (isError) {
+                userElem.textContent = 'Chat error';
+            } else {
+                userElem.textContent = `Live Listeners: ${count}`;
+                userElem.style.color = count > 0 ? '#00ff8c' : 'rgba(255,255,255,0.4)';
+            }
+        }
+    }
 
-    if (isError) {
-        userElem.textContent = 'Error loading Live Listeners';
-    } else {
-        userElem.textContent = `Live Listeners: ${count}`;
-        userElem.style.color = count > 0 ? '#00ff00' : '#ff0000';
+    // Update channel dropdown counts
+    const dropdownOptionBadge = document.querySelector(`.channel-option[data-station="${sName}"] .chat-online-badge`);
+    if (dropdownOptionBadge) {
+        if (isError) {
+            dropdownOptionBadge.textContent = '!';
+        } else {
+            dropdownOptionBadge.textContent = count;
+        }
+    }
 
-        // Notify if it's the active station and count changed significantly
-        const currentStationName = stationName ? stationName.textContent : '';
-        if (sName === currentStationName && count !== null) {
+    if (!isError) {
+        // Sync with the main chat online badge if this is the currently viewing station
+        const currentViewingStationName = document.getElementById('chat-current-station')?.textContent || '';
+        if (sName === currentViewingStationName) {
+            const chatOnlineCountElem = document.getElementById('chat-online-count');
+            if (chatOnlineCountElem) chatOnlineCountElem.textContent = count;
+        }
+
+        // Notify if it's the active PLAYING station and count changed significantly
+        const currentPlayingStation = stationName ? stationName.textContent : '';
+        if (sName === currentPlayingStation && count !== null) {
             const now = Date.now();
             const timeSinceLastNotify = now - lastListenerNotifyTime;
 
-            // Notify if count changed and it's been at least 2 minutes, or if it's the first fetch
             if (lastActiveListenerCount === -1 || (count !== lastActiveListenerCount && timeSinceLastNotify > 120000)) {
                 if (count > 0) {
                     showNotification(`There are <span class="notification-listeners-count">${count}</span> live listeners on ${sName}!`, 'fas fa-users');

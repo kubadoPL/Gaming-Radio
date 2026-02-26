@@ -2576,6 +2576,11 @@ body::-webkit-scrollbar-thumb {
     padding-left: 22px;
 }
 
+.channel-option .chat-online-badge {
+    margin-left: auto;
+    pointer-events: none;
+}
+
 .channel-option::before {
     content: '\f086';
     font-family: 'Font Awesome 5 Free';
