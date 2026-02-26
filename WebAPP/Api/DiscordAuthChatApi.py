@@ -22,7 +22,7 @@ CORS(
     resources={
         r"/*": {
             "origins": "*",
-            "allow_headers": ["Authorization", "Content-Type"],
+            "allow_headers": ["Authorization", "Content-Type", "X-Playing-Station"],
             "methods": ["GET", "POST", "OPTIONS"],
         }
     },
