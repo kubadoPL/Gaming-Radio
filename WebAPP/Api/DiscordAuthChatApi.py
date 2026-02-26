@@ -98,7 +98,7 @@ def get_online_users_list(station_key):
             p = user_profiles[uid].copy()
             station_val = user_last_station.get(uid, "Radio GAMING")
             p["current_station"] = station_names.get(station_val, station_val)
-            p["last_seen"] = last_ts.isoformat()
+            p["last_seen"] = last_ts.isoformat() + "Z"
             p["is_online"] = diff < ONLINE_THRESHOLD_SECONDS
             results.append(p)
 
@@ -200,7 +200,7 @@ def discord_callback():
         user_sessions[session_token] = {
             **profile,
             "discord_access_token": token_json["access_token"],
-            "expires_at": (datetime.utcnow() + timedelta(days=7)).isoformat(),
+            "expires_at": (datetime.utcnow() + timedelta(days=7)).isoformat() + "Z",
         }
         return redirect(f"{frontend_url}?auth_token={session_token}")
     except Exception as e:
@@ -329,13 +329,14 @@ def get_chat_history(station):
             )
 
     online_users_list = get_online_users_list(station_key)
+    online_count = len([u for u in online_users_list if u.get("is_online")])
     return jsonify(
         {
             "station": station_key,
             "messages": chat_messages[station_key][-50:],
-            "online_count": len(online_users_list),
+            "online_count": online_count,
             "online_users": online_users_list,
-            "server_time": datetime.utcnow().isoformat(),
+            "server_time": datetime.utcnow().isoformat() + "Z",
         }
     )
 
@@ -370,12 +371,13 @@ def poll_messages(station):
             pass
 
     online_users_list = get_online_users_list(station_key)
+    online_count = len([u for u in online_users_list if u.get("is_online")])
     return jsonify(
         {
             "messages": messages[-50:],
-            "online_count": len(online_users_list),
+            "online_count": online_count,
             "online_users": online_users_list,
-            "server_time": datetime.utcnow().isoformat(),
+            "server_time": datetime.utcnow().isoformat() + "Z",
         }
     )
 
@@ -414,7 +416,7 @@ def send_message():
         "id": secrets.token_hex(8),
         "user": user,
         "content": content,
-        "timestamp": now.isoformat(),
+        "timestamp": now.isoformat() + "Z",
         "station": station,
         "song_data": data.get("song_data"),  # optional song embed
     }
