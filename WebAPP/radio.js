@@ -3005,7 +3005,8 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
 let customEmojis = [
     { id: 'custom_kekw', name: 'kekw', url: 'https://i.iplsc.com/000H02HTFRKMGFP9-C323-F4.webp', creator_id: 'system' },
     { id: 'custom_obamium', name: 'obamium', url: 'https://img.itch.zone/aW1nLzU1NjA1MDkuZ2lm/original/qAldOG.gif', creator_id: 'system' },
-    { id: 'custom_poggers', name: 'poggers', url: 'https://cdn3.emoji.gg/emojis/7893-poggerchug.png', creator_id: 'system' }
+    { id: 'custom_poggers', name: 'poggers', url: 'https://cdn3.emoji.gg/emojis/7893-poggerchug.png', creator_id: 'system' },
+    { id: 'custom_dwayne_eyebrow', name: 'dwayne_eyebrow', url: 'https://cdn3.emoji.gg/emojis/4221-dwayneeyebrow.png', creator_id: 'system' }
 ]; // List of {id, name, url, creator_id}
 
 async function fetchCustomEmojis() {
