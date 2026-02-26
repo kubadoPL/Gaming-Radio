@@ -2046,7 +2046,10 @@ function updateCurrentStation() {
 async function loadChatHistory() {
     const messagesContainer = document.getElementById('chat-messages');
     try {
-        const headers = {};
+        const playingStation = document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING';
+        const headers = {
+            'X-Playing-Station': playingStation
+        };
         if (discordAuthToken) {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
@@ -2099,9 +2102,11 @@ async function pollNewMessages() {
 
     try {
         const since = lastMessageTimestamp ? `?since=${encodeURIComponent(lastMessageTimestamp)}` : '';
+        const playingStation = document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING';
         const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`, {
             headers: {
-                'Authorization': `Bearer ${discordAuthToken}`
+                'Authorization': `Bearer ${discordAuthToken}`,
+                'X-Playing-Station': playingStation
             }
         });
         const data = await response.json();
@@ -2337,11 +2342,13 @@ window.sendChatMessage = async function (overrideMessage = null) {
             }
         }
 
+        const playingStation = document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING';
         const response = await fetch(`${CHAT_API_BASE}/chat/send`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${discordAuthToken}`
+                'Authorization': `Bearer ${discordAuthToken}`,
+                'X-Playing-Station': playingStation
             },
             body: JSON.stringify({
                 message: message,

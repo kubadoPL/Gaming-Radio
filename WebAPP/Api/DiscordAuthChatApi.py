@@ -51,11 +51,15 @@ MESSAGE_COOLDOWN_SECONDS = 2
 ONLINE_THRESHOLD_SECONDS = 60
 
 
-def update_user_activity(user_id, station_key):
+def update_user_activity(user_id, station_key, playing_station=None):
     if station_key not in online_users:
         online_users[station_key] = {}
     online_users[station_key][user_id] = datetime.utcnow()
-    user_last_station[user_id] = station_key
+    if playing_station:
+        user_last_station[user_id] = playing_station
+    else:
+        # Fallback to chat channel if no header provided
+        user_last_station[user_id] = station_key
 
 
 def get_online_users_list(station_key):
@@ -85,9 +89,11 @@ def get_online_users_list(station_key):
     for uid in active_uids:
         if uid in user_profiles:
             p = user_profiles[uid].copy()
-            p["current_station"] = station_names.get(
-                user_last_station.get(uid), "Unknown Station"
-            )
+            # Use the actual station from user_last_station
+            station_val = user_last_station.get(uid, "Radio GAMING")
+            # If it's a key like RADIOGAMINGDARK, map it to a nice name,
+            # but if it's already a nice name (from header), use it as is
+            p["current_station"] = station_names.get(station_val, station_val)
             profiles.append(p)
     return profiles
 
@@ -295,10 +301,13 @@ def get_chat_history(station):
 
     # Track activity if token provided
     auth_header = request.headers.get("Authorization")
+    playing_header = request.headers.get("X-Playing-Station")
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header.split(" ")[1]
         if token in user_sessions:
-            update_user_activity(user_sessions[token]["id"], station_key)
+            update_user_activity(
+                user_sessions[token]["id"], station_key, playing_header
+            )
 
     online_users_list = get_online_users_list(station_key)
     return jsonify(
@@ -321,10 +330,13 @@ def poll_messages(station):
 
     # Track activity
     auth_header = request.headers.get("Authorization")
+    playing_header = request.headers.get("X-Playing-Station")
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header.split(" ")[1]
         if token in user_sessions:
-            update_user_activity(user_sessions[token]["id"], station_key)
+            update_user_activity(
+                user_sessions[token]["id"], station_key, playing_header
+            )
 
     messages = chat_messages[station_key]
     if since:
@@ -368,7 +380,8 @@ def send_message():
 
     user = user_sessions[token]
     now = datetime.utcnow()
-    update_user_activity(user["id"], station)
+    playing_header = request.headers.get("X-Playing-Station")
+    update_user_activity(user["id"], station, playing_header)
 
     if (
         user["id"] in message_cooldowns
