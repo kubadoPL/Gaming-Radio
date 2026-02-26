@@ -742,6 +742,18 @@ function playPause() {
         audio.play();
         updatePlayPauseUI('loading');
         showNotification("Now Playing!");
+
+        // Add the currently displayed song to history when play is pressed
+        // (metadata was received while paused, so we need to trigger this manually)
+        const currentTitle = streamTitleElement ? streamTitleElement.textContent : '';
+        const currentCover = document.getElementById('albumCover') ? document.getElementById('albumCover').src : '';
+        if (currentTitle && currentTitle !== 'Loading...' && currentTitle !== '') {
+            lastHistorySongTitle = ''; // Reset so addToSongHistory will accept it
+            // Use a short delay to let audio.paused become false
+            setTimeout(() => {
+                addToSongHistory(currentTitle, currentCover);
+            }, 300);
+        }
     } else {
         audio.pause();
         updatePlayPauseUI('paused');
@@ -2497,6 +2509,10 @@ window.changeStation = function (source, name, metadataURL) {
 
 function addToSongHistory(title, coverUrl) {
     if (!title || title === lastHistorySongTitle) return;
+
+    // Only add to history if the user is actually listening
+    if (!audio || audio.paused) return;
+
     lastHistorySongTitle = title;
 
     const currentStation = stationName ? stationName.textContent : 'Unknown';
