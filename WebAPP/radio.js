@@ -2046,7 +2046,7 @@ function updateCurrentStation() {
 async function loadChatHistory() {
     const messagesContainer = document.getElementById('chat-messages');
     try {
-        const playingStation = document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING';
+        const playingStation = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
         const headers = {
             'X-Playing-Station': playingStation
         };
@@ -2102,7 +2102,7 @@ async function pollNewMessages() {
 
     try {
         const since = lastMessageTimestamp ? `?since=${encodeURIComponent(lastMessageTimestamp)}` : '';
-        const playingStation = document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING';
+        const playingStation = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
         const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`, {
             headers: {
                 'Authorization': `Bearer ${discordAuthToken}`,
@@ -2175,9 +2175,11 @@ window.openOnlineUsersModal = async function () {
     container.innerHTML = '<div class="chat-loading"><i class="fas fa-spinner fa-spin"></i> Loading users...</div>';
 
     try {
+        const playingStation = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
         const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, {
             headers: {
-                'Authorization': `Bearer ${discordAuthToken}`
+                'Authorization': `Bearer ${discordAuthToken}`,
+                'X-Playing-Station': playingStation
             }
         });
         const data = await response.json();
@@ -2342,7 +2344,7 @@ window.sendChatMessage = async function (overrideMessage = null) {
             }
         }
 
-        const playingStation = document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING';
+        const playingStation = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
         const response = await fetch(`${CHAT_API_BASE}/chat/send`, {
             method: 'POST',
             headers: {
