@@ -1388,11 +1388,16 @@ window.switchGifTab = function (tab) {
     }
 };
 
-window.toggleFavoriteGif = function (url, event) {
+window.toggleFavoriteGif = function (btn, event) {
     if (event) event.stopPropagation();
 
+    const url = btn.dataset.mediaUrl;
+    if (!url) return;
+
     const index = gifFavorites.indexOf(url);
-    if (index === -1) {
+    const isAdding = index === -1;
+
+    if (isAdding) {
         gifFavorites.push(url);
         showNotification('Added to favorites!', 'fas fa-heart');
     } else {
@@ -1402,10 +1407,13 @@ window.toggleFavoriteGif = function (url, event) {
 
     localStorage.setItem('RadioGaming-gifFavorites', JSON.stringify(gifFavorites));
 
-    // Update all matching heart icons in chat
-    document.querySelectorAll(`.chat-media-fav-btn[onclick*="${url}"]`).forEach(btn => {
-        btn.classList.toggle('active', index === -1);
-        btn.querySelector('i').className = index === -1 ? 'fas fa-heart' : 'far fa-heart';
+    // Update all matching icons (including the current one)
+    document.querySelectorAll(`.chat-media-fav-btn[data-media-url]`).forEach(otherBtn => {
+        if (otherBtn.dataset.mediaUrl === url) {
+            otherBtn.classList.toggle('active', isAdding);
+            const icon = otherBtn.querySelector('i');
+            if (icon) icon.className = isAdding ? 'fas fa-heart' : 'far fa-heart';
+        }
     });
 
     // Refresh tab if in favorites
@@ -2439,16 +2447,17 @@ function appendChatMessage(message, scrollToBottom = true) {
     const trimmedContent = message.content.trim();
     const isImageOnly = trimmedContent.match(/^https?:\/\/.*?\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) ||
         trimmedContent.match(/^https?:\/\/media\d?\.giphy\.com\/media\/[a-zA-Z0-9]+\/giphy\.gif$/) ||
-        trimmedContent.includes('tenor.com/view/');
+        trimmedContent.includes('tenor.com/view/') ||
+        trimmedContent.startsWith('data:image/');
 
     if (isImageOnly) {
         const isFaved = gifFavorites.includes(trimmedContent);
         formattedContent = `
             <div class="chat-image-wrapper">
-                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" onclick="toggleFavoriteGif('${trimmedContent}', event)">
+                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" data-media-url="${escapeHtml(trimmedContent)}" onclick="toggleFavoriteGif(this, event)">
                     <i class="${isFaved ? 'fas' : 'far'} fa-heart"></i>
                 </div>
-                <img src="${escapeHtml(trimmedContent)}" class="chat-inline-gif chat-uploaded-image" alt="GIF" onclick="openImageZoom('${trimmedContent}')">
+                <img src="${escapeHtml(trimmedContent)}" class="chat-inline-gif chat-uploaded-image" alt="GIF" onclick="openImageZoom(this)">
             </div>`;
     } else {
         let content = escapeHtml(message.content);
@@ -2495,7 +2504,10 @@ function appendChatMessage(message, scrollToBottom = true) {
             </div>` : ''}
             ${message.image_data ? `
             <div class="chat-image-wrapper">
-                <img src="${message.image_data}" class="chat-inline-gif chat-uploaded-image" alt="Image" loading="lazy" onclick="openImageZoom('${message.image_data}')">
+                <div class="chat-media-fav-btn ${gifFavorites.includes(message.image_data) ? 'active' : ''}" data-media-url="${escapeHtml(message.image_data)}" onclick="toggleFavoriteGif(this, event)">
+                    <i class="${gifFavorites.includes(message.image_data) ? 'fas' : 'far'} fa-heart"></i>
+                </div>
+                <img src="${message.image_data}" class="chat-inline-gif chat-uploaded-image" alt="Image" loading="lazy" onclick="openImageZoom(this)">
             </div>
             ` : ''}
             ${message.song_data ? `
@@ -3040,10 +3052,11 @@ window.clearImageUpload = function () {
 };
 
 // --- Image Zoom ---
-window.openImageZoom = function (src) {
+window.openImageZoom = function (srcOrElement) {
     const overlay = document.getElementById('image-zoom-overlay');
     const img = document.getElementById('zoomed-image');
     if (overlay && img) {
+        const src = (srcOrElement instanceof HTMLElement) ? (srcOrElement.src || srcOrElement.dataset.mediaUrl) : srcOrElement;
         img.src = src;
         overlay.classList.add('active');
     }
@@ -3122,6 +3135,12 @@ window.sendChatMessage = async function (overrideMessage = null) {
         // Include image data if present
         if (hasImage) {
             bodyData.image_data = pendingImageData;
+        }
+
+        // If overrideMessage is a data URL, treat it as image data
+        if (overrideMessage && overrideMessage.startsWith('data:image/')) {
+            bodyData.message = '';
+            bodyData.image_data = overrideMessage;
         }
 
         const response = await fetch(`${CHAT_API_BASE}/chat/send`, {
@@ -3267,7 +3286,7 @@ function displayGifs(gifs) {
             const wrapper = document.createElement('div');
             wrapper.className = 'chat-image-wrapper';
             wrapper.innerHTML = `
-                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" onclick="toggleFavoriteGif('${url}', event)">
+                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" data-media-url="${escapeHtml(url)}" onclick="toggleFavoriteGif(this, event)">
                     <i class="${isFaved ? 'fas' : 'far'} fa-heart"></i>
                 </div>
                 <img src="${url}" alt="${gif.title || 'GIF'}" onclick="selectGif('${url}')">
