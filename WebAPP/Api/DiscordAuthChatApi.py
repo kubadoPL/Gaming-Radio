@@ -569,6 +569,32 @@ def react_to_message():
     )
 
 
+@chat_api.route("/music/itunes", methods=["GET"])
+def search_itunes():
+    query = request.args.get("q")
+    if not query:
+        return jsonify({"error": "Missing query"}), 400
+    try:
+        url = f"https://itunes.apple.com/search?term={query}&media=music&limit=5"
+        resp = http_requests.get(url, timeout=10)
+        return jsonify(resp.json())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@chat_api.route("/music/deezer", methods=["GET"])
+def search_deezer():
+    query = request.args.get("q")
+    if not query:
+        return jsonify({"error": "Missing query"}), 400
+    try:
+        url = f"https://api.deezer.com/search?q={query}&limit=5"
+        resp = http_requests.get(url, timeout=10)
+        return jsonify(resp.json())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 app.register_blueprint(chat_api, url_prefix="/DiscordAuthChatApi")
 app.register_blueprint(chat_api, name="chat_api_root")
 
