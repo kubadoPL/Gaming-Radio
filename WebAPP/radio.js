@@ -1252,36 +1252,36 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
         }
 
         const finalCount = Math.max(zenoCount, chatCount);
-        console.log(`[OnlineCountDebug] ${sName} -> Final Selected Count:`, finalCount);
+        console.log(`[OnlineCountDebug] ${sName} -> Tooltip: ${zenoCount}, Chat: ${finalCount}`);
 
-        updateTooltip(tooltipElement, finalCount, sName);
+        updateTooltip(tooltipElement, zenoCount, finalCount, sName);
     } catch (e) {
         console.error(`[OnlineCountDebug] Error fetching count for ${sName}:`, e);
-        updateTooltip(tooltipElement, null, sName, true);
+        updateTooltip(tooltipElement, 0, 0, sName, true);
     }
 }
 
-function updateTooltip(tooltipElement, count, sName, isError = false) {
-    // Update tooltip UI
+function updateTooltip(tooltipElement, zenoCount, finalCount, sName, isError = false) {
+    // Update tooltip UI (Main Page - ONLY ZenoFM Listeners)
     if (tooltipElement) {
         const userElem = tooltipElement.querySelector('.tooltip-Online-Users');
         if (userElem) {
             if (isError) {
-                userElem.textContent = 'Chat error';
+                userElem.textContent = 'Error loading';
             } else {
-                userElem.textContent = `Live Listeners: ${count}`;
-                userElem.style.color = count > 0 ? '#00ff8c' : 'rgba(255,255,255,0.4)';
+                userElem.textContent = `Live Listeners: ${zenoCount}`;
+                userElem.style.color = zenoCount > 0 ? '#00ff8c' : 'rgba(255,255,255,0.4)';
             }
         }
     }
 
-    // Update channel dropdown counts
+    // Update channel dropdown counts (Chat - Combined Max)
     const dropdownOptionBadge = document.querySelector(`.channel-option[data-station="${sName}"] .chat-online-badge`);
     if (dropdownOptionBadge) {
         if (isError) {
             dropdownOptionBadge.textContent = '!';
         } else {
-            dropdownOptionBadge.textContent = count;
+            dropdownOptionBadge.textContent = finalCount;
         }
     }
 
@@ -1290,20 +1290,20 @@ function updateTooltip(tooltipElement, count, sName, isError = false) {
         const currentViewingStationName = document.getElementById('chat-current-station')?.textContent || '';
         if (sName === currentViewingStationName) {
             const chatOnlineCountElem = document.getElementById('chat-online-count');
-            if (chatOnlineCountElem) chatOnlineCountElem.textContent = count;
+            if (chatOnlineCountElem) chatOnlineCountElem.textContent = finalCount;
         }
 
-        // Notify if it's the active PLAYING station and count changed significantly
+        // Notify based on listeners specifically
         const currentPlayingStation = stationName ? stationName.textContent : '';
-        if (sName === currentPlayingStation && count !== null) {
+        if (sName === currentPlayingStation && zenoCount !== null) {
             const now = Date.now();
             const timeSinceLastNotify = now - lastListenerNotifyTime;
 
-            if (lastActiveListenerCount === -1 || (count !== lastActiveListenerCount && timeSinceLastNotify > 120000)) {
-                if (count > 0) {
-                    showNotification(`There are <span class="notification-listeners-count">${count}</span> live listeners on ${sName}!`, 'fas fa-users');
+            if (lastActiveListenerCount === -1 || (zenoCount !== lastActiveListenerCount && timeSinceLastNotify > 120000)) {
+                if (zenoCount > 0) {
+                    showNotification(`There are <span class="notification-listeners-count">${zenoCount}</span> live listeners on ${sName}!`, 'fas fa-users');
                 }
-                lastActiveListenerCount = count;
+                lastActiveListenerCount = zenoCount;
                 lastListenerNotifyTime = now;
             }
         }
