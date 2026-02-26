@@ -48,6 +48,7 @@ online_users = {}  # station_key -> {user_id -> last_activity_timestamp}
 MAX_MESSAGES_PER_CHANNEL = 100
 message_cooldowns = {}
 MESSAGE_COOLDOWN_SECONDS = 2
+ONLINE_THRESHOLD_SECONDS = 60
 OFFLINE_THRESHOLD_SECONDS = 86400  # 24 hours
 all_user_activity = {}  # user_id -> last_activity_timestamp (global)
 
@@ -118,10 +119,6 @@ def get_online_count(station_key):
             if (now - ts).total_seconds() < ONLINE_THRESHOLD_SECONDS
         ]
     )
-
-
-def get_online_count(station_key):
-    return len(get_online_users_list(station_key))
 
 
 @chat_api.route("/")
