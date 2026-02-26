@@ -87,6 +87,7 @@ let listeningStats = JSON.parse(localStorage.getItem('RadioGaming-listeningStats
 let historyViewMode = localStorage.getItem('RadioGaming-historyViewMode') || 'grid'; // 'list' or 'grid' (spotify-style)
 let lastHistorySongTitle = '';
 let listeningTimer = null;
+let notifiedMessages = new Set();
 
 window.toggleVisualizations = function () {
     isVisualizerEnabled = !isVisualizerEnabled;
@@ -722,17 +723,38 @@ function updateMediaSessionMetadata(title, artwork) {
     }
 }
 
-function showNotification(message, icon = 'fas fa-bell') {
+function showNotification(message, icon = 'fas fa-bell', title = null, imageUrl = null, messageId = null) {
+    if (messageId) {
+        if (notifiedMessages.has(messageId)) return;
+        notifiedMessages.add(messageId);
+    }
     const container = document.getElementById('notificationContainer');
     if (!container) return;
 
     const notification = document.createElement('div');
     notification.className = 'notificationPopup';
-    notification.innerHTML = `
-        <div class="notification-icon"><i class="${icon}"></i></div>
-        <div class="notification-message">${message}</div>
-        <div class="notification-close" onclick="this.parentElement.classList.add('exiting'); setTimeout(() => this.parentElement.remove(), 500);"><i class="fas fa-times"></i></div>
-    `;
+
+    if (!title && !imageUrl) {
+        notification.classList.add('simple');
+        notification.innerHTML = `
+            <div class="notification-icon"><i class="${icon}"></i></div>
+            <div class="notification-message">${message}</div>
+            <div class="notification-close" onclick="this.parentElement.classList.add('exiting'); setTimeout(() => this.parentElement.remove(), 500);"><i class="fas fa-times"></i></div>
+        `;
+    } else {
+        let mediaHtml = `<div class="notification-icon"><i class="${icon}"></i></div>`;
+        if (imageUrl) {
+            mediaHtml = `<div class="notification-avatar"><img src="${imageUrl}" alt="User Avatar"></div>`;
+        }
+        notification.innerHTML = `
+            ${mediaHtml}
+            <div class="notification-content">
+                ${title ? `<div class="notification-title">${title}</div>` : ''}
+                <div class="notification-message">${message}</div>
+            </div>
+            <div class="notification-close" onclick="this.parentElement.classList.add('exiting'); setTimeout(() => this.parentElement.remove(), 500);"><i class="fas fa-times"></i></div>
+        `;
+    }
 
     // Apply active station color for border
     const activeColor = getComputedStyle(document.documentElement).getPropertyValue('--active-station-color');
@@ -2368,11 +2390,15 @@ async function loadChatHistory() {
 
 let pollCount = 0;
 async function pollNewMessages() {
-    // If chat is not visible, only poll every 30s (10 ticks * 3s) to save resources
-    // but still announce we are online and what we are listening to.
-    if (!isChatVisible && pollCount % 10 !== 0) {
-        pollCount++;
-        return;
+    const isFirstPoll = !lastMessageTimestamp;
+
+    // If chat is not visible, only poll every ~9s (3 ticks * 3s) for background pings
+    if (!isChatVisible) {
+        if (isFirstPoll) return; // Don't poll background if we don't have a baseline yet
+        if (pollCount % 3 !== 0) {
+            pollCount++;
+            return;
+        }
     }
     pollCount++;
 
@@ -2401,8 +2427,8 @@ async function pollNewMessages() {
                 // Only append if we don't already have this message
                 if (!document.getElementById(`msg-${message.id}`)) {
                     if (isChatVisible) {
-                        appendChatMessage(message, true, true);
-                    } else {
+                        appendChatMessage(message, true, !isFirstPoll);
+                    } else if (!isFirstPoll) {
                         // Background notification check
                         checkMessageForMention(message);
                     }
@@ -2555,7 +2581,7 @@ function checkMessageForMention(message) {
     });
 
     if (hasMeMention) {
-        showNotification(`${message.user.global_name || message.user.username} mentioned you in chat!`, 'fas fa-at');
+        showNotification(message.content, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
         return true;
     }
     return false;
@@ -2674,7 +2700,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
 
     // Notify if mentioned but not by myself
     if (showNotify && hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
-        showNotification(`${message.user.global_name || message.user.username} mentioned you in chat!`, 'fas fa-at');
+        showNotification(message.content, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
     }
 
     // Auto-scroll logic for new messages
@@ -3748,9 +3774,8 @@ window.changeStation = function (source, name, metadataURL) {
 
         lastMessageTimestamp = null;
 
-        if (isChatVisible) {
-            loadChatHistory();
-        }
+        // Always load history to establish base timestamp for pings
+        loadChatHistory();
 
         // Update chat UI
         const chatStationLabel = document.getElementById('chat-current-station');
