@@ -2928,6 +2928,15 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
             return `<span class="chat-mention">${mention}</span>`;
         });
 
+        // Custom Emojis (<:name:id>)
+        content = content.replace(/&lt;:([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)&gt;/g, (match, name, id) => {
+            const c = customEmojis.find(e => e.id === id);
+            if (c) {
+                return `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">`;
+            }
+            return match;
+        });
+
         formattedContent = content;
     }
 
@@ -3167,7 +3176,7 @@ async function openEmojiPicker(messageId, btnElement) {
     closeEmojiPicker();
 
     if (!discordAuthToken) {
-        showNotification('Zaloguj się, aby reagować', 'fas fa-exclamation-triangle');
+        showNotification('Zaloguj się, aby używać emoji', 'fas fa-exclamation-triangle');
         return;
     }
 
@@ -3180,6 +3189,11 @@ async function openEmojiPicker(messageId, btnElement) {
     const picker = document.createElement('div');
     picker.className = 'chat-emoji-picker';
     picker.id = 'active-emoji-picker';
+
+    // If it's for chat input, it has different positioning via CSS
+    if (messageId === null) {
+        picker.classList.add('input-picker');
+    }
 
     picker.innerHTML = `
         <div class="emoji-picker-header">
@@ -3301,7 +3315,11 @@ function renderEmojiGrid(messageId, filter = '') {
             }
 
             btn.onclick = () => {
-                toggleReaction(messageId, emojiId);
+                if (messageId) {
+                    toggleReaction(messageId, emojiId);
+                } else {
+                    insertEmojiToInput(emojiId);
+                }
                 closeEmojiPicker();
             };
             grid.appendChild(btn);
@@ -3377,9 +3395,48 @@ function scrollToCategory(catName) {
     }
 }
 
+window.toggleEmojiPickerForInput = function (btnElement) {
+    if (activeEmojiPicker && activeEmojiPicker.messageId === null) {
+        closeEmojiPicker();
+    } else {
+        openEmojiPicker(null, btnElement);
+        btnElement.classList.add('active');
+    }
+};
+
+function insertEmojiToInput(emojiId) {
+    const input = document.getElementById('chat-input');
+    if (!input) return;
+
+    let textToInsert = emojiId;
+    if (emojiId.startsWith('custom_')) {
+        const c = customEmojis.find(e => e.id === emojiId);
+        if (c) {
+            textToInsert = `<:${c.name}:${c.id}>`;
+        }
+    } else {
+        textToInsert = emojiId;
+    }
+
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const text = input.value;
+    input.value = text.substring(0, start) + textToInsert + text.substring(end);
+    input.focus();
+    input.selectionStart = input.selectionEnd = start + textToInsert.length;
+
+    // Trigger input event to update char counter
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
 function closeEmojiPicker() {
     const picker = document.getElementById('active-emoji-picker');
     if (picker) picker.remove();
+
+    // Remove active class from input button
+    const inputBtn = document.getElementById('chat-emoji-btn');
+    if (inputBtn) inputBtn.classList.remove('active');
+
     activeEmojiPicker = null;
     document.removeEventListener('mousedown', handleEmojiPickerOutsideClick);
 }

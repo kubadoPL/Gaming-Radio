@@ -3685,6 +3685,43 @@ body::-webkit-scrollbar-thumb {
     box-shadow: 0 0 15px var(--active-station-glow);
 }
 
+.chat-emoji-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.chat-emoji-btn:hover {
+    background: rgba(var(--active-station-glow-rgb), 0.2);
+    color: white;
+    border-color: var(--active-station-color);
+    transform: translateY(-2px);
+}
+
+.chat-emoji-btn.active {
+    background: var(--active-station-color);
+    color: white;
+    border-color: white;
+    box-shadow: 0 0 15px var(--active-station-glow);
+}
+
+.chat-custom-emoji {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin: -3px 2px 2px;
+}
+
 .chat-gif-picker {
     position: absolute;
     bottom: 85px;
