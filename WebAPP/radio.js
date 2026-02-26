@@ -1391,34 +1391,75 @@ window.switchGifTab = function (tab) {
 window.toggleFavoriteGif = function (btn, event) {
     if (event) event.stopPropagation();
 
-    const url = btn.dataset.mediaUrl;
+    const url = btn.getAttribute('data-media-url');
     if (!url) return;
 
     const index = gifFavorites.indexOf(url);
     const isAdding = index === -1;
+    const oldFavorites = [...gifFavorites];
 
+    // 1. Update memory
     if (isAdding) {
         gifFavorites.push(url);
-        showNotification('Added to favorites!', 'fas fa-heart');
     } else {
-        gifFavorites.splice(index, 1);
-        showNotification('Removed from favorites!', 'far fa-heart');
+        if (index > -1) gifFavorites.splice(index, 1);
     }
 
-    localStorage.setItem('RadioGaming-gifFavorites', JSON.stringify(gifFavorites));
+    // 2. Attempt storage
+    let storageSuccess = false;
+    try {
+        localStorage.setItem('RadioGaming-gifFavorites', JSON.stringify(gifFavorites));
+        storageSuccess = true;
+    } catch (e) {
+        console.warn('[STORAGE] LocalStorage full!', e);
+        gifFavorites = oldFavorites; // Revert memory on failure
+    }
 
-    // Update all matching icons (including the current one)
-    document.querySelectorAll(`.chat-media-fav-btn[data-media-url]`).forEach(otherBtn => {
-        if (otherBtn.dataset.mediaUrl === url) {
-            otherBtn.classList.toggle('active', isAdding);
-            const icon = otherBtn.querySelector('i');
-            if (icon) icon.className = isAdding ? 'fas fa-heart' : 'far fa-heart';
+    // Determine final state based on storage success
+    const finalFavoriteState = storageSuccess ? isAdding : !isAdding;
+
+    // 3. Sync ALL icons on the page
+    const allMediaBtns = document.getElementsByClassName('chat-media-fav-btn');
+    for (let i = 0; i < allMediaBtns.length; i++) {
+        const otherBtn = allMediaBtns[i];
+        if (otherBtn.getAttribute('data-media-url') === url) {
+            otherBtn.classList.toggle('active', finalFavoriteState);
+            const otherIcon = otherBtn.querySelector('i');
+            if (otherIcon) {
+                otherIcon.className = finalFavoriteState ? 'fas fa-heart' : 'far fa-heart';
+            }
         }
-    });
+    }
 
-    // Refresh tab if in favorites
-    if (currentGifTab === 'favorites') {
-        switchGifTab('favorites');
+    // 4. Notifications
+    if (isAdding) {
+        if (storageSuccess) {
+            showNotification('Dodano do ulubionych!', 'fas fa-heart');
+        } else {
+            const isBase64 = url.startsWith('data:image/');
+            const msg = isBase64 ? 'Ten obrazek jest za duży!' : 'Błąd zapisu: Kolekcja jest pełna!';
+            showNotification(msg, 'fas fa-exclamation-triangle');
+        }
+    } else if (storageSuccess) {
+        showNotification('Usunięto z ulubionych!', 'far fa-heart');
+    }
+
+    // 5. Context-aware removal (ONLY if inside GIF picker in Favorites tab)
+    const pickerContainer = btn.closest('#chat-gif-picker');
+    if (currentGifTab === 'favorites' && pickerContainer && storageSuccess && !isAdding) {
+        const wrapper = btn.closest('.chat-image-wrapper');
+        if (wrapper) {
+            wrapper.style.opacity = '0';
+            wrapper.style.transform = 'scale(0.8)';
+            wrapper.style.transition = 'all 0.2s ease';
+            setTimeout(() => {
+                if (wrapper.parentNode) {
+                    wrapper.remove();
+                    // Optional refresh to re-layout or check if empty
+                    if (currentGifTab === 'favorites') switchGifTab('favorites');
+                }
+            }, 200);
+        }
     }
 };
 
@@ -2556,13 +2597,22 @@ function appendChatMessage(message, scrollToBottom = true) {
 // EMOJI REACTIONS SYSTEM
 // ========================
 
-let customEmojis = []; // List of {id, name, url, creator_id}
+let customEmojis = [
+    { id: 'custom_kekw', name: 'kekw', url: 'https://i.iplsc.com/000H02HTFRKMGFP9-C323-F4.webp', creator_id: 'system' }
+]; // List of {id, name, url, creator_id}
 
 async function fetchCustomEmojis() {
     try {
         const response = await fetch(`${CHAT_API_BASE}/chat/emojis`);
         if (response.ok) {
-            customEmojis = await response.json();
+            const data = await response.json();
+            // Merge with default list, ensuring no duplicates by ID
+            const API_EMOJIS = data || [];
+            API_EMOJIS.forEach(emoji => {
+                if (!customEmojis.find(e => e.id === emoji.id)) {
+                    customEmojis.push(emoji);
+                }
+            });
             console.log('[CHAT] Loaded custom emojis:', customEmojis.length);
         }
     } catch (err) {
@@ -3218,10 +3268,15 @@ window.toggleGifPicker = function () {
     if (isGifPickerOpen) {
         picker.classList.remove('hidden');
         btn.classList.add('active');
-        fetchGiphyGifs(); // Load trending by default
+
+        // Reset tab content and highlight to Trending on every open
+        switchGifTab('trending');
 
         // Auto focus search
-        setTimeout(() => document.getElementById('gif-search-input').focus(), 100);
+        setTimeout(() => {
+            const searchInput = document.getElementById('gif-search-input');
+            if (searchInput) searchInput.focus();
+        }, 100);
     } else {
         picker.classList.add('hidden');
         btn.classList.remove('active');

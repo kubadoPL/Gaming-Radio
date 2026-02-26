@@ -3720,14 +3720,15 @@ body::-webkit-scrollbar-thumb {
 }
 
 .chat-media-fav-btn.active {
-    opacity: 1;
-    transform: scale(1);
-    color: #ff4d4d;
-    background: rgba(0, 0, 0, 0.7);
+    opacity: 1 !important;
+    transform: scale(1) !important;
+    color: white;
+    background: var(--active-station-color);
+    box-shadow: 0 0 15px var(--active-station-glow);
 }
 
 .chat-media-fav-btn.active i {
-    filter: drop-shadow(0 0 5px #ff4d4d);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
 /* Image Zoom Modal */
