@@ -2103,8 +2103,15 @@ async function loadChatHistory() {
     }
 }
 
+let pollCount = 0;
 async function pollNewMessages() {
-    if (!isChatVisible) return;
+    // If chat is not visible, only poll every 30s (10 ticks * 3s) to save resources
+    // but still announce we are online and what we are listening to.
+    if (!isChatVisible && pollCount % 10 !== 0) {
+        pollCount++;
+        return;
+    }
+    pollCount++;
 
     try {
         const since = lastMessageTimestamp ? `?since=${encodeURIComponent(lastMessageTimestamp)}` : '';
@@ -2120,11 +2127,13 @@ async function pollNewMessages() {
         const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`, { headers });
         const data = await response.json();
 
+        // Always update online count and users list
         if (data.online_count !== undefined) {
             updateOnlineCountUI(data.online_count, data.online_users);
         }
 
-        if (data.messages && data.messages.length > 0) {
+        // Only process and append messages if the chat is actually open
+        if (isChatVisible && data.messages && data.messages.length > 0) {
             data.messages.forEach(message => {
                 // Only append if we don't already have this message
                 if (!document.getElementById(`msg-${message.id}`)) {
@@ -2140,7 +2149,7 @@ async function pollNewMessages() {
             lastMessageTimestamp = lastMessageTimestamp || data.server_time;
         }
     } catch (error) {
-        console.error('[CHAT] Polling error:', error);
+        if (isChatVisible) console.error('[CHAT] Polling error:', error);
     }
 }
 
