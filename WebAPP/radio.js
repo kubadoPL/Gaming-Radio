@@ -78,7 +78,7 @@ let isVisualizerEnabled = localStorage.getItem('RadioGaming-visualizerEnabled') 
 let songHistory = JSON.parse(localStorage.getItem('RadioGaming-songHistory') || '[]');
 let songFavorites = JSON.parse(localStorage.getItem('RadioGaming-songFavorites') || '[]');
 let listeningStats = JSON.parse(localStorage.getItem('RadioGaming-listeningStats') || '{"totalTime": 0, "songs": {}}');
-let historyViewMode = localStorage.getItem('RadioGaming-historyViewMode') || 'list'; // 'list' or 'grid' (spotify-style)
+let historyViewMode = localStorage.getItem('RadioGaming-historyViewMode') || 'grid'; // 'list' or 'grid' (spotify-style)
 let lastHistorySongTitle = '';
 let listeningTimer = null;
 
