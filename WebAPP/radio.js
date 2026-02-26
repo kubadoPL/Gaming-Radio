@@ -2951,10 +2951,10 @@ function renderHistoryList() {
                             <button class="grid-action-btn" onclick="event.stopPropagation(); shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
                                 <i class="fas fa-comment-alt"></i>
                             </button>
-                            <a class="grid-action-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
+                            <a class="grid-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
                                 <i class="fab fa-spotify"></i>
                             </a>
-                            <a class="grid-action-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="YouTube">
+                            <a class="grid-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="YouTube">
                                 <i class="fab fa-youtube"></i>
                             </a>
                         </div>
@@ -2984,7 +2984,7 @@ function renderHistoryList() {
                         <a class="history-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Search on Spotify">
                             <i class="fab fa-spotify"></i>
                         </a>
-                        <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube" style="color: #ff0000;">
+                        <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube">
                             <i class="fab fa-youtube"></i>
                         </a>
                     </div>
@@ -3058,10 +3058,10 @@ function renderFavoritesList() {
                             <button class="grid-action-btn" onclick="event.stopPropagation(); shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
                                 <i class="fas fa-comment-alt"></i>
                             </button>
-                            <a class="grid-action-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
+                            <a class="grid-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
                                 <i class="fab fa-spotify"></i>
                             </a>
-                            <a class="grid-action-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="YouTube">
+                            <a class="grid-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="YouTube">
                                 <i class="fab fa-youtube"></i>
                             </a>
                         </div>
@@ -3091,7 +3091,7 @@ function renderFavoritesList() {
                         <a class="history-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Search on Spotify">
                             <i class="fab fa-spotify"></i>
                         </a>
-                        <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube" style="color: #ff0000;">
+                        <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube">
                             <i class="fab fa-youtube"></i>
                         </a>
                     </div>

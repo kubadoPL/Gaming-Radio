@@ -4378,6 +4378,14 @@ body::-webkit-scrollbar-thumb {
     transform: scale(1.2);
 }
 
+.grid-action-btn.spotify-btn:hover {
+    color: #1DB954;
+}
+
+.grid-action-btn.youtube-btn:hover {
+    color: #FF0000;
+}
+
 .grid-action-btn.favorited {
     color: var(--active-station-color);
 }
