@@ -175,10 +175,12 @@ async function processStatusQueue() {
                         // Trigger actions that should wait for the initial loading to finish
                         if (!hasInitialLoadFinished) {
                             hasInitialLoadFinished = true;
-                            // If chat was already initialized but deferred preload, run it now
-                            if (discordUser && typeof preloadAllChatMentions === 'function') {
-                                preloadAllChatMentions();
-                            }
+                            // Wait 3 seconds after loading screen is gone before checking mentions
+                            setTimeout(() => {
+                                if (discordUser && typeof preloadAllChatMentions === 'function') {
+                                    preloadAllChatMentions();
+                                }
+                            }, 3000);
                         }
                     }, 500);
                 }
