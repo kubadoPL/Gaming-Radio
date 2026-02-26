@@ -2959,12 +2959,12 @@ body::-webkit-scrollbar-thumb {
     border: 2px solid #000;
 }
 
-/* Preview area in input */
 .chat-input-wrapper {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    position: relative;
 }
 
 .chat-song-preview {
@@ -3010,11 +3010,11 @@ body::-webkit-scrollbar-thumb {
 }
 
 .chat-char-count {
+    position: absolute;
+    top: -18px;
+    right: 15px;
     font-size: 10px;
     color: rgba(255, 255, 255, 0.4);
-    text-align: right;
-    margin-top: 4px;
-    padding-right: 12px;
     transition: color 0.3s ease;
 }
 
