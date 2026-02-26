@@ -2214,7 +2214,7 @@ function renderOnlineUsers() {
             <img class="share-guild-icon" src="${user.avatar_url}" alt="${user.username}">
             <div class="share-guild-info">
                 <div class="share-guild-name">${user.global_name || user.username}</div>
-                <div class="share-guild-desc">Listening to ${currentChatStation}</div>
+                <div class="share-guild-desc">Listening to ${user.current_station || 'Radio GAMING'}</div>
             </div>
             <div class="chat-online-badge" style="margin-left: auto; background: rgba(0, 255, 140, 0.1); border-color: rgba(0, 255, 140, 0.2); color: #00ff8c; cursor: default;">
                 <i class="fas fa-circle" style="font-size: 8px;"></i> Online

@@ -43,6 +43,7 @@ DISCORD_API_URL = "https://discord.com/api/v10"
 user_sessions = {}
 chat_messages = {"RADIOGAMING": [], "RADIOGAMINGDARK": [], "RADIOGAMINGMARONFM": []}
 user_profiles = {}  # user_id -> profile_data (safe subset)
+user_last_station = {}  # user_id -> station_key
 online_users = {}  # station_key -> {user_id -> last_activity_timestamp}
 MAX_MESSAGES_PER_CHANNEL = 100
 message_cooldowns = {}
@@ -54,6 +55,7 @@ def update_user_activity(user_id, station_key):
     if station_key not in online_users:
         online_users[station_key] = {}
     online_users[station_key][user_id] = datetime.utcnow()
+    user_last_station[user_id] = station_key
 
 
 def get_online_users_list(station_key):
@@ -70,8 +72,24 @@ def get_online_users_list(station_key):
     online_users[station_key] = {
         uid: online_users[station_key][uid] for uid in active_uids
     }
-    # Return profiles
-    return [user_profiles[uid] for uid in active_uids if uid in user_profiles]
+
+    # Station display names
+    station_names = {
+        "RADIOGAMING": "Radio GAMING",
+        "RADIOGAMINGDARK": "Radio GAMING DARK",
+        "RADIOGAMINGMARONFM": "Radio GAMING MARON FM",
+    }
+
+    # Return profiles with their current station
+    profiles = []
+    for uid in active_uids:
+        if uid in user_profiles:
+            p = user_profiles[uid].copy()
+            p["current_station"] = station_names.get(
+                user_last_station.get(uid), "Unknown Station"
+            )
+            profiles.append(p)
+    return profiles
 
 
 def get_online_count(station_key):
