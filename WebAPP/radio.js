@@ -1186,10 +1186,19 @@ function handleEventSource(metadataUrl, tooltipElement) {
     return es;
 }
 
+function getStationId(sName) {
+    const nameToId = {
+        'Radio GAMING': 'RADIOGAMING',
+        'Radio GAMING DARK': 'RADIOGAMINGDARK',
+        'Radio GAMING MARON FM': 'RADIOGAMINGMARONFM'
+    };
+    return nameToId[sName] || sName.replace(/\s+/g, '').toUpperCase();
+}
+
 async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
     try {
-        const normalized = sName.replace(/\s+/g, '').toUpperCase();
-        const cacheKey = `combinedOnlineCount_${normalized}`;
+        const stationId = getStationId(sName);
+        const cacheKey = `combinedOnlineCount_${stationId}`;
         const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
 
         if (cached && (Date.now() - cached.timestamp < 40 * 1000)) {
@@ -1204,8 +1213,8 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
 
         // Fetch from BOTH ZenoFM (total listeners) and Chat API (active users)
         const [zenoRes, chatRes] = await Promise.allSettled([
-            fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + normalized),
-            fetch(`${CHAT_API_BASE}/chat/poll/${normalized}?since=${Date.now()}`, { headers })
+            fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationId),
+            fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?since=${Date.now()}`, { headers })
         ]);
 
         let zenoCount = 0;
@@ -1221,7 +1230,6 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
             chatCount = chatData.online_count !== undefined ? chatData.online_count : 0;
         }
 
-        // Use the higher value: if chat users > listeners, show chat count. Otherwise show listeners.
         const finalCount = Math.max(zenoCount, chatCount);
 
         localStorage.setItem(cacheKey, JSON.stringify({ count: finalCount, timestamp: Date.now() }));
