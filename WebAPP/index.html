@@ -207,8 +207,9 @@
                             <span id="chat-current-station">Radio GAMING</span>
                             <i class="fas fa-chevron-down channel-chevron"></i>
                         </div>
-                        <div class="chat-online-badge"><i class="fas fa-users"></i> <span
-                                id="chat-online-count">1</span> online</div>
+                        <div class="chat-online-badge" onclick="openOnlineUsersModal()"><i class="fas fa-users"></i>
+                            <span id="chat-online-count">1</span> online
+                        </div>
 
                         <div id="channel-dropdown" class="channel-dropdown hidden">
                             <div class="channel-option" onclick="switchChatChannel('Radio GAMING')">Radio GAMING</div>
@@ -475,6 +476,24 @@
                             <span>Logout</span>
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Online Users Modal -->
+    <div id="online-users-modal-overlay" class="share-modal-overlay hidden" onclick="closeOnlineUsersModal(event)">
+        <div class="share-modal" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <i class="fas fa-users"></i>
+                <h3>Online Listeners</h3>
+                <button class="share-modal-close" onclick="closeOnlineUsersModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="share-modal-body">
+                <div id="online-users-list" class="share-guild-list">
+                    <!-- Populated by JS -->
                 </div>
             </div>
         </div>

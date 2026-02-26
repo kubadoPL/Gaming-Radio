@@ -42,6 +42,7 @@ DISCORD_API_URL = "https://discord.com/api/v10"
 # In-memory storage
 user_sessions = {}
 chat_messages = {"RADIOGAMING": [], "RADIOGAMINGDARK": [], "RADIOGAMINGMARONFM": []}
+user_profiles = {}  # user_id -> profile_data (safe subset)
 online_users = {}  # station_key -> {user_id -> last_activity_timestamp}
 MAX_MESSAGES_PER_CHANNEL = 100
 message_cooldowns = {}
@@ -55,17 +56,26 @@ def update_user_activity(user_id, station_key):
     online_users[station_key][user_id] = datetime.utcnow()
 
 
-def get_online_count(station_key):
+def get_online_users_list(station_key):
     if station_key not in online_users:
-        return 0
+        return []
     now = datetime.utcnow()
-    # Clean up old entries
-    online_users[station_key] = {
-        uid: ts
+    # Clean up and get active user IDs
+    active_uids = [
+        uid
         for uid, ts in online_users[station_key].items()
         if (now - ts).total_seconds() < ONLINE_THRESHOLD_SECONDS
+    ]
+    # Update the internal dict to clean up expired ones
+    online_users[station_key] = {
+        uid: online_users[station_key][uid] for uid in active_uids
     }
-    return len(online_users[station_key])
+    # Return profiles
+    return [user_profiles[uid] for uid in active_uids if uid in user_profiles]
+
+
+def get_online_count(station_key):
+    return len(get_online_users_list(station_key))
 
 
 @chat_api.route("/")
@@ -128,7 +138,7 @@ def discord_callback():
             else f"https://cdn.discordapp.com/embed/avatars/{int(user_data.get('discriminator', 0)) % 5}.png"
         )
 
-        user_sessions[session_token] = {
+        profile = {
             "id": user_data["id"],
             "username": user_data["username"],
             "global_name": user_data.get("global_name", user_data["username"]),
@@ -139,6 +149,13 @@ def discord_callback():
                 else None
             ),
             "accent_color": user_data.get("accent_color"),
+        }
+
+        # Store safe profile for common use
+        user_profiles[user_data["id"]] = profile
+
+        user_sessions[session_token] = {
+            **profile,
             "discord_access_token": token_json["access_token"],
             "expires_at": (datetime.utcnow() + timedelta(days=7)).isoformat(),
         }
@@ -265,11 +282,13 @@ def get_chat_history(station):
         if token in user_sessions:
             update_user_activity(user_sessions[token]["id"], station_key)
 
+    online_users_list = get_online_users_list(station_key)
     return jsonify(
         {
             "station": station_key,
             "messages": chat_messages[station_key][-50:],
-            "online_count": get_online_count(station_key),
+            "online_count": len(online_users_list),
+            "online_users": online_users_list,
             "server_time": datetime.utcnow().isoformat(),
         }
     )
@@ -301,10 +320,12 @@ def poll_messages(station):
         except:
             pass
 
+    online_users_list = get_online_users_list(station_key)
     return jsonify(
         {
             "messages": messages[-50:],
-            "online_count": get_online_count(station_key),
+            "online_count": len(online_users_list),
+            "online_users": online_users_list,
             "server_time": datetime.utcnow().isoformat(),
         }
     )

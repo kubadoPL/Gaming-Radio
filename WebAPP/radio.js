@@ -2055,7 +2055,7 @@ async function loadChatHistory() {
         const data = await response.json();
 
         if (data.online_count !== undefined) {
-            updateOnlineCountUI(data.online_count);
+            updateOnlineCountUI(data.online_count, data.online_users);
         }
 
         if (messagesContainer) {
@@ -2107,7 +2107,7 @@ async function pollNewMessages() {
         const data = await response.json();
 
         if (data.online_count !== undefined) {
-            updateOnlineCountUI(data.online_count);
+            updateOnlineCountUI(data.online_count, data.online_users);
         }
 
         if (data.messages && data.messages.length > 0) {
@@ -2130,11 +2130,98 @@ async function pollNewMessages() {
     }
 }
 
-function updateOnlineCountUI(count) {
+function updateOnlineCountUI(count, users) {
     const onlineCountElem = document.getElementById('chat-online-count');
     if (onlineCountElem) {
         onlineCountElem.textContent = count;
     }
+    // Store users list if provided for the modal
+    if (users) {
+        window.currentOnlineUsers = users;
+
+        // If modal is open, refresh the list immediately
+        const overlay = document.getElementById('online-users-modal-overlay');
+        if (overlay && !overlay.classList.contains('hidden')) {
+            renderOnlineUsers();
+        }
+    }
+}
+
+window.openOnlineUsersModal = async function () {
+    const overlay = document.getElementById('online-users-modal-overlay');
+    const container = document.getElementById('online-users-list');
+    if (!overlay || !container) return;
+
+    overlay.classList.remove('hidden');
+
+    if (!discordAuthToken) {
+        container.innerHTML = `
+            <div class="chat-empty">
+                <i class="fab fa-discord" style="font-size: 32px; margin-bottom: 12px; color: #5865F2;"></i>
+                <p>Please login with Discord to see who else is listening!</p>
+                <button class="discord-btn" onclick="initiateDiscordLogin()" style="margin-top: 15px; width: auto; padding: 10px 20px;">
+                    <i class="fab fa-discord"></i> Login
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = '<div class="chat-loading"><i class="fas fa-spinner fa-spin"></i> Loading users...</div>';
+
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, {
+            headers: {
+                'Authorization': `Bearer ${discordAuthToken}`
+            }
+        });
+        const data = await response.json();
+        console.log('[CHAT] Online users data:', data);
+
+        // API might return online_users or just users depending on the version
+        const users = data.online_users || data.users || [];
+        window.currentOnlineUsers = users;
+
+        renderOnlineUsers();
+    } catch (error) {
+        console.error('[CHAT] Error fetching online users:', error);
+        container.innerHTML = '<div class="chat-error">Failed to load online users.</div>';
+    }
+};
+
+window.closeOnlineUsersModal = function (event) {
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = document.getElementById('online-users-modal-overlay');
+    if (overlay) overlay.classList.add('hidden');
+};
+
+function renderOnlineUsers() {
+    const container = document.getElementById('online-users-list');
+    if (!container) return;
+
+    const users = window.currentOnlineUsers || [];
+    if (users.length === 0) {
+        container.innerHTML = '<div class="chat-empty">No other listeners online right now.</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+    users.forEach(user => {
+        const item = document.createElement('div');
+        item.className = 'share-guild-item'; // Reuse existing styles
+        item.style.cursor = 'default';
+        item.innerHTML = `
+            <img class="share-guild-icon" src="${user.avatar_url}" alt="${user.username}">
+            <div class="share-guild-info">
+                <div class="share-guild-name">${user.global_name || user.username}</div>
+                <div class="share-guild-desc">Listening to ${currentChatStation}</div>
+            </div>
+            <div class="chat-online-badge" style="margin-left: auto; background: rgba(0, 255, 140, 0.1); border-color: rgba(0, 255, 140, 0.2); color: #00ff8c; cursor: default;">
+                <i class="fas fa-circle" style="font-size: 8px;"></i> Online
+            </div>
+        `;
+        container.appendChild(item);
+    });
 }
 
 function appendChatMessage(message, scrollToBottom = true) {

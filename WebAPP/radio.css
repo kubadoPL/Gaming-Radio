@@ -2492,10 +2492,26 @@ body::-webkit-scrollbar-thumb {
     align-items: center;
     gap: 5px;
     border: 1px solid rgba(0, 255, 140, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.chat-online-badge i {
-    font-size: 10px;
+.chat-online-badge:hover {
+    background: rgba(0, 255, 140, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 0 10px rgba(0, 255, 140, 0.2);
+}
+
+.chat-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .channel-dropdown {
