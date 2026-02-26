@@ -1210,8 +1210,17 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
             zenoCount = zenoCached.count;
         }
 
-        const headers = {};
-        if (discordAuthToken) {
+        const currentPlayingName = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
+        const currentPlayingId = getStationId(currentPlayingName);
+
+        const headers = {
+            'X-Playing-Station': currentPlayingName
+        };
+
+        // Only send the token if we are checking the station we are ACTUALLY listening to 
+        // OR the one we are currently viewing in the chat window.
+        // This prevents us from appearing "online" in every station at once during background checks.
+        if (discordAuthToken && (stationId === currentPlayingId || stationId === currentChatStation)) {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
