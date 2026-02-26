@@ -1236,10 +1236,21 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
         const results = await Promise.allSettled(fetchPromises);
 
         // Handle Chat Data (always the first promise)
-        let chatCount = 0;
+        let chatRoomCount = 0;
+        let usersListeningToStation = 0;
+
         if (results[0].status === 'fulfilled') {
-            chatCount = results[0].value.online_count !== undefined ? results[0].value.online_count : 0;
-            console.log(`[OnlineCountDebug] ${sName} (Chat API - Realtime):`, chatCount);
+            const chatData = results[0].value;
+            chatRoomCount = chatData.online_count !== undefined ? chatData.online_count : 0;
+
+            if (chatData.online_users && Array.isArray(chatData.online_users)) {
+                usersListeningToStation = chatData.online_users.filter(u =>
+                    u.is_online && getStationId(u.current_station || 'Radio GAMING') === stationId
+                ).length;
+            } else {
+                usersListeningToStation = chatRoomCount;
+            }
+            console.log(`[OnlineCountDebug] ${sName} (Chat API - Room): ${chatRoomCount}, Listening: ${usersListeningToStation}`);
         }
 
         // Handle Zeno Data (if requested, it's the second promise)
@@ -1251,10 +1262,10 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
             console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Cached):`, zenoCount);
         }
 
-        const finalCount = Math.max(zenoCount, chatCount);
-        console.log(`[OnlineCountDebug] ${sName} -> Tooltip: ${zenoCount}, Chat: ${finalCount}`);
+        const tooltipListenersCount = Math.max(zenoCount, usersListeningToStation);
+        console.log(`[OnlineCountDebug] ${sName} -> Tooltip: ${tooltipListenersCount}, Chat: ${chatRoomCount}`);
 
-        updateTooltip(tooltipElement, zenoCount, finalCount, sName);
+        updateTooltip(tooltipElement, tooltipListenersCount, chatRoomCount, sName);
     } catch (e) {
         console.error(`[OnlineCountDebug] Error fetching count for ${sName}:`, e);
         updateTooltip(tooltipElement, 0, 0, sName, true);
@@ -1294,7 +1305,8 @@ function updateTooltip(tooltipElement, zenoCount, finalCount, sName, isError = f
         }
 
         // Notify based on listeners specifically
-        const currentPlayingStation = stationName ? stationName.textContent : '';
+        const stationNameElem = document.getElementById('StationNameInh1');
+        const currentPlayingStation = stationNameElem ? stationNameElem.textContent.trim() : '';
         if (sName === currentPlayingStation && zenoCount !== null) {
             const now = Date.now();
             const timeSinceLastNotify = now - lastListenerNotifyTime;
@@ -2232,10 +2244,6 @@ async function pollNewMessages() {
 }
 
 function updateOnlineCountUI(count, users) {
-    const onlineCountElem = document.getElementById('chat-online-count');
-    if (onlineCountElem) {
-        onlineCountElem.textContent = count;
-    }
     // Store users list if provided for the modal
     if (users) {
         window.currentOnlineUsers = users;
@@ -2245,6 +2253,11 @@ function updateOnlineCountUI(count, users) {
         if (overlay && !overlay.classList.contains('hidden')) {
             renderOnlineUsers();
         }
+    }
+
+    const onlineCountElem = document.getElementById('chat-online-count');
+    if (onlineCountElem) {
+        onlineCountElem.textContent = count;
     }
 }
 
