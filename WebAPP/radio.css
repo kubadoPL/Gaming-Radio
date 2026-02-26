@@ -2983,8 +2983,8 @@ body::-webkit-scrollbar-thumb {
 /* Emoji Picker Popup */
 .chat-emoji-picker {
     position: absolute;
-    bottom: calc(100% + 8px);
-    right: 0;
+    bottom: 85px;
+    right: 20px;
     width: 320px;
     background: rgba(15, 12, 28, 0.98);
     backdrop-filter: blur(30px);
@@ -2998,25 +2998,6 @@ body::-webkit-scrollbar-thumb {
     animation: emojiPickerIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;
     transform-origin: bottom right;
-}
-
-.chat-emoji-picker.open-down {
-    bottom: auto;
-    top: calc(100% + 8px);
-    transform-origin: top right;
-    animation: emojiPickerInDown 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes emojiPickerInDown {
-    from {
-        opacity: 0;
-        transform: scale(0.9) translateY(-8px);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
 }
 
 @keyframes emojiPickerIn {
@@ -4313,10 +4294,17 @@ body::-webkit-scrollbar-thumb {
     align-items: center;
     justify-content: center;
     height: 100%;
+    min-height: 200px;
     color: rgba(255, 255, 255, 0.3);
     gap: 12px;
     padding: 40px;
     text-align: center;
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.history-drawer.immersive-mode .history-empty {
+    min-height: 400px;
 }
 
 .history-empty i {

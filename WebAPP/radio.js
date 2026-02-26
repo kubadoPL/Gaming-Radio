@@ -2611,24 +2611,12 @@ async function openEmojiPicker(messageId, btnElement) {
     // Refresh custom emojis list
     await fetchCustomEmojis();
 
-    const msgEl = document.getElementById(`msg-${messageId}`);
-    if (!msgEl) return;
+    const chatContainer = document.querySelector('.chat-container');
+    if (!chatContainer) return;
 
     const picker = document.createElement('div');
     picker.className = 'chat-emoji-picker';
     picker.id = 'active-emoji-picker';
-
-    // Inteligentne pozycjonowanie - jeśli wiadomość jest na samej górze, otwórz w dół
-    const messagesContainer = document.getElementById('chat-messages');
-    if (messagesContainer) {
-        const msgRect = msgEl.getBoundingClientRect();
-        const containerRect = messagesContainer.getBoundingClientRect();
-
-        // Zmniejszony próg do 320px (wysokość pickera)
-        if (msgRect.top - containerRect.top < 320) {
-            picker.classList.add('open-down');
-        }
-    }
 
     picker.innerHTML = `
         <div class="emoji-picker-header">
@@ -2638,7 +2626,7 @@ async function openEmojiPicker(messageId, btnElement) {
         <div class="emoji-picker-grid" id="emoji-picker-grid"></div>
     `;
 
-    msgEl.appendChild(picker);
+    chatContainer.appendChild(picker);
     activeEmojiPicker = { messageId, element: picker };
 
     // Render categories bar
