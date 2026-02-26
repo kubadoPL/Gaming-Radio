@@ -2844,7 +2844,12 @@ function renderStatsView() {
 
     // Sort songs by listening time
     const sortedSongs = Object.entries(listeningStats.songs)
-        .sort(([, a], [, b]) => b.listeningTime - a.listeningTime);
+        .sort(([, a], [, b]) => {
+            if ((b.playCount || 0) !== (a.playCount || 0)) {
+                return (b.playCount || 0) - (a.playCount || 0);
+            }
+            return (b.listeningTime || 0) - (a.listeningTime || 0);
+        });
 
     // Calculate station stats
     const stationStats = {};
@@ -2882,7 +2887,7 @@ function renderStatsView() {
                     <span class="stat-value">${favoriteStation}</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-label">Most Listened Track</span>
+                    <span class="stat-label">Most Played Track</span>
                     <span class="stat-value" title="${mostPopular}">${mostPopular}</span>
                 </div>
                 <div class="stat-card">
