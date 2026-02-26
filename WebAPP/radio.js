@@ -2988,12 +2988,9 @@ function renderHistoryList() {
 
             if (historyViewMode === 'grid') {
                 return `
-                    <div class="grid-item" style="animation-delay: ${i * 0.05}s" onclick="switchSection('home'); toggleHistoryDrawer();">
+                    <div class="grid-item" style="animation-delay: ${i * 0.05}s">
                         <div class="grid-cover-wrapper">
                             <img class="grid-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
-                            <div class="grid-overlay">
-                                <button class="grid-play-btn"><i class="fas fa-play"></i></button>
-                            </div>
                         </div>
                         <div class="grid-info">
                             <div class="grid-title" title="${song.title}">${song.title}</div>
@@ -3001,10 +2998,10 @@ function renderHistoryList() {
                             <div class="grid-stats">${stats.playCount} plays</div>
                         </div>
                         <div class="grid-actions">
-                            <button class="grid-action-btn ${fav ? 'favorited' : ''}" onclick="event.stopPropagation(); toggleFavorite('${song.title.replace(/'/g, "\\'")}')" title="Favorite">
+                            <button class="grid-action-btn ${fav ? 'favorited' : ''}" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')" title="Favorite">
                                 <i class="fas fa-heart"></i>
                             </button>
-                            <button class="grid-action-btn" onclick="event.stopPropagation(); shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
+                            <button class="grid-action-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
                                 <i class="fas fa-comment-alt"></i>
                             </button>
                             <a class="grid-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
@@ -3095,12 +3092,9 @@ function renderFavoritesList() {
 
             if (historyViewMode === 'grid') {
                 return `
-                    <div class="grid-item" style="animation-delay: ${i * 0.05}s" onclick="switchSection('home'); toggleHistoryDrawer();">
+                    <div class="grid-item" style="animation-delay: ${i * 0.05}s">
                         <div class="grid-cover-wrapper">
                             <img class="grid-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
-                            <div class="grid-overlay">
-                                <button class="grid-play-btn"><i class="fas fa-play"></i></button>
-                            </div>
                         </div>
                         <div class="grid-info">
                             <div class="grid-title" title="${song.title}">${song.title}</div>
@@ -3108,10 +3102,10 @@ function renderFavoritesList() {
                             <div class="grid-stats">${stats.playCount} plays</div>
                         </div>
                         <div class="grid-actions">
-                            <button class="grid-action-btn favorited" onclick="event.stopPropagation(); toggleFavorite('${song.title.replace(/'/g, "\\'")}')" title="Favorite">
+                            <button class="grid-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')" title="Favorite">
                                 <i class="fas fa-heart"></i>
                             </button>
-                            <button class="grid-action-btn" onclick="event.stopPropagation(); shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
+                            <button class="grid-action-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
                                 <i class="fas fa-comment-alt"></i>
                             </button>
                             <a class="grid-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
