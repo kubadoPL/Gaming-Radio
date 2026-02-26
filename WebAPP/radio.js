@@ -91,6 +91,8 @@ let historyViewMode = localStorage.getItem('RadioGaming-historyViewMode') || 'gr
 let lastHistorySongTitle = '';
 let youtubeCoverCache = JSON.parse(localStorage.getItem('RadioGaming-youtubeCoverCache') || '{}');
 let spotifyCoverCache = JSON.parse(localStorage.getItem('RadioGaming-spotifyCoverCache') || '{}');
+let itunesCoverCache = JSON.parse(localStorage.getItem('RadioGaming-itunesCoverCache') || '{}');
+let deezerCoverCache = JSON.parse(localStorage.getItem('RadioGaming-deezerCoverCache') || '{}');
 let listeningTimer = null;
 let notifiedMessages = new Set(JSON.parse(localStorage.getItem('RadioGaming-notifiedMessages') || '[]'));
 
@@ -647,6 +649,8 @@ async function fetchBestCover(query) {
     try {
         let manualData = findBestManualMatch(query);
         let spotifyData = null;
+        let itunesData = null;
+        let deezerData = null;
         let youtubeData = null;
         let bestChoice = { url: fallbackCover, score: -1, source: 'fallback' };
 
@@ -658,16 +662,34 @@ async function fetchBestCover(query) {
             if (spotifyData && spotifyData.score >= 0.8) {
                 bestChoice = { url: spotifyData.url, score: spotifyData.score, source: 'spotify' };
             } else {
-                youtubeData = await fetchYouTubeCoverData(query);
+                itunesData = await fetchITunesCoverData(query);
+                if (itunesData && itunesData.score >= 0.8) {
+                    bestChoice = { url: itunesData.url, score: itunesData.score, source: 'itunes' };
+                } else {
+                    deezerData = await fetchDeezerCoverData(query);
+                    if (deezerData && deezerData.score >= 0.8) {
+                        bestChoice = { url: deezerData.url, score: deezerData.score, source: 'deezer' };
+                    } else {
+                        youtubeData = await fetchYouTubeCoverData(query);
 
-                // Determine best from all gathered
-                if (manualData && manualData.score > bestChoice.score) bestChoice = { url: manualData.url, score: manualData.score, source: 'manual' };
-                if (spotifyData && spotifyData.score > bestChoice.score) bestChoice = { url: spotifyData.url, score: spotifyData.score, source: 'spotify' };
-                if (youtubeData && youtubeData.score > bestChoice.score) bestChoice = { url: youtubeData.url, score: youtubeData.score, source: 'youtube' };
+                        // Final selection logic from all gathered data
+                        if (manualData && manualData.score > bestChoice.score) bestChoice = { url: manualData.url, score: manualData.score, source: 'manual' };
+                        if (spotifyData && spotifyData.score > bestChoice.score) bestChoice = { url: spotifyData.url, score: spotifyData.score, source: 'spotify' };
+                        if (itunesData && itunesData.score > bestChoice.score) bestChoice = { url: itunesData.url, score: itunesData.score, source: 'itunes' };
+                        if (deezerData && deezerData.score > bestChoice.score) bestChoice = { url: deezerData.url, score: deezerData.score, source: 'deezer' };
+                        if (youtubeData && youtubeData.score > bestChoice.score) bestChoice = { url: youtubeData.url, score: youtubeData.score, source: 'youtube' };
+                    }
+                }
             }
         }
 
-        console.log(`[Cover Search] "${query}" | Scores -> Manual: ${manualData ? manualData.score.toFixed(2) : 'N/A'}, Spotify: ${spotifyData ? spotifyData.score.toFixed(2) : (bestChoice.source === 'manual' ? 'Skipped' : 'N/A')}, YouTube: ${youtubeData ? youtubeData.score.toFixed(2) : (bestChoice.source !== 'youtube' && bestChoice.score >= 0.8 ? 'Skipped' : 'N/A')} | Result: ${bestChoice.source} (${bestChoice.score.toFixed(2)})`);
+        const logManual = manualData ? manualData.score.toFixed(2) : 'N/A';
+        const logSpotify = spotifyData ? spotifyData.score.toFixed(2) : (bestChoice.source === 'manual' ? 'Skipped' : 'N/A');
+        const logITunes = itunesData ? itunesData.score.toFixed(2) : (bestChoice.score >= 0.8 && ['manual', 'spotify'].includes(bestChoice.source) ? 'Skipped' : 'N/A');
+        const logDeezer = deezerData ? deezerData.score.toFixed(2) : (bestChoice.score >= 0.8 && ['manual', 'spotify', 'itunes'].includes(bestChoice.source) ? 'Skipped' : 'N/A');
+        const logYouTube = youtubeData ? youtubeData.score.toFixed(2) : (bestChoice.score >= 0.8 ? 'Skipped' : 'N/A');
+
+        console.log(`[Cover Search] "${query}" | Scores -> Manual: ${logManual}, Spotify: ${logSpotify}, iTunes: ${logITunes}, Deezer: ${logDeezer}, YouTube: ${logYouTube} | Result: ${bestChoice.source} (${bestChoice.score.toFixed(2)})`);
 
         if (coverElem) coverElem.src = bestChoice.url;
         updateMediaSessionMetadata(query, bestChoice.url);
@@ -762,7 +784,7 @@ async function fetchYouTubeCoverData(query) {
             });
 
             const result = {
-                url: bestMatch.snippet.thumbnails.high ? bestMatch.snippet.thumbnails.high.url : bestMatch.snippet.thumbnails.default.url,
+                url: bestMatch.snippet.thumbnails.high ? bestMatch.snippet.thumbnails.high.url : (bestMatch.snippet.thumbnails.default ? bestMatch.snippet.thumbnails.default.url : ''),
                 score: highestScore
             };
 
@@ -777,6 +799,91 @@ async function fetchYouTubeCoverData(query) {
         }
     } catch (e) {
         console.error('YouTube Fetch Error:', e);
+    }
+    return null;
+}
+
+async function fetchITunesCoverData(query) {
+    if (itunesCoverCache[query]) {
+        console.log(`[iTunes Cache] Hit for "${query}"`);
+        return itunesCoverCache[query];
+    }
+
+    try {
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=5`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.results && data.results.length > 0) {
+            let bestMatch = data.results[0];
+            let highestScore = -1;
+
+            data.results.forEach(item => {
+                const itemTitle = `${item.artistName} - ${item.trackName}`;
+                const score = getSimilarityScore(query, itemTitle);
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = item;
+                }
+            });
+
+            const result = {
+                url: bestMatch.artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg'),
+                score: highestScore
+            };
+
+            itunesCoverCache[query] = result;
+            const keys = Object.keys(itunesCoverCache);
+            if (keys.length > 400) delete itunesCoverCache[keys[0]];
+            localStorage.setItem('RadioGaming-itunesCoverCache', JSON.stringify(itunesCoverCache));
+
+            return result;
+        }
+    } catch (e) {
+        console.error('iTunes Fetch Error:', e);
+    }
+    return null;
+}
+
+async function fetchDeezerCoverData(query) {
+    if (deezerCoverCache[query]) {
+        console.log(`[Deezer Cache] Hit for "${query}"`);
+        return deezerCoverCache[query];
+    }
+
+    try {
+        const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=5`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        const data = await response.json();
+
+        if (data.data && data.data.length > 0) {
+            let bestMatch = data.data[0];
+            let highestScore = -1;
+
+            data.data.forEach(item => {
+                const itemTitle = `${item.artist.name} - ${item.title}`;
+                const score = getSimilarityScore(query, itemTitle);
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = item;
+                }
+            });
+
+            const result = {
+                url: bestMatch.album.cover_xl || bestMatch.album.cover_big,
+                score: highestScore
+            };
+
+            deezerCoverCache[query] = result;
+            const keys = Object.keys(deezerCoverCache);
+            if (keys.length > 400) delete deezerCoverCache[keys[0]];
+            localStorage.setItem('RadioGaming-deezerCoverCache', JSON.stringify(deezerCoverCache));
+
+            return result;
+        }
+    } catch (e) {
+        console.error('Deezer Fetch Error:', e);
     }
     return null;
 }
@@ -1257,6 +1364,8 @@ async function fetchSpotifyCovertooltip(query, tooltipElement) {
     try {
         let manualData = findBestManualMatch(query);
         let spotifyData = null;
+        let itunesData = null;
+        let deezerData = null;
         let youtubeData = null;
         let bestUrl = fallbackCover;
         let highestScore = -1;
@@ -1274,15 +1383,38 @@ async function fetchSpotifyCovertooltip(query, tooltipElement) {
                 bestUrl = spotifyData.url;
                 chosenSource = 'spotify';
             } else {
-                youtubeData = await fetchYouTubeCoverData(query);
+                itunesData = await fetchITunesCoverData(query);
+                if (itunesData && itunesData.score >= 0.8) {
+                    highestScore = itunesData.score;
+                    bestUrl = itunesData.url;
+                    chosenSource = 'itunes';
+                } else {
+                    deezerData = await fetchDeezerCoverData(query);
+                    if (deezerData && deezerData.score >= 0.8) {
+                        highestScore = deezerData.score;
+                        bestUrl = deezerData.url;
+                        chosenSource = 'deezer';
+                    } else {
+                        youtubeData = await fetchYouTubeCoverData(query);
 
-                if (manualData && manualData.score > highestScore) { highestScore = manualData.score; bestUrl = manualData.url; chosenSource = 'manual'; }
-                if (spotifyData && spotifyData.score > highestScore) { highestScore = spotifyData.score; bestUrl = spotifyData.url; chosenSource = 'spotify'; }
-                if (youtubeData && youtubeData.score > highestScore) { highestScore = youtubeData.score; bestUrl = youtubeData.url; chosenSource = 'youtube'; }
+                        // Final selection logic
+                        if (manualData && manualData.score > highestScore) { highestScore = manualData.score; bestUrl = manualData.url; chosenSource = 'manual'; }
+                        if (spotifyData && spotifyData.score > highestScore) { highestScore = spotifyData.score; bestUrl = spotifyData.url; chosenSource = 'spotify'; }
+                        if (itunesData && itunesData.score > highestScore) { highestScore = itunesData.score; bestUrl = itunesData.url; chosenSource = 'itunes'; }
+                        if (deezerData && deezerData.score > highestScore) { highestScore = deezerData.score; bestUrl = deezerData.url; chosenSource = 'deezer'; }
+                        if (youtubeData && youtubeData.score > highestScore) { highestScore = youtubeData.score; bestUrl = youtubeData.url; chosenSource = 'youtube'; }
+                    }
+                }
             }
         }
 
-        console.log(`[Tooltip Search] "${query}" | Scores -> Manual: ${manualData ? manualData.score.toFixed(2) : 'N/A'}, Spotify: ${spotifyData ? spotifyData.score.toFixed(2) : (chosenSource === 'manual' ? 'Skipped' : 'N/A')}, YouTube: ${youtubeData ? youtubeData.score.toFixed(2) : (chosenSource !== 'youtube' && highestScore >= 0.8 ? 'Skipped' : 'N/A')} | Result: ${chosenSource} (${highestScore.toFixed(2)})`);
+        const logManual = manualData ? manualData.score.toFixed(2) : 'N/A';
+        const logSpotify = spotifyData ? spotifyData.score.toFixed(2) : (chosenSource === 'manual' ? 'Skipped' : 'N/A');
+        const logITunes = itunesData ? itunesData.score.toFixed(2) : (['manual', 'spotify'].includes(chosenSource) && highestScore >= 0.8 ? 'Skipped' : 'N/A');
+        const logDeezer = deezerData ? deezerData.score.toFixed(2) : (['manual', 'spotify', 'itunes'].includes(chosenSource) && highestScore >= 0.8 ? 'Skipped' : 'N/A');
+        const logYouTube = youtubeData ? youtubeData.score.toFixed(2) : (highestScore >= 0.8 ? 'Skipped' : 'N/A');
+
+        console.log(`[Tooltip Search] "${query}" | Scores -> Manual: ${logManual}, Spotify: ${logSpotify}, iTunes: ${logITunes}, Deezer: ${logDeezer}, YouTube: ${logYouTube} | Result: ${chosenSource} (${highestScore.toFixed(2)})`);
 
         if (img) img.src = bestUrl;
     } catch (e) {
