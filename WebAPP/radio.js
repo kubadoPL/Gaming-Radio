@@ -90,6 +90,7 @@ let listeningStats = JSON.parse(localStorage.getItem('RadioGaming-listeningStats
 let historyViewMode = localStorage.getItem('RadioGaming-historyViewMode') || 'grid'; // 'list' or 'grid' (spotify-style)
 let lastHistorySongTitle = '';
 let youtubeCoverCache = JSON.parse(localStorage.getItem('RadioGaming-youtubeCoverCache') || '{}');
+let spotifyCoverCache = JSON.parse(localStorage.getItem('RadioGaming-spotifyCoverCache') || '{}');
 let listeningTimer = null;
 let notifiedMessages = new Set(JSON.parse(localStorage.getItem('RadioGaming-notifiedMessages') || '[]'));
 
@@ -695,6 +696,12 @@ function findBestManualMatch(query) {
 }
 
 async function fetchSpotifyCoverData(query) {
+    // 1. Check persistent cache first
+    if (spotifyCoverCache[query]) {
+        console.log(`[Spotify Cache] Hit for "${query}"`);
+        return spotifyCoverCache[query];
+    }
+
     try {
         const accessToken = await getSpotifyAccessToken();
         if (!accessToken) return null;
@@ -707,10 +714,19 @@ async function fetchSpotifyCoverData(query) {
 
         if (data.tracks && data.tracks.items.length > 0) {
             const bestMatchData = findBestTrackMatchWithScore(query, data.tracks.items);
-            return {
+            const result = {
                 url: bestMatchData.track.album.images[0].url,
                 score: bestMatchData.score
             };
+
+            // 2. Save to persistent cache
+            spotifyCoverCache[query] = result;
+            // Keep cache size manageable (max 400 entries)
+            const keys = Object.keys(spotifyCoverCache);
+            if (keys.length > 400) delete spotifyCoverCache[keys[0]];
+            localStorage.setItem('RadioGaming-spotifyCoverCache', JSON.stringify(spotifyCoverCache));
+
+            return result;
         }
     } catch (e) {
         console.error('Spotify Fetch Error:', e);
