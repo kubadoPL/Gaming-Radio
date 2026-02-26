@@ -89,6 +89,7 @@ let songFavorites = JSON.parse(localStorage.getItem('RadioGaming-songFavorites')
 let listeningStats = JSON.parse(localStorage.getItem('RadioGaming-listeningStats') || '{"totalTime": 0, "songs": {}}');
 let historyViewMode = localStorage.getItem('RadioGaming-historyViewMode') || 'grid'; // 'list' or 'grid' (spotify-style)
 let lastHistorySongTitle = '';
+let youtubeCoverCache = JSON.parse(localStorage.getItem('RadioGaming-youtubeCoverCache') || '{}');
 let listeningTimer = null;
 let notifiedMessages = new Set(JSON.parse(localStorage.getItem('RadioGaming-notifiedMessages') || '[]'));
 
@@ -643,33 +644,32 @@ async function fetchBestCover(query) {
     const coverElem = document.getElementById('albumCover');
 
     try {
-        const [spotifyRes, youtubeRes] = await Promise.allSettled([
-            fetchSpotifyCoverData(query),
-            fetchYouTubeCoverData(query)
-        ]);
-
-        let spotifyData = spotifyRes.status === 'fulfilled' ? spotifyRes.value : null;
-        let youtubeData = youtubeRes.status === 'fulfilled' ? youtubeRes.value : null;
         let manualData = findBestManualMatch(query);
-
+        let spotifyData = null;
+        let youtubeData = null;
         let bestChoice = { url: fallbackCover, score: -1, source: 'fallback' };
 
-        const MANUAL_MIN_SCORE = 0.6; // Only use manual cover if similarity is high enough
-        if (manualData && manualData.score >= MANUAL_MIN_SCORE && manualData.score > bestChoice.score) {
+        // Sequential check to save YouTube quota
+        if (manualData && manualData.score >= 0.8) {
             bestChoice = { url: manualData.url, score: manualData.score, source: 'manual' };
-        }
-        if (spotifyData && spotifyData.score > bestChoice.score) {
-            bestChoice = { url: spotifyData.url, score: spotifyData.score, source: 'spotify' };
-        }
-        if (youtubeData && youtubeData.score > bestChoice.score) {
-            bestChoice = { url: youtubeData.url, score: youtubeData.score, source: 'youtube' };
+        } else {
+            spotifyData = await fetchSpotifyCoverData(query);
+            if (spotifyData && spotifyData.score >= 0.8) {
+                bestChoice = { url: spotifyData.url, score: spotifyData.score, source: 'spotify' };
+            } else {
+                youtubeData = await fetchYouTubeCoverData(query);
+
+                // Determine best from all gathered
+                if (manualData && manualData.score > bestChoice.score) bestChoice = { url: manualData.url, score: manualData.score, source: 'manual' };
+                if (spotifyData && spotifyData.score > bestChoice.score) bestChoice = { url: spotifyData.url, score: spotifyData.score, source: 'spotify' };
+                if (youtubeData && youtubeData.score > bestChoice.score) bestChoice = { url: youtubeData.url, score: youtubeData.score, source: 'youtube' };
+            }
         }
 
-        console.log(`[Cover Search] "${query}" | Scores -> Manual: ${manualData ? manualData.score.toFixed(2) : 'N/A'}, Spotify: ${spotifyData ? spotifyData.score.toFixed(2) : 'N/A'}, YouTube: ${youtubeData ? youtubeData.score.toFixed(2) : 'N/A'} | Result: ${bestChoice.source} (${bestChoice.score.toFixed(2)})`);
+        console.log(`[Cover Search] "${query}" | Scores -> Manual: ${manualData ? manualData.score.toFixed(2) : 'N/A'}, Spotify: ${spotifyData ? spotifyData.score.toFixed(2) : (bestChoice.source === 'manual' ? 'Skipped' : 'N/A')}, YouTube: ${youtubeData ? youtubeData.score.toFixed(2) : (bestChoice.source !== 'youtube' && bestChoice.score >= 0.8 ? 'Skipped' : 'N/A')} | Result: ${bestChoice.source} (${bestChoice.score.toFixed(2)})`);
 
         if (coverElem) coverElem.src = bestChoice.url;
         updateMediaSessionMetadata(query, bestChoice.url);
-        // Add to song history
         addToSongHistory(query, bestChoice.url);
     } catch (error) {
         console.error('Error fetching best cover:', error);
@@ -719,6 +719,12 @@ async function fetchSpotifyCoverData(query) {
 }
 
 async function fetchYouTubeCoverData(query) {
+    // 1. Check persistent cache first to save YouTube quota
+    if (youtubeCoverCache[query]) {
+        console.log(`[YouTube Cache] Hit for "${query}"`);
+        return youtubeCoverCache[query];
+    }
+
     const youtubeKey = await getYouTubeAccessToken();
     if (!youtubeKey) return null;
 
@@ -739,10 +745,19 @@ async function fetchYouTubeCoverData(query) {
                 }
             });
 
-            return {
+            const result = {
                 url: bestMatch.snippet.thumbnails.high ? bestMatch.snippet.thumbnails.high.url : bestMatch.snippet.thumbnails.default.url,
                 score: highestScore
             };
+
+            // 2. Save to persistent cache
+            youtubeCoverCache[query] = result;
+            // Keep cache size manageable (max 400 entries)
+            const keys = Object.keys(youtubeCoverCache);
+            if (keys.length > 400) delete youtubeCoverCache[keys[0]];
+            localStorage.setItem('RadioGaming-youtubeCoverCache', JSON.stringify(youtubeCoverCache));
+
+            return result;
         }
     } catch (e) {
         console.error('YouTube Fetch Error:', e);
@@ -1224,36 +1239,34 @@ async function fetchSpotifyCovertooltip(query, tooltipElement) {
     const img = tooltipElement.querySelector('.tooltip-cover');
 
     try {
-        const [spotifyRes, youtubeRes] = await Promise.allSettled([
-            fetchSpotifyCoverData(query),
-            fetchYouTubeCoverData(query)
-        ]);
-
-        let spotifyData = spotifyRes.status === 'fulfilled' ? spotifyRes.value : null;
-        let youtubeData = youtubeRes.status === 'fulfilled' ? youtubeRes.value : null;
         let manualData = findBestManualMatch(query);
-
+        let spotifyData = null;
+        let youtubeData = null;
         let bestUrl = fallbackCover;
         let highestScore = -1;
         let chosenSource = 'fallback';
 
-        if (manualData && manualData.score > highestScore) {
+        // Sequential check
+        if (manualData && manualData.score >= 0.8) {
             highestScore = manualData.score;
             bestUrl = manualData.url;
             chosenSource = 'manual';
-        }
-        if (spotifyData && spotifyData.score > highestScore) {
-            highestScore = spotifyData.score;
-            bestUrl = spotifyData.url;
-            chosenSource = 'spotify';
-        }
-        if (youtubeData && youtubeData.score > highestScore) {
-            highestScore = youtubeData.score;
-            bestUrl = youtubeData.url;
-            chosenSource = 'youtube';
+        } else {
+            spotifyData = await fetchSpotifyCoverData(query);
+            if (spotifyData && spotifyData.score >= 0.8) {
+                highestScore = spotifyData.score;
+                bestUrl = spotifyData.url;
+                chosenSource = 'spotify';
+            } else {
+                youtubeData = await fetchYouTubeCoverData(query);
+
+                if (manualData && manualData.score > highestScore) { highestScore = manualData.score; bestUrl = manualData.url; chosenSource = 'manual'; }
+                if (spotifyData && spotifyData.score > highestScore) { highestScore = spotifyData.score; bestUrl = spotifyData.url; chosenSource = 'spotify'; }
+                if (youtubeData && youtubeData.score > highestScore) { highestScore = youtubeData.score; bestUrl = youtubeData.url; chosenSource = 'youtube'; }
+            }
         }
 
-        console.log(`[Tooltip Search] "${query}" | Scores -> Manual: ${manualData ? manualData.score.toFixed(2) : 'N/A'}, Spotify: ${spotifyData ? spotifyData.score.toFixed(2) : 'N/A'}, YouTube: ${youtubeData ? youtubeData.score.toFixed(2) : 'N/A'} | Result: ${chosenSource} (${highestScore.toFixed(2)})`);
+        console.log(`[Tooltip Search] "${query}" | Scores -> Manual: ${manualData ? manualData.score.toFixed(2) : 'N/A'}, Spotify: ${spotifyData ? spotifyData.score.toFixed(2) : (chosenSource === 'manual' ? 'Skipped' : 'N/A')}, YouTube: ${youtubeData ? youtubeData.score.toFixed(2) : (chosenSource !== 'youtube' && highestScore >= 0.8 ? 'Skipped' : 'N/A')} | Result: ${chosenSource} (${highestScore.toFixed(2)})`);
 
         if (img) img.src = bestUrl;
     } catch (e) {
