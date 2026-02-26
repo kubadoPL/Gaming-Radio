@@ -4264,7 +4264,22 @@ body::-webkit-scrollbar-thumb {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+    animation: fadeInUp 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.9);
+        filter: blur(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
 }
 
 .grid-item:hover {
