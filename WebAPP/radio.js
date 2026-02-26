@@ -77,7 +77,10 @@ let isVisualizerEnabled = localStorage.getItem('RadioGaming-visualizerEnabled') 
 // Song History & Favorites
 let songHistory = JSON.parse(localStorage.getItem('RadioGaming-songHistory') || '[]');
 let songFavorites = JSON.parse(localStorage.getItem('RadioGaming-songFavorites') || '[]');
+let listeningStats = JSON.parse(localStorage.getItem('RadioGaming-listeningStats') || '{"totalTime": 0, "songs": {}}');
+let historyViewMode = localStorage.getItem('RadioGaming-historyViewMode') || 'list'; // 'list' or 'grid' (spotify-style)
 let lastHistorySongTitle = '';
+let listeningTimer = null;
 
 window.toggleVisualizations = function () {
     isVisualizerEnabled = !isVisualizerEnabled;
@@ -408,6 +411,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial check
     checkFullscreen();
+
+    // Start stats tracking
+    startListeningTimer();
 });
 
 async function getSpotifyAccessToken() {
@@ -2501,6 +2507,21 @@ function addToSongHistory(title, coverUrl) {
         timestamp: Date.now()
     };
 
+    // Update Stats
+    if (!listeningStats.songs[title]) {
+        listeningStats.songs[title] = {
+            playCount: 0,
+            listeningTime: 0,
+            firstPlayed: Date.now(),
+            cover: coverUrl,
+            station: currentStation
+        };
+    }
+    listeningStats.songs[title].playCount++;
+    listeningStats.songs[title].lastPlayed = Date.now();
+    listeningStats.songs[title].cover = coverUrl; // Update cover if same song has different one now
+    localStorage.setItem('RadioGaming-listeningStats', JSON.stringify(listeningStats));
+
     // Remove duplicate if exists
     songHistory = songHistory.filter(s => s.title !== title);
 
@@ -2512,6 +2533,38 @@ function addToSongHistory(title, coverUrl) {
 
     localStorage.setItem('RadioGaming-songHistory', JSON.stringify(songHistory));
     renderHistoryList();
+}
+
+function startListeningTimer() {
+    if (listeningTimer) return;
+    listeningTimer = setInterval(() => {
+        if (audio && !audio.paused) {
+            const currentTitle = document.getElementById('streamTitle') ? document.getElementById('streamTitle').textContent : '';
+            if (currentTitle && currentTitle !== 'Loading...' && currentTitle !== '') {
+                listeningStats.totalTime++;
+                if (listeningStats.songs[currentTitle]) {
+                    listeningStats.songs[currentTitle].listeningTime++;
+                } else {
+                    // This case handles if the song started before stats were initialized or if it's the first play
+                    const currentStation = stationName ? stationName.textContent : 'Unknown';
+                    const currentCover = document.getElementById('albumCover') ? document.getElementById('albumCover').src : '';
+                    listeningStats.songs[currentTitle] = {
+                        playCount: 1,
+                        listeningTime: 1,
+                        firstPlayed: Date.now(),
+                        lastPlayed: Date.now(),
+                        cover: currentCover,
+                        station: currentStation
+                    };
+                }
+
+                // Save every 30 seconds to avoid too many writes
+                if (listeningStats.totalTime % 30 === 0) {
+                    localStorage.setItem('RadioGaming-listeningStats', JSON.stringify(listeningStats));
+                }
+            }
+        }
+    }, 1000);
 }
 
 window.shareSongToChat = function (title, cover, station) {
@@ -2712,25 +2765,342 @@ window.toggleHistoryDrawer = function () {
 window.switchHistoryTab = function (tab) {
     const historyList = document.getElementById('history-list');
     const favoritesList = document.getElementById('favorites-list');
+    const statsView = document.getElementById('stats-view');
     const tabs = document.querySelectorAll('.history-tab');
 
     tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
 
-    if (tab === 'history') {
-        historyList.style.display = 'flex';
-        favoritesList.style.display = 'none';
+    const displayVal = historyViewMode === 'grid' ? 'grid' : 'flex';
+    historyList.style.display = tab === 'history' ? displayVal : 'none';
+    favoritesList.style.display = tab === 'favorites' ? displayVal : 'none';
+    statsView.style.display = tab === 'stats' ? 'block' : 'none';
+
+    if (tab === 'stats') {
+        renderStatsView();
+        statsView.scrollTop = 0;
+    } else if (tab === 'favorites') {
+        renderFavoritesList();
+        favoritesList.scrollTop = 0;
     } else {
-        historyList.style.display = 'none';
-        favoritesList.style.display = 'flex';
+        renderHistoryList();
+        historyList.scrollTop = 0;
     }
 };
 
-// Initialize visualizer mode UI on load
-document.addEventListener('DOMContentLoaded', () => {
-    // History initial render
-    renderHistoryList();
-    renderFavoritesList();
-});
+window.toggleHistoryMode = function () {
+    historyViewMode = historyViewMode === 'list' ? 'grid' : 'list';
+    localStorage.setItem('RadioGaming-historyViewMode', historyViewMode);
+
+    const drawer = document.getElementById('history-drawer');
+    const toggleIcon = document.querySelector('#view-mode-toggle i');
+
+    if (historyViewMode === 'grid') {
+        drawer.classList.add('immersive-mode');
+        if (toggleIcon) toggleIcon.className = 'fas fa-list';
+    } else {
+        drawer.classList.remove('immersive-mode');
+        if (toggleIcon) toggleIcon.className = 'fas fa-th-large';
+    }
+
+    // Refresh current active tab
+    const activeTab = document.querySelector('.history-tab.active');
+    if (activeTab) {
+        switchHistoryTab(activeTab.dataset.tab);
+    }
+};
+
+function renderStatsView() {
+    const list = document.getElementById('stats-view');
+    if (!list) return;
+
+    if (Object.keys(listeningStats.songs).length === 0) {
+        list.innerHTML = `<div class="history-empty"><i class="fas fa-chart-line"></i><p>Statistics are being gathered. Keep listening!</p></div>`;
+        return;
+    }
+
+    // Sort songs by listening time
+    const sortedSongs = Object.entries(listeningStats.songs)
+        .sort(([, a], [, b]) => b.listeningTime - a.listeningTime);
+
+    // Calculate station stats
+    const stationStats = {};
+    Object.values(listeningStats.songs).forEach(data => {
+        const sName = data.station || 'Unknown Station';
+        if (!stationStats[sName]) stationStats[sName] = 0;
+        stationStats[sName] += data.listeningTime;
+    });
+
+    const sortedStations = Object.entries(stationStats)
+        .sort(([, a], [, b]) => b - a);
+
+    const favoriteStation = sortedStations.length > 0 ? sortedStations[0][0] : 'N/A';
+
+    const mostPopular = sortedSongs[0][0];
+    const totalTimeHours = Math.floor(listeningStats.totalTime / 3600);
+    const totalTimeMins = Math.floor((listeningStats.totalTime % 3600) / 60);
+
+    let html = `
+        <div class="stats-container">
+            <div class="stats-header-row">
+                <h4 class="stats-subtitle">Listening Overview</h4>
+                <button class="stats-export-btn" onclick="exportUserData()" title="Export Statistics Data">
+                    <i class="fas fa-file-export"></i> Export Data
+                </button>
+            </div>
+            <div class="stats-overview">
+                <div class="stat-card">
+                    <span class="stat-label">Total Listening Time</span>
+                    <span class="stat-value">${totalTimeHours}h ${totalTimeMins}m</span>
+                </div>
+                <div class="stat-card featured">
+                    <span class="stat-label">Top Station</span>
+                    <span class="stat-value">${favoriteStation}</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Most Listened Track</span>
+                    <span class="stat-value" title="${mostPopular}">${mostPopular}</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Songs Heard</span>
+                    <span class="stat-value">${Object.keys(listeningStats.songs).length}</span>
+                </div>
+            </div>
+            <h4 class="stats-subtitle">Top Tracks</h4>
+            <div class="stats-songs-list">
+    `;
+
+    html += sortedSongs.slice(0, 10).map(([title, data], i) => {
+        const mins = Math.floor(data.listeningTime / 60);
+        const secs = data.listeningTime % 60;
+        return `
+            <div class="stats-song-item" style="animation-delay: ${i * 0.05}s">
+                <div class="stats-rank">${i + 1}</div>
+                <img class="stats-cover" src="${data.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                <div class="stats-info">
+                    <div class="stats-title">${title}</div>
+                    <div class="stats-meta">${data.playCount} plays • ${mins}m ${secs}s</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    html += `</div></div>`;
+    list.innerHTML = html;
+}
+
+function renderHistoryList() {
+    const list = document.getElementById('history-list');
+    if (!list) return;
+
+    const drawer = document.getElementById('history-drawer');
+    if (historyViewMode === 'grid') {
+        drawer.classList.add('immersive-mode');
+        const toggleIcon = document.querySelector('#view-mode-toggle i');
+        if (toggleIcon) toggleIcon.className = 'fas fa-list';
+    }
+
+    if (songHistory.length === 0) {
+        list.innerHTML = `<div class="history-empty"><i class="fas fa-music"></i><p>No songs played yet. Start listening!</p></div>`;
+        return;
+    }
+
+    // Group songs by station
+    const groups = songHistory.reduce((acc, song) => {
+        if (!acc[song.station]) acc[song.station] = [];
+        acc[song.station].push(song);
+        return acc;
+    }, {});
+
+    let html = '';
+    Object.keys(groups).forEach(stationName => {
+        const stationSongs = groups[stationName];
+
+        // Add station header
+        html += `
+            <div class="station-group-header">
+                <i class="fas fa-broadcast-tower"></i>
+                <h3>${stationName}</h3>
+                <span class="song-count">${stationSongs.length} songs</span>
+            </div>
+        `;
+
+        html += stationSongs.map((song, i) => {
+            const timeAgo = getTimeAgo(song.timestamp);
+            const fav = isFavorited(song.title);
+            const encodedTitle = encodeURIComponent(song.title);
+            const stats = listeningStats.songs[song.title] || { playCount: 0, listeningTime: 0 };
+
+            if (historyViewMode === 'grid') {
+                return `
+                    <div class="grid-item" style="animation-delay: ${i * 0.05}s" onclick="switchSection('home'); toggleHistoryDrawer();">
+                        <div class="grid-cover-wrapper">
+                            <img class="grid-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                            <div class="grid-overlay">
+                                <button class="grid-play-btn"><i class="fas fa-play"></i></button>
+                            </div>
+                        </div>
+                        <div class="grid-info">
+                            <div class="grid-title" title="${song.title}">${song.title}</div>
+                            <div class="grid-meta">${song.station}</div>
+                            <div class="grid-stats">${stats.playCount} plays</div>
+                        </div>
+                        <div class="grid-actions">
+                            <button class="grid-action-btn ${fav ? 'favorited' : ''}" onclick="event.stopPropagation(); toggleFavorite('${song.title.replace(/'/g, "\\'")}')" title="Favorite">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                            <button class="grid-action-btn" onclick="event.stopPropagation(); shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
+                                <i class="fas fa-comment-alt"></i>
+                            </button>
+                            <a class="grid-action-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
+                                <i class="fab fa-spotify"></i>
+                            </a>
+                            <a class="grid-action-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="YouTube">
+                                <i class="fab fa-youtube"></i>
+                            </a>
+                        </div>
+                    </div>`;
+            }
+
+            return `
+                <div class="history-item" style="animation-delay: ${i * 0.05}s">
+                    <img class="history-item-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                    <div class="history-item-info">
+                        <div class="history-item-title" title="${song.title}">${song.title}</div>
+                        <div class="history-item-meta">
+                            <span class="history-item-station">${song.station}</span>
+                            <span class="history-item-playcount">• ${stats.playCount} plays</span>
+                            <span>• ${timeAgo}</span>
+                        </div>
+                    </div>
+                    <div class="history-item-actions">
+                        <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')"
+                            title="Share to Chat">
+                            <i class="fas fa-comment-alt"></i>
+                        </button>
+                        <button class="history-action-btn ${fav ? 'favorited' : ''}" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
+                            title="${fav ? 'Remove from favorites' : 'Add to favorites'}">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <a class="history-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Search on Spotify">
+                            <i class="fab fa-spotify"></i>
+                        </a>
+                        <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube" style="color: #ff0000;">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>`;
+        }).join('');
+    });
+
+    list.innerHTML = html;
+}
+
+
+function renderFavoritesList() {
+    const list = document.getElementById('favorites-list');
+    if (!list) return;
+
+    const drawer = document.getElementById('history-drawer');
+    if (historyViewMode === 'grid') {
+        drawer.classList.add('immersive-mode');
+        const toggleIcon = document.querySelector('#view-mode-toggle i');
+        if (toggleIcon) toggleIcon.className = 'fas fa-list';
+    }
+
+    if (songFavorites.length === 0) {
+        list.innerHTML = `<div class="history-empty"><i class="fas fa-heart"></i><p>No favorites yet. Heart a song to save it!</p></div>`;
+        return;
+    }
+
+    // Group songs by station
+    const groups = songFavorites.reduce((acc, song) => {
+        if (!acc[song.station]) acc[song.station] = [];
+        acc[song.station].push(song);
+        return acc;
+    }, {});
+
+    let html = '';
+    Object.keys(groups).forEach(stationName => {
+        const stationSongs = groups[stationName];
+
+        // Add station header
+        html += `
+            <div class="station-group-header">
+                <i class="fas fa-broadcast-tower"></i>
+                <h3>${stationName}</h3>
+                <span class="song-count">${stationSongs.length} favorites</span>
+            </div>
+        `;
+
+        html += stationSongs.map((song, i) => {
+            const timeAgo = getTimeAgo(song.timestamp);
+            const encodedTitle = encodeURIComponent(song.title);
+            const stats = listeningStats.songs[song.title] || { playCount: 0, listeningTime: 0 };
+
+            if (historyViewMode === 'grid') {
+                return `
+                    <div class="grid-item" style="animation-delay: ${i * 0.05}s" onclick="switchSection('home'); toggleHistoryDrawer();">
+                        <div class="grid-cover-wrapper">
+                            <img class="grid-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                            <div class="grid-overlay">
+                                <button class="grid-play-btn"><i class="fas fa-play"></i></button>
+                            </div>
+                        </div>
+                        <div class="grid-info">
+                            <div class="grid-title" title="${song.title}">${song.title}</div>
+                            <div class="grid-meta">${song.station}</div>
+                            <div class="grid-stats">${stats.playCount} plays</div>
+                        </div>
+                        <div class="grid-actions">
+                            <button class="grid-action-btn favorited" onclick="event.stopPropagation(); toggleFavorite('${song.title.replace(/'/g, "\\'")}')" title="Favorite">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                            <button class="grid-action-btn" onclick="event.stopPropagation(); shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
+                                <i class="fas fa-comment-alt"></i>
+                            </button>
+                            <a class="grid-action-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
+                                <i class="fab fa-spotify"></i>
+                            </a>
+                            <a class="grid-action-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="YouTube">
+                                <i class="fab fa-youtube"></i>
+                            </a>
+                        </div>
+                    </div>`;
+            }
+
+            return `
+                <div class="history-item" style="animation-delay: ${i * 0.05}s">
+                    <img class="history-item-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                    <div class="history-item-info">
+                        <div class="history-item-title" title="${song.title}">${song.title}</div>
+                        <div class="history-item-meta">
+                            <span class="history-item-station">${song.station}</span>
+                            <span class="history-item-playcount">• ${stats.playCount} plays</span>
+                            <span>• ${timeAgo}</span>
+                        </div>
+                    </div>
+                    <div class="history-item-actions">
+                        <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')"
+                            title="Share to Chat">
+                            <i class="fas fa-comment-alt"></i>
+                        </button>
+                        <button class="history-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
+                            title="Remove from favorites">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                        <a class="history-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Search on Spotify">
+                            <i class="fab fa-spotify"></i>
+                        </a>
+                        <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube" style="color: #ff0000;">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>`;
+        }).join('');
+    });
+
+    list.innerHTML = html;
+}
 
 // ========================
 // DATA PERSISTENCE (EX/IM)
