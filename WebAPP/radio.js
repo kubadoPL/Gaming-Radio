@@ -1319,6 +1319,12 @@ window.toggleSongShare = function (forceState = null, song = null) {
 document.addEventListener('DOMContentLoaded', () => {
     handleAuthCallback();
     checkExistingSession();
+
+    // Start polling automatically for everyone (guests included)
+    // Only if chat visibility logic doesn't handle it first
+    if (!chatPollingInterval) {
+        initializeChatPolling();
+    }
 });
 
 function handleAuthCallback() {
@@ -2005,7 +2011,7 @@ async function switchChatChannel(stationName) {
 }
 
 function initializeChatPolling() {
-    if (!discordAuthToken || chatPollingInterval) return;
+    if (chatPollingInterval) return;
 
     console.log('[CHAT] Initializing polling...');
     updateCurrentStation();
@@ -2098,17 +2104,20 @@ async function loadChatHistory() {
 }
 
 async function pollNewMessages() {
-    if (!discordAuthToken || !isChatVisible) return;
+    if (!isChatVisible) return;
 
     try {
         const since = lastMessageTimestamp ? `?since=${encodeURIComponent(lastMessageTimestamp)}` : '';
         const playingStation = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
-        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`, {
-            headers: {
-                'Authorization': `Bearer ${discordAuthToken}`,
-                'X-Playing-Station': playingStation
-            }
-        });
+        const headers = {
+            'X-Playing-Station': playingStation
+        };
+
+        if (discordAuthToken) {
+            headers['Authorization'] = `Bearer ${discordAuthToken}`;
+        }
+
+        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`, { headers });
         const data = await response.json();
 
         if (data.online_count !== undefined) {
@@ -2158,30 +2167,19 @@ window.openOnlineUsersModal = async function () {
     if (!overlay || !container) return;
 
     overlay.classList.remove('hidden');
-
-    if (!discordAuthToken) {
-        container.innerHTML = `
-            <div class="chat-empty">
-                <i class="fab fa-discord" style="font-size: 32px; margin-bottom: 12px; color: #5865F2;"></i>
-                <p>Please login with Discord to see who else is listening!</p>
-                <button class="discord-btn" onclick="initiateDiscordLogin()" style="margin-top: 15px; width: auto; padding: 10px 20px;">
-                    <i class="fab fa-discord"></i> Login
-                </button>
-            </div>
-        `;
-        return;
-    }
-
     container.innerHTML = '<div class="chat-loading"><i class="fas fa-spinner fa-spin"></i> Loading users...</div>';
 
     try {
         const playingStation = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
-        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, {
-            headers: {
-                'Authorization': `Bearer ${discordAuthToken}`,
-                'X-Playing-Station': playingStation
-            }
-        });
+        const headers = {
+            'X-Playing-Station': playingStation
+        };
+
+        if (discordAuthToken) {
+            headers['Authorization'] = `Bearer ${discordAuthToken}`;
+        }
+
+        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, { headers });
         const data = await response.json();
         console.log('[CHAT] Online users data:', data);
 
@@ -2553,7 +2551,7 @@ window.switchSection = function (sectionId) {
 
     isChatVisible = (sectionId === 'chat');
 
-    if (isChatVisible && discordAuthToken && discordUser) {
+    if (isChatVisible) {
         updateCurrentStation();
         // Wait for section transition to complete before loading history and scrolling
         setTimeout(() => {
