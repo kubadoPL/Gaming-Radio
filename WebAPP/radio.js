@@ -853,8 +853,8 @@ async function fetchDeezerCoverData(query) {
 
     try {
         const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=5`;
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-        const response = await fetch(proxyUrl);
+        // Use a proxy if needed for CORS, but often direct works for search
+        const response = await fetch(url);
         const data = await response.json();
 
         if (data.data && data.data.length > 0) {
