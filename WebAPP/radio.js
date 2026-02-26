@@ -2686,6 +2686,18 @@ window.switchSection = function (sectionId) {
         if (!chatPollingInterval) {
             initializeChatPolling();
         }
+    } else {
+        setTimeout(() => {
+            const messagesContainer = document.getElementById('chat-messages');
+            if (messagesContainer) {
+                messagesContainer.innerHTML = `
+                    <div class="chat-welcome">
+                        <i class="fas fa-music"></i>
+                        <p>Welcome to the chat! Say hello to other listeners.</p>
+                    </div>
+                `;
+            }
+        }, 500);
     }
 };
 
