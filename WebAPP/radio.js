@@ -2955,6 +2955,14 @@ function renderHistoryList() {
         if (toggleIcon) toggleIcon.className = 'fas fa-list';
     }
 
+    const stationLogos = {
+        'Radio GAMING': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp',
+        'Radio GAMING DARK': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp',
+        'Radio GAMING MARON FM': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp',
+    };
+    const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+
+
     if (songHistory.length === 0) {
         list.innerHTML = `<div class="history-empty"><i class="fas fa-music"></i><p>No songs played yet. Start listening!</p></div>`;
         return;
@@ -2972,9 +2980,10 @@ function renderHistoryList() {
         const stationSongs = groups[stationName];
 
         // Add station header
+        const sLogo1 = stationLogos[stationName] || fallbackLogo;
         html += `
             <div class="station-group-header">
-                <i class="fas fa-broadcast-tower"></i>
+                <img src="${sLogo1}" alt="${stationName}" class="station-group-logo" onerror="this.src='${fallbackLogo}'">
                 <h3>${stationName}</h3>
                 <span class="song-count">${stationSongs.length} songs</span>
             </div>
@@ -3065,6 +3074,13 @@ function renderFavoritesList() {
         return;
     }
 
+    const stationLogos = {
+        'Radio GAMING': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp',
+        'Radio GAMING DARK': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp',
+        'Radio GAMING MARON FM': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp',
+    };
+    const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+
     // Group songs by station
     const groups = songFavorites.reduce((acc, song) => {
         if (!acc[song.station]) acc[song.station] = [];
@@ -3077,9 +3093,10 @@ function renderFavoritesList() {
         const stationSongs = groups[stationName];
 
         // Add station header
+        const sLogo2 = stationLogos[stationName] || fallbackLogo;
         html += `
             <div class="station-group-header">
-                <i class="fas fa-broadcast-tower"></i>
+                <img src="${sLogo2}" alt="${stationName}" class="station-group-logo" onerror="this.src='${fallbackLogo}'">
                 <h3>${stationName}</h3>
                 <span class="song-count">${stationSongs.length} favorites</span>
             </div>
