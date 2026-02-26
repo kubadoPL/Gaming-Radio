@@ -2630,6 +2630,9 @@ async function loadChatHistory() {
 
         if (messagesContainer) {
             if (data.messages && data.messages.length > 0) {
+                // Ensure we have custom emoji definitions for these messages
+                await ensureEmojisForMessages(data.messages);
+
                 // Clear welcome message or loading indicator
                 messagesContainer.innerHTML = '';
                 // Set showNotify to true for mentions catch-up in current channel
@@ -2700,6 +2703,9 @@ async function pollNewMessages() {
 
         // Process messages
         if (data.messages && data.messages.length > 0) {
+            // Ensure we have custom emoji definitions for these messages
+            await ensureEmojisForMessages(data.messages);
+
             data.messages.forEach(message => {
                 // Only append if we don't already have this message
                 if (!document.getElementById(`msg-${message.id}`)) {
@@ -3025,15 +3031,55 @@ async function fetchCustomEmojis() {
             const data = await response.json();
             // Merge with default list, ensuring no duplicates by ID
             const API_EMOJIS = data || [];
+            let addedCount = 0;
             API_EMOJIS.forEach(emoji => {
                 if (!customEmojis.find(e => e.id === emoji.id)) {
                     customEmojis.push(emoji);
+                    addedCount++;
                 }
             });
-            console.log('[CHAT] Loaded custom emojis:', customEmojis.length);
+            if (addedCount > 0) {
+                console.log(`[CHAT] Loaded ${addedCount} new custom emojis (Total: ${customEmojis.length})`);
+            }
+            return true;
         }
     } catch (err) {
         console.error('[CHAT] Error fetching custom emojis:', err);
+    }
+    return false;
+}
+
+async function ensureEmojisForMessages(messages) {
+    if (!messages || messages.length === 0) return;
+
+    let needsFetch = false;
+    for (const msg of messages) {
+        // Check content for <:name:id>
+        if (msg.content && msg.content.includes('<:')) {
+            const matches = msg.content.matchAll(/<:[a-zA-Z0-9_]+:([a-zA-Z0-9_]+)>/g);
+            for (const match of matches) {
+                if (!customEmojis.find(e => e.id === match[1])) {
+                    needsFetch = true;
+                    break;
+                }
+            }
+        }
+        if (needsFetch) break;
+
+        // Check reactions
+        if (msg.reactions) {
+            for (const emojiId of Object.keys(msg.reactions)) {
+                if (emojiId.startsWith('custom_') && !customEmojis.find(e => e.id === emojiId)) {
+                    needsFetch = true;
+                    break;
+                }
+            }
+        }
+        if (needsFetch) break;
+    }
+
+    if (needsFetch) {
+        await fetchCustomEmojis();
     }
 }
 
