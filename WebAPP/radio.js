@@ -252,6 +252,12 @@ function handleMainStreamMessage(event) {
         var jsonData = JSON.parse(event.data);
         if (jsonData.streamTitle) {
             var cleanedTitle = cleanTitle(jsonData.streamTitle);
+
+            // Skip if the song hasn't changed to avoid redundant API calls and UI updates
+            if (streamTitleElement && streamTitleElement.textContent === cleanedTitle) {
+                return;
+            }
+
             if (streamTitleElement) streamTitleElement.textContent = cleanedTitle;
             fetchBestCover(cleanedTitle); // Fetch and display the best cover from Spotify or YouTube
             updateFavoriteIcon(cleanedTitle); // Update the heart icon state for the new song
@@ -1263,6 +1269,15 @@ function handleEventSource(metadataUrl, tooltipElement) {
             if (data.streamTitle) {
                 const cleaned = cleanTitle(data.streamTitle);
                 const trackElem = tooltipElement.querySelector('.tooltip-track');
+
+                // Skip if title hasn't changed to avoid redundant searches
+                if (trackElem && trackElem.textContent.includes(cleaned)) {
+                    const img = tooltipElement.querySelector('.tooltip-cover');
+                    if (img && img.src && !img.src.includes('Radio%20Gaming%20Logo')) {
+                        return;
+                    }
+                }
+
                 if (trackElem) {
                     trackElem.textContent = cleaned;
                     if (isFavorited(cleaned)) {
