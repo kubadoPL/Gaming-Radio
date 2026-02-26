@@ -2997,6 +2997,26 @@ body::-webkit-scrollbar-thumb {
         0 0 30px rgba(var(--active-station-glow-rgb), 0.15);
     animation: emojiPickerIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     overflow: hidden;
+    transform-origin: bottom right;
+}
+
+.chat-emoji-picker.open-down {
+    bottom: auto;
+    top: calc(100% + 8px);
+    transform-origin: top right;
+    animation: emojiPickerInDown 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes emojiPickerInDown {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 @keyframes emojiPickerIn {

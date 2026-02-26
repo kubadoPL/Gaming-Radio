@@ -2617,6 +2617,19 @@ async function openEmojiPicker(messageId, btnElement) {
     const picker = document.createElement('div');
     picker.className = 'chat-emoji-picker';
     picker.id = 'active-emoji-picker';
+
+    // Inteligentne pozycjonowanie - jeśli wiadomość jest na samej górze, otwórz w dół
+    const messagesContainer = document.getElementById('chat-messages');
+    if (messagesContainer) {
+        const msgRect = msgEl.getBoundingClientRect();
+        const containerRect = messagesContainer.getBoundingClientRect();
+
+        // Zmniejszony próg do 320px (wysokość pickera)
+        if (msgRect.top - containerRect.top < 320) {
+            picker.classList.add('open-down');
+        }
+    }
+
     picker.innerHTML = `
         <div class="emoji-picker-header">
             <input type="text" class="emoji-picker-search" placeholder="Szukaj emoji..." id="emoji-picker-search-input">
