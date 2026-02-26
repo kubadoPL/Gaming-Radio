@@ -400,6 +400,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply initial visualization state
     applyVisualizationState();
 
+    // Initial history view mode setup based on saved preference
+    const historyDrawer = document.getElementById('history-drawer');
+    if (historyDrawer && historyViewMode === 'grid') {
+        historyDrawer.classList.add('immersive-mode');
+        const toggleIcon = document.querySelector('#view-mode-toggle i');
+        if (toggleIcon) toggleIcon.className = 'fas fa-list';
+    }
+
     // Listen for Fullscreen API changes
     document.addEventListener('fullscreenchange', checkFullscreen);
     document.addEventListener('webkitfullscreenchange', checkFullscreen);
@@ -2796,90 +2804,7 @@ function isFavorited(title) {
     return songFavorites.some(s => s.title === title);
 }
 
-function renderHistoryList() {
-    const list = document.getElementById('history-list');
-    if (!list) return;
 
-    if (songHistory.length === 0) {
-        list.innerHTML = `<div class="history-empty"><i class="fas fa-music"></i><p>No songs played yet. Start listening!</p></div>`;
-        return;
-    }
-
-    list.innerHTML = songHistory.map((song, i) => {
-        const timeAgo = getTimeAgo(song.timestamp);
-        const fav = isFavorited(song.title);
-        const encodedTitle = encodeURIComponent(song.title);
-        return `
-            <div class="history-item" style="animation-delay: ${i * 0.05}s">
-                <img class="history-item-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
-                <div class="history-item-info">
-                    <div class="history-item-title" title="${song.title}">${song.title}</div>
-                    <div class="history-item-meta">
-                        <span class="history-item-station">${song.station}</span>
-                        <span>• ${timeAgo}</span>
-                    </div>
-                </div>
-                <div class="history-item-actions">
-                    <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')"
-                        title="Share to Chat">
-                        <i class="fas fa-comment-alt"></i>
-                    </button>
-                    <button class="history-action-btn ${fav ? 'favorited' : ''}" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
-                        title="${fav ? 'Remove from favorites' : 'Add to favorites'}">
-                        <i class="fas fa-heart"></i>
-                    </button>
-                    <a class="history-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Search on Spotify">
-                        <i class="fab fa-spotify"></i>
-                    </a>
-                    <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube">
-                        <i class="fab fa-youtube"></i>
-                    </a>
-                </div>
-            </div>`;
-    }).join('');
-}
-
-function renderFavoritesList() {
-    const list = document.getElementById('favorites-list');
-    if (!list) return;
-
-    if (songFavorites.length === 0) {
-        list.innerHTML = `<div class="history-empty"><i class="fas fa-heart"></i><p>No favorites yet. Heart a song to save it!</p></div>`;
-        return;
-    }
-
-    list.innerHTML = songFavorites.map((song, i) => {
-        const timeAgo = getTimeAgo(song.timestamp);
-        const encodedTitle = encodeURIComponent(song.title);
-        return `
-            <div class="history-item" style="animation-delay: ${i * 0.05}s">
-                <img class="history-item-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
-                <div class="history-item-info">
-                    <div class="history-item-title" title="${song.title}">${song.title}</div>
-                    <div class="history-item-meta">
-                        <span class="history-item-station">${song.station}</span>
-                        <span>• ${timeAgo}</span>
-                    </div>
-                </div>
-                <div class="history-item-actions">
-                    <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')"
-                        title="Share to Chat">
-                        <i class="fas fa-comment-alt"></i>
-                    </button>
-                    <button class="history-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
-                        title="Remove from favorites">
-                        <i class="fas fa-heart"></i>
-                    </button>
-                    <a class="history-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Search on Spotify">
-                        <i class="fab fa-spotify"></i>
-                    </a>
-                    <a class="history-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="Search on YouTube">
-                        <i class="fab fa-youtube"></i>
-                    </a>
-                </div>
-            </div>`;
-    }).join('');
-}
 
 function getTimeAgo(timestamp) {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -3082,13 +3007,6 @@ function renderHistoryList() {
     const list = document.getElementById('history-list');
     if (!list) return;
 
-    const drawer = document.getElementById('history-drawer');
-    if (historyViewMode === 'grid') {
-        drawer.classList.add('immersive-mode');
-        const toggleIcon = document.querySelector('#view-mode-toggle i');
-        if (toggleIcon) toggleIcon.className = 'fas fa-list';
-    }
-
     const stationLogos = {
         'Radio GAMING': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp',
         'Radio GAMING DARK': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp',
@@ -3195,13 +3113,6 @@ function renderHistoryList() {
 function renderFavoritesList() {
     const list = document.getElementById('favorites-list');
     if (!list) return;
-
-    const drawer = document.getElementById('history-drawer');
-    if (historyViewMode === 'grid') {
-        drawer.classList.add('immersive-mode');
-        const toggleIcon = document.querySelector('#view-mode-toggle i');
-        if (toggleIcon) toggleIcon.className = 'fas fa-list';
-    }
 
     if (songFavorites.length === 0) {
         list.innerHTML = `<div class="history-empty"><i class="fas fa-heart"></i><p>No favorites yet. Heart a song to save it!</p></div>`;
