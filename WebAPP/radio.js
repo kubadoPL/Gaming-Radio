@@ -2834,6 +2834,14 @@ function renderStatsView() {
         return;
     }
 
+    // Station logo map
+    const stationLogos = {
+        'Radio GAMING': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp',
+        'Radio GAMING DARK': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp',
+        'Radio GAMING MARON FM': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp',
+    };
+    const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+
     // Sort songs by listening time
     const sortedSongs = Object.entries(listeningStats.songs)
         .sort(([, a], [, b]) => b.listeningTime - a.listeningTime);
@@ -2842,18 +2850,19 @@ function renderStatsView() {
     const stationStats = {};
     Object.values(listeningStats.songs).forEach(data => {
         const sName = data.station || 'Unknown Station';
-        if (!stationStats[sName]) stationStats[sName] = 0;
-        stationStats[sName] += data.listeningTime;
+        if (!stationStats[sName]) stationStats[sName] = { time: 0, songs: 0 };
+        stationStats[sName].time += data.listeningTime;
+        stationStats[sName].songs++;
     });
 
     const sortedStations = Object.entries(stationStats)
-        .sort(([, a], [, b]) => b - a);
+        .sort(([, a], [, b]) => b.time - a.time);
 
     const favoriteStation = sortedStations.length > 0 ? sortedStations[0][0] : 'N/A';
-
     const mostPopular = sortedSongs[0][0];
     const totalTimeHours = Math.floor(listeningStats.totalTime / 3600);
     const totalTimeMins = Math.floor((listeningStats.totalTime % 3600) / 60);
+    const maxStationTime = sortedStations.length > 0 ? sortedStations[0][1].time : 1;
 
     let html = `
         <div class="stats-container">
@@ -2881,6 +2890,37 @@ function renderStatsView() {
                     <span class="stat-value">${Object.keys(listeningStats.songs).length}</span>
                 </div>
             </div>
+
+            <h4 class="stats-subtitle">Station Breakdown</h4>
+            <div class="station-stats-list">
+    `;
+
+    sortedStations.forEach(([name, data], i) => {
+        const logo = stationLogos[name] || fallbackLogo;
+        const h = Math.floor(data.time / 3600);
+        const m = Math.floor((data.time % 3600) / 60);
+        const s = data.time % 60;
+        const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m ${s}s`;
+        const pct = Math.round((data.time / Math.max(listeningStats.totalTime, 1)) * 100);
+        const barWidth = Math.round((data.time / maxStationTime) * 100);
+        html += `
+            <div class="station-stat-item" style="animation-delay: ${i * 0.08}s">
+                <img class="station-stat-logo" src="${logo}" alt="${name}" onerror="this.src='${fallbackLogo}'">
+                <div class="station-stat-info">
+                    <div class="station-stat-header">
+                        <span class="station-stat-name">${name}</span>
+                        <span class="station-stat-time">${timeStr} <span class="station-stat-pct">(${pct}%)</span></span>
+                    </div>
+                    <div class="station-stat-bar-bg">
+                        <div class="station-stat-bar" style="width: ${barWidth}%"></div>
+                    </div>
+                    <div class="station-stat-songs">${data.songs} unique tracks</div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>
             <h4 class="stats-subtitle">Top Tracks</h4>
             <div class="stats-songs-list">
     `;
