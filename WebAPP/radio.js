@@ -1223,19 +1223,26 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
         if (zenoRes.status === 'fulfilled') {
             const zenoData = await zenoRes.value.json();
             zenoCount = zenoData.total_sum || 0;
+            console.log(`[OnlineCountDebug] ${sName} (ZenoFM):`, zenoCount);
+        } else {
+            console.warn(`[OnlineCountDebug] ${sName} (ZenoFM) Fetch Failed`);
         }
 
         if (chatRes.status === 'fulfilled') {
             const chatData = await chatRes.value.json();
             chatCount = chatData.online_count !== undefined ? chatData.online_count : 0;
+            console.log(`[OnlineCountDebug] ${sName} (Chat API):`, chatCount);
+        } else {
+            console.warn(`[OnlineCountDebug] ${sName} (Chat API) Fetch Failed`);
         }
 
         const finalCount = Math.max(zenoCount, chatCount);
+        console.log(`[OnlineCountDebug] ${sName} -> Final Selected Count:`, finalCount);
 
         localStorage.setItem(cacheKey, JSON.stringify({ count: finalCount, timestamp: Date.now() }));
         updateTooltip(tooltipElement, finalCount, sName);
     } catch (e) {
-        console.error(`[Combined Online] Error fetching count for ${sName}:`, e);
+        console.error(`[OnlineCountDebug] Error fetching count for ${sName}:`, e);
         updateTooltip(tooltipElement, null, sName, true);
     }
 }
