@@ -2801,42 +2801,49 @@ body::-webkit-scrollbar-thumb {
 /* Reaction add button (appears on hover) */
 .chat-message {
     position: relative;
+    padding: 12px 16px;
+    border-radius: 12px;
+    transition: background 0.2s ease;
+}
+
+.chat-message:hover {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .chat-reaction-add-btn {
     position: absolute;
-    top: -8px;
-    right: 8px;
+    top: 8px;
+    right: 12px;
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    background: rgba(15, 12, 28, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.6);
+    background: rgba(30, 25, 45, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
     font-size: 16px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transform: scale(0.8);
-    transition: all 0.15s ease;
+    transform: scale(0.9) translateX(5px);
+    transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     z-index: 5;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
     pointer-events: none;
 }
 
 .chat-message:hover .chat-reaction-add-btn {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateX(0);
     pointer-events: all;
 }
 
 .chat-reaction-add-btn:hover {
-    background: rgba(var(--active-station-glow-rgb), 0.2);
+    background: var(--active-station-color);
     color: white;
-    border-color: var(--active-station-color);
-    transform: scale(1.1) !important;
+    border-color: white;
+    transform: scale(1.1) rotate(5deg) !important;
 }
 
 /* Reactions container */
@@ -2887,6 +2894,15 @@ body::-webkit-scrollbar-thumb {
 .chat-reaction-emoji {
     font-size: 16px;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chat-reaction-emoji img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
 }
 
 .chat-reaction-count {
@@ -2899,6 +2915,41 @@ body::-webkit-scrollbar-thumb {
 
 .chat-reaction-pill.active .chat-reaction-count {
     color: var(--active-station-color);
+}
+
+/* Custom Emoji Picker Grid */
+.emoji-picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoji-picker-item img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+.emoji-upload-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--active-station-glow-rgb), 0.1);
+    border: 1px dashed rgba(var(--active-station-glow-rgb), 0.4);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    color: var(--active-station-color);
+    grid-column: span 1;
+    aspect-ratio: 1;
+}
+
+.emoji-upload-item:hover {
+    background: rgba(var(--active-station-glow-rgb), 0.2);
+    border-color: var(--active-station-color);
+    transform: scale(1.05);
 }
 
 /* Add reaction button within the reactions bar */
@@ -3292,6 +3343,65 @@ body::-webkit-scrollbar-thumb {
     color: #ff4d4d;
 }
 
+/* Image Upload Button */
+.chat-image-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.chat-image-btn:hover {
+    background: rgba(var(--active-station-glow-rgb), 0.2);
+    color: white;
+    border-color: var(--active-station-color);
+    transform: translateY(-2px);
+}
+
+/* Image Preview in Input */
+.chat-image-preview {
+    background: rgba(var(--active-station-glow-rgb), 0.15);
+    border-radius: 12px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    animation: slideUp 0.3s ease-out;
+    border: 1px solid rgba(var(--active-station-glow-rgb), 0.2);
+}
+
+.chat-image-preview img {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.chat-image-preview-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.chat-image-size {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+}
+
 .chat-char-count {
     position: absolute;
     top: -18px;
@@ -3478,6 +3588,78 @@ body::-webkit-scrollbar-thumb {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
+
+/* Uploaded Images Styling */
+.chat-uploaded-image {
+    cursor: pointer;
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.chat-uploaded-image:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+
+/* Image Zoom Modal */
+.image-zoom-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.image-zoom-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.zoom-content {
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.image-zoom-overlay.active .zoom-content {
+    transform: scale(1);
+}
+
+.zoom-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zoom-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.zoom-close:hover {
+    transform: scale(1.2);
+    color: var(--active-station-color);
+}
+
 
 .chat-link {
     color: var(--active-station-color-secondary);

@@ -2105,6 +2105,7 @@ function initializeChatPolling() {
 
     console.log('[CHAT] Initializing polling...');
     updateCurrentStation();
+    fetchCustomEmojis(); // Wgrywamy własne emoji
     loadChatHistory();
 
     // Poll for new messages every 3 seconds
@@ -2403,9 +2404,12 @@ function appendChatMessage(message, scrollToBottom = true) {
                 <span class="chat-message-username">${message.user.global_name || message.user.username}</span>
                 <span class="chat-message-time">${timeStr}</span>
             </div>
-            <div class="chat-message-text">
+            ${formattedContent ? `<div class="chat-message-text">
                 ${formattedContent}
-            </div>
+            </div>` : ''}
+            ${message.image_data ? `
+            <img src="${message.image_data}" class="chat-inline-gif chat-uploaded-image" alt="Image" loading="lazy" onclick="openImageZoom('${message.image_data}')">
+            ` : ''}
             ${message.song_data ? `
             <div class="song-embed">
                 <img class="song-embed-cover" src="${message.song_data.artwork}" alt="Album Cover">
@@ -2447,8 +2451,23 @@ function appendChatMessage(message, scrollToBottom = true) {
 // EMOJI REACTIONS SYSTEM
 // ========================
 
+let customEmojis = []; // List of {id, name, url, creator_id}
+
+async function fetchCustomEmojis() {
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/chat/emojis`);
+        if (response.ok) {
+            customEmojis = await response.json();
+            console.log('[CHAT] Loaded custom emojis:', customEmojis.length);
+        }
+    } catch (err) {
+        console.error('[CHAT] Error fetching custom emojis:', err);
+    }
+}
+
 const EMOJI_CATEGORIES = {
     'Często używane': ['😂', '❤️', '🔥', '👍', '👀', '😭', '🥺', '✨', '💀', '🙏', '😍', '🤣', '😊', '🎉', '💯', '😎'],
+    'Własne': [], // Będzie dynamicznie zapełniane
     'Buźki': ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖'],
     'Gesty': ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🙏', '💪'],
     'Serca': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟'],
@@ -2477,10 +2496,21 @@ function buildReactionsHtml(message) {
             return u ? u.username : 'Unknown';
         }).join(', ');
 
+        // Check if custom emoji
+        let emojiDisplay = emoji;
+        if (emoji.startsWith('custom_')) {
+            const custom = customEmojis.find(e => e.id === emoji);
+            if (custom) {
+                emojiDisplay = `<img src="${custom.url}" alt="${custom.name}" title="${custom.name}">`;
+            } else {
+                emojiDisplay = '❓';
+            }
+        }
+
         html += `<button class="chat-reaction-pill ${isActive ? 'active' : ''}" 
                     onclick="toggleReaction('${message.id}', '${emoji}')"
                     title="${names}">
-                    <span class="chat-reaction-emoji">${emoji}</span>
+                    <span class="chat-reaction-emoji">${emojiDisplay}</span>
                     <span class="chat-reaction-count">${userIds.length}</span>
                 </button>`;
     }
@@ -2513,10 +2543,21 @@ function updateReactionsUI(messageId, reactions, reactionUsers) {
             return u ? u.username : 'Unknown';
         }).join(', ');
 
+        // Check if custom emoji
+        let emojiDisplay = emoji;
+        if (emoji.startsWith('custom_')) {
+            const custom = customEmojis.find(e => e.id === emoji);
+            if (custom) {
+                emojiDisplay = `<img src="${custom.url}" alt="${custom.name}" title="${custom.name}">`;
+            } else {
+                emojiDisplay = '❓';
+            }
+        }
+
         html += `<button class="chat-reaction-pill ${isActive ? 'active' : ''}" 
                     onclick="toggleReaction('${messageId}', '${emoji}')"
                     title="${names}">
-                    <span class="chat-reaction-emoji">${emoji}</span>
+                    <span class="chat-reaction-emoji">${emojiDisplay}</span>
                     <span class="chat-reaction-count">${userIds.length}</span>
                 </button>`;
     }
@@ -2558,7 +2599,7 @@ async function toggleReaction(messageId, emoji) {
     }
 }
 
-function openEmojiPicker(messageId, btnElement) {
+async function openEmojiPicker(messageId, btnElement) {
     // Close existing picker
     closeEmojiPicker();
 
@@ -2566,6 +2607,9 @@ function openEmojiPicker(messageId, btnElement) {
         showNotification('Zaloguj się, aby reagować', 'fas fa-exclamation-triangle');
         return;
     }
+
+    // Refresh custom emojis list
+    await fetchCustomEmojis();
 
     const msgEl = document.getElementById(`msg-${messageId}`);
     if (!msgEl) return;
@@ -2587,7 +2631,7 @@ function openEmojiPicker(messageId, btnElement) {
     // Render categories bar
     const catBar = picker.querySelector('#emoji-categories-bar');
     const catKeys = Object.keys(EMOJI_CATEGORIES);
-    const catIcons = ['⭐', '😀', '👋', '❤️', '🐶', '🍎', '⚽', '✈️', '🔥'];
+    const catIcons = ['⭐', '☁️', '😀', '👋', '❤️', '🐶', '🍎', '⚽', '✈️', '🔥'];
     catKeys.forEach((catName, i) => {
         const btn = document.createElement('button');
         btn.className = 'emoji-category-btn' + (i === 0 ? ' active' : '');
@@ -2627,12 +2671,38 @@ function renderEmojiGrid(messageId, filter = '') {
 
     grid.innerHTML = '';
 
-    for (const [catName, emojis] of Object.entries(EMOJI_CATEGORIES)) {
-        const filteredEmojis = filter
-            ? emojis.filter(e => e.includes(filter))
-            : emojis;
+    // Hidden file input for custom emoji upload
+    const emojiInput = document.createElement('input');
+    emojiInput.type = 'file';
+    emojiInput.accept = 'image/*';
+    emojiInput.style.display = 'none';
+    emojiInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            uploadCustomEmoji(file, messageId);
+        }
+    };
+    grid.appendChild(emojiInput);
 
-        if (filteredEmojis.length === 0) continue;
+    for (const [catName, emojis] of Object.entries(EMOJI_CATEGORIES)) {
+        let currentEmojis = emojis;
+
+        // Dynamic population for custom category
+        if (catName === 'Własne') {
+            currentEmojis = customEmojis.map(e => e.id);
+        }
+
+        const filteredEmojis = filter
+            ? currentEmojis.filter(emojiId => {
+                if (emojiId.startsWith('custom_')) {
+                    const c = customEmojis.find(e => e.id === emojiId);
+                    return c && c.name.toLowerCase().includes(filter);
+                }
+                return emojiId.includes(filter);
+            })
+            : currentEmojis;
+
+        if (catName !== 'Własne' && filteredEmojis.length === 0) continue;
 
         if (!filter) {
             const label = document.createElement('div');
@@ -2642,20 +2712,97 @@ function renderEmojiGrid(messageId, filter = '') {
             grid.appendChild(label);
         }
 
-        filteredEmojis.forEach(emoji => {
+        // Add upload button in custom category
+        if (catName === 'Własne' && !filter) {
+            const uploadBtn = document.createElement('div');
+            uploadBtn.className = 'emoji-upload-item';
+            uploadBtn.innerHTML = '<i class="fas fa-plus"></i>';
+            uploadBtn.title = 'Dodaj własne emoji';
+            uploadBtn.onclick = () => emojiInput.click();
+            grid.appendChild(uploadBtn);
+        }
+
+        filteredEmojis.forEach(emojiId => {
             const btn = document.createElement('button');
             btn.className = 'emoji-picker-item';
-            btn.textContent = emoji;
+
+            if (emojiId.startsWith('custom_')) {
+                const c = customEmojis.find(e => e.id === emojiId);
+                if (c) {
+                    btn.innerHTML = `<img src="${c.url}" alt="${c.name}">`;
+                    btn.title = c.name;
+                }
+            } else {
+                btn.textContent = emojiId;
+            }
+
             btn.onclick = () => {
-                toggleReaction(messageId, emoji);
+                toggleReaction(messageId, emojiId);
                 closeEmojiPicker();
             };
             grid.appendChild(btn);
         });
     }
 
-    if (grid.children.length === 0) {
-        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.3); padding: 20px; font-size: 13px;">Nie znaleziono emoji</div>';
+    if (grid.children.length <= 1) { // 1 because of hidden input
+        grid.innerHTML += '<div style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.3); padding: 20px; font-size: 13px;">Nie znaleziono emoji</div>';
+    }
+}
+
+async function uploadCustomEmoji(file, messageId) {
+    if (file.size > 6 * 1024 * 1024) {
+        showNotification('Emoji za duże! Max 6MB', 'fas fa-exclamation-triangle');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        let imageData = e.target.result;
+
+        // Compress if not GIF
+        if (file.type !== 'image/gif') {
+            const img = new Image();
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 64, 64);
+                imageData = canvas.toDataURL('image/png');
+                sendEmoji(imageData, file.name, messageId);
+            };
+            img.src = imageData;
+        } else {
+            sendEmoji(imageData, file.name, messageId);
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+async function sendEmoji(imageData, fileName, messageId) {
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/chat/emojis/upload`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${discordAuthToken}`
+            },
+            body: JSON.stringify({
+                name: fileName.split('.')[0],
+                image_data: imageData
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Dodano własne emoji!', 'fas fa-check-circle');
+            await fetchCustomEmojis();
+            renderEmojiGrid(messageId);
+        } else {
+            showNotification(data.error || 'Błąd wgrywania emoji', 'fas fa-exclamation-triangle');
+        }
+    } catch (err) {
+        console.error('[CHAT] Emoji upload error:', err);
     }
 }
 
@@ -2686,12 +2833,164 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// ========================
+// IMAGE UPLOAD SYSTEM
+// ========================
+let pendingImageData = null; // base64 data URL
+
+window.handleImageUpload = function (event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+        showNotification('Nieobsługiwany format! Użyj PNG, JPG, GIF lub WebP', 'fas fa-exclamation-triangle');
+        event.target.value = '';
+        return;
+    }
+
+    // Validate file size (2MB)
+    const maxSize = 6 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showNotification(`Plik za duży! ${(file.size / 1024 / 1024).toFixed(1)}MB / max 6MB`, 'fas fa-exclamation-triangle');
+        event.target.value = '';
+        return;
+    }
+
+    if (!discordAuthToken) {
+        showNotification('Zaloguj się aby wysyłać obrazki', 'fas fa-exclamation-triangle');
+        event.target.value = '';
+        return;
+    }
+
+    // Compress and convert to base64
+    compressImage(file, (dataUrl) => {
+        pendingImageData = dataUrl;
+
+        // Show preview
+        const preview = document.getElementById('chat-image-preview');
+        const previewImg = document.getElementById('chat-image-preview-img');
+        const previewName = document.getElementById('chat-image-preview-name');
+        const previewSize = document.getElementById('chat-image-preview-size');
+
+        if (preview && previewImg && previewName && previewSize) {
+            previewImg.src = dataUrl;
+            previewName.textContent = file.name;
+            const sizeKB = Math.round(dataUrl.length * 0.75 / 1024); // approximate decoded size
+            previewSize.textContent = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`;
+            preview.classList.remove('hidden');
+        }
+    });
+
+    // Reset input so same file can be re-selected
+    event.target.value = '';
+};
+
+function compressImage(file, callback) {
+    // GIFs shouldn't be compressed (would lose animation)
+    if (file.type === 'image/gif') {
+        const reader = new FileReader();
+        reader.onload = (e) => callback(e.target.result);
+        reader.readAsDataURL(file);
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            const maxW = 1920;
+            const maxH = 1080;
+            let w = img.width;
+            let h = img.height;
+
+            // Only resize if larger than max
+            if (w > maxW || h > maxH) {
+                const ratio = Math.min(maxW / w, maxH / h);
+                w = Math.round(w * ratio);
+                h = Math.round(h * ratio);
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+
+            // Use JPEG for photos (smaller), keep PNG for small images/emotes
+            const isSmallImage = file.size < 100 * 1024; // < 100KB
+            const outputType = isSmallImage && file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+            const quality = outputType === 'image/jpeg' ? 0.85 : undefined;
+
+            const result = canvas.toDataURL(outputType, quality);
+
+            // If compressed is bigger than original, use original
+            if (result.length > e.target.result.length) {
+                callback(e.target.result);
+            } else {
+                callback(result);
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+window.clearImageUpload = function () {
+    pendingImageData = null;
+    const preview = document.getElementById('chat-image-preview');
+    if (preview) preview.classList.add('hidden');
+    const input = document.getElementById('chat-image-input');
+    if (input) input.value = '';
+};
+
+// --- Image Zoom ---
+window.openImageZoom = function (src) {
+    const overlay = document.getElementById('image-zoom-overlay');
+    const img = document.getElementById('zoomed-image');
+    if (overlay && img) {
+        img.src = src;
+        overlay.classList.add('active');
+    }
+};
+
+window.closeImageZoom = function () {
+    const overlay = document.getElementById('image-zoom-overlay');
+    if (overlay) overlay.classList.remove('active');
+};
+
+// --- Drag & Drop for Chat ---
+document.addEventListener('DOMContentLoaded', () => {
+    const chatContainer = document.getElementById('chat-section');
+    if (!chatContainer) return;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        chatContainer.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+
+    chatContainer.addEventListener('drop', e => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+            handleImageUpload({ target: { files: files } });
+        }
+    }, false);
+});
+
+
 window.sendChatMessage = async function (overrideMessage = null) {
     const input = document.getElementById('chat-input');
     if (!input) return;
 
     const message = overrideMessage || input.value.trim();
-    if (!message) return;
+    const hasImage = !!pendingImageData;
+
+    // Need either text or image
+    if (!message && !hasImage) return;
 
     if (!overrideMessage && message.length > 200) {
         showNotification(`Message is too long! ${message.length}/200 letters`, 'fas fa-exclamation-triangle');
@@ -2720,6 +3019,17 @@ window.sendChatMessage = async function (overrideMessage = null) {
         }
 
         const playingStation = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
+        const bodyData = {
+            message: message || '',
+            station: currentChatStation,
+            song_data: songData
+        };
+
+        // Include image data if present
+        if (hasImage) {
+            bodyData.image_data = pendingImageData;
+        }
+
         const response = await fetch(`${CHAT_API_BASE}/chat/send`, {
             method: 'POST',
             headers: {
@@ -2727,18 +3037,18 @@ window.sendChatMessage = async function (overrideMessage = null) {
                 'Authorization': `Bearer ${discordAuthToken}`,
                 'X-Playing-Station': playingStation
             },
-            body: JSON.stringify({
-                message: message,
-                station: currentChatStation,
-                song_data: songData
-            })
+            body: JSON.stringify(bodyData)
         });
 
         const data = await response.json();
 
         if (response.ok && data.success) {
             input.value = '';
+            clearImageUpload(); // Clear image preview
             toggleSongShare(false); // Reset share state
+            // Update char counter
+            const counterElem = document.getElementById('chat-char-count');
+            if (counterElem) counterElem.textContent = '0/200';
             // Append message immediately for instant feedback
             if (!document.getElementById(`msg-${data.message.id}`)) {
                 appendChatMessage(data.message);

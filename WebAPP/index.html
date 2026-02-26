@@ -265,10 +265,24 @@
                                 <span class="preview-song-name"></span>
                                 <i class="fas fa-times remove-preview" onclick="toggleSongShare(false)"></i>
                             </div>
+                            <div id="chat-image-preview" class="chat-image-preview hidden">
+                                <img id="chat-image-preview-img" src="" alt="Preview">
+                                <div class="chat-image-preview-info">
+                                    <span id="chat-image-preview-name" class="preview-song-name"></span>
+                                    <span id="chat-image-preview-size" class="chat-image-size"></span>
+                                </div>
+                                <i class="fas fa-times remove-preview" onclick="clearImageUpload()"></i>
+                            </div>
                             <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
                                 maxlength="205" autocomplete="off">
                             <div id="chat-char-count" class="chat-char-count">0/200</div>
                         </div>
+                        <input type="file" id="chat-image-input" accept="image/png,image/jpeg,image/gif,image/webp"
+                            style="display: none;" onchange="handleImageUpload(event)">
+                        <button class="chat-image-btn" onclick="document.getElementById('chat-image-input').click()"
+                            title="Wyślij obrazek (max 2MB)">
+                            <i class="fas fa-image"></i>
+                        </button>
                         <button id="chat-gif-btn" class="chat-gif-btn" onclick="toggleGifPicker()" title="Send a GIF">
                             <i class="fas fa-sticky-note"></i>
                         </button>
@@ -500,6 +514,14 @@
                     <!-- Populated by JS -->
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Image Zoom Modal -->
+    <div id="image-zoom-overlay" class="image-zoom-overlay" onclick="closeImageZoom()">
+        <div class="zoom-content" onclick="event.stopPropagation()">
+            <button class="zoom-close" onclick="closeImageZoom()">&times;</button>
+            <img id="zoomed-image" src="" alt="Zoomed view">
         </div>
     </div>
 
