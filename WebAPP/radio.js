@@ -717,6 +717,7 @@ function showNotification(message, icon = 'fas fa-bell') {
     notification.innerHTML = `
         <div class="notification-icon"><i class="${icon}"></i></div>
         <div class="notification-message">${message}</div>
+        <div class="notification-close" onclick="this.parentElement.classList.add('exiting'); setTimeout(() => this.parentElement.remove(), 500);"><i class="fas fa-times"></i></div>
     `;
 
     // Apply active station color for border

@@ -2176,6 +2176,27 @@ body::-webkit-scrollbar-thumb {
     font-weight: 500;
     line-height: 1.4;
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    flex: 1;
+}
+
+.notification-close {
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-left: -5px;
+}
+
+.notification-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ff4d4d;
 }
 
 .notification-listeners-count {
