@@ -61,6 +61,8 @@ function switchSection(sectionId) {
     }
 }
 
+let hasInitialLoadFinished = false;
+
 let audio, streamTitleElement, playPauseIcon, stationName, eventSource, currentEventSource;
 let globalCurrentColor = "#7300ff"; // Default color for the loading screen and scrollbar
 let fetching = false; // Flag to prevent multiple fetches
@@ -169,6 +171,15 @@ async function processStatusQueue() {
                         ls.style.opacity = '1';
                         // Reset for next time (e.g. station change)
                         lastPercentage = 0;
+
+                        // Trigger actions that should wait for the initial loading to finish
+                        if (!hasInitialLoadFinished) {
+                            hasInitialLoadFinished = true;
+                            // If chat was already initialized but deferred preload, run it now
+                            if (discordUser && typeof preloadAllChatMentions === 'function') {
+                                preloadAllChatMentions();
+                            }
+                        }
                     }, 500);
                 }
             }, 500);
@@ -1653,6 +1664,10 @@ async function checkExistingSession() {
             discordUser = data.user;
             updateAuthUI(true);
             initializeChatPolling();
+            // Preload mentions only if loading screen is already gone
+            if (hasInitialLoadFinished) {
+                preloadAllChatMentions();
+            }
         } else {
             // Token invalid or expired
             localStorage.removeItem('RadioGaming-discordAuthToken');
@@ -2310,6 +2325,35 @@ function initializeChatPolling() {
     chatPollingInterval = setInterval(pollNewMessages, 3000);
 }
 
+// Background preloader to catch missed mentions on all stations at startup
+async function preloadAllChatMentions() {
+    if (!discordUser) return;
+
+    console.log('[CHAT] Preloading all channels for mentions...');
+    const stations = ['RADIOGAMING', 'RADIOGAMINGDARK', 'RADIOGAMINGMARONFM'];
+    const headers = {};
+    if (discordAuthToken) {
+        headers['Authorization'] = `Bearer ${discordAuthToken}`;
+    }
+
+    for (const station of stations) {
+        try {
+            const response = await fetch(`${CHAT_API_BASE}/chat/history/${station}`, { headers });
+            if (!response.ok) continue;
+
+            const data = await response.json();
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(message => {
+                    // Only check for mentions in history, don't append to DOM
+                    checkMessageForMention(message);
+                });
+            }
+        } catch (e) {
+            console.error(`[CHAT] Preload error for ${station}:`, e);
+        }
+    }
+}
+
 function stopChatPolling() {
     if (chatPollingInterval) {
         clearInterval(chatPollingInterval);
@@ -2360,7 +2404,8 @@ async function loadChatHistory() {
             if (data.messages && data.messages.length > 0) {
                 // Clear welcome message or loading indicator
                 messagesContainer.innerHTML = '';
-                data.messages.forEach(message => appendChatMessage(message, false, false));
+                // Set showNotify to true for mentions catch-up in current channel
+                data.messages.forEach(message => appendChatMessage(message, false, true));
 
                 // Scroll to bottom after the section transition and DOM update
                 setTimeout(() => {
@@ -2431,8 +2476,8 @@ async function pollNewMessages() {
                 // Only append if we don't already have this message
                 if (!document.getElementById(`msg-${message.id}`)) {
                     if (isChatVisible) {
-                        appendChatMessage(message, true, !isFirstPoll);
-                    } else if (!isFirstPoll) {
+                        appendChatMessage(message, true, true);
+                    } else {
                         // Background notification check
                         checkMessageForMention(message);
                     }
@@ -2703,7 +2748,8 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     messagesContainer.appendChild(messageEl);
 
     // Notify if mentioned but not by myself
-    if (showNotify && hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
+    // Deduping is handled inside showNotification via notifiedMessages set
+    if (hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
         showNotification(message.content, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
     }
 
