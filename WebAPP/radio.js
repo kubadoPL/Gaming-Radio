@@ -87,7 +87,7 @@ let listeningStats = JSON.parse(localStorage.getItem('RadioGaming-listeningStats
 let historyViewMode = localStorage.getItem('RadioGaming-historyViewMode') || 'grid'; // 'list' or 'grid' (spotify-style)
 let lastHistorySongTitle = '';
 let listeningTimer = null;
-let notifiedMessages = new Set();
+let notifiedMessages = new Set(JSON.parse(localStorage.getItem('RadioGaming-notifiedMessages') || '[]'));
 
 window.toggleVisualizations = function () {
     isVisualizerEnabled = !isVisualizerEnabled;
@@ -727,6 +727,10 @@ function showNotification(message, icon = 'fas fa-bell', title = null, imageUrl 
     if (messageId) {
         if (notifiedMessages.has(messageId)) return;
         notifiedMessages.add(messageId);
+        // Persist to localStorage (limit to last 100 notifications to avoid storage bloat)
+        const currentList = Array.from(notifiedMessages);
+        if (currentList.length > 100) currentList.shift();
+        localStorage.setItem('RadioGaming-notifiedMessages', JSON.stringify(currentList));
     }
     const container = document.getElementById('notificationContainer');
     if (!container) return;
