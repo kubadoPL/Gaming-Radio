@@ -3741,7 +3741,7 @@ body::-webkit-scrollbar-thumb {
     top: 20px;
     right: 16px;
     background: rgba(255, 255, 255, 0.05);
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: rgba(255, 255, 255, 0.5);
     width: 32px;
     height: 32px;
@@ -3750,14 +3750,15 @@ body::-webkit-scrollbar-thumb {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     font-size: 14px;
 }
 
 .history-close:hover {
-    background: rgba(255, 70, 70, 0.2);
-    color: #ff6b6b;
-    transform: scale(1.1);
+    background: rgba(255, 77, 77, 0.15);
+    border-color: rgba(255, 77, 77, 0.3);
+    color: #ff4d4d;
+    transform: rotate(90deg);
 }
 
 .history-tabs {
