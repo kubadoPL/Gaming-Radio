@@ -2,6 +2,12 @@ const albumCovers = {};
 const eventSources = new Map();
 const YOUTUBE_API_KEY = '';
 
+if (!String.prototype.equalsIgnoreCase) {
+    String.prototype.equalsIgnoreCase = function (str) {
+        return this.toLowerCase() === str.toLowerCase();
+    };
+}
+
 function switchSection(sectionId) {
     const sections = document.querySelectorAll('.page-section');
     const targetSection = document.getElementById(sectionId + '-section');
@@ -1362,6 +1368,52 @@ let currentChatStation = 'RADIOGAMING';
 let isSongShared = false;
 let sharedSongData = null; // Stores specific song data (from history) if sharing specific song
 
+let gifFavorites = JSON.parse(localStorage.getItem('RadioGaming-gifFavorites') || '[]');
+let currentGifTab = 'trending';
+
+window.switchGifTab = function (tab) {
+    currentGifTab = tab;
+    const tabs = document.querySelectorAll('.gif-tab');
+    tabs.forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+    });
+
+    if (tab === 'favorites') {
+        displayGifs(gifFavorites.map(url => ({
+            images: { fixed_height: { url } },
+            title: 'Favorite GIF'
+        })));
+    } else {
+        fetchGiphyGifs(document.getElementById('gif-search-input').value);
+    }
+};
+
+window.toggleFavoriteGif = function (url, event) {
+    if (event) event.stopPropagation();
+
+    const index = gifFavorites.indexOf(url);
+    if (index === -1) {
+        gifFavorites.push(url);
+        showNotification('Added to favorites!', 'fas fa-heart');
+    } else {
+        gifFavorites.splice(index, 1);
+        showNotification('Removed from favorites!', 'far fa-heart');
+    }
+
+    localStorage.setItem('RadioGaming-gifFavorites', JSON.stringify(gifFavorites));
+
+    // Update all matching heart icons in chat
+    document.querySelectorAll(`.chat-media-fav-btn[onclick*="${url}"]`).forEach(btn => {
+        btn.classList.toggle('active', index === -1);
+        btn.querySelector('i').className = index === -1 ? 'fas fa-heart' : 'far fa-heart';
+    });
+
+    // Refresh tab if in favorites
+    if (currentGifTab === 'favorites') {
+        switchGifTab('favorites');
+    }
+};
+
 window.toggleSongShare = function (forceState = null, song = null) {
     if (forceState !== null) {
         isSongShared = forceState;
@@ -2376,23 +2428,57 @@ function appendChatMessage(message, scrollToBottom = true) {
     const timestamp = new Date(message.timestamp);
     const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Improved detection for image-only messages (like from GIF picker)
+    // Handle mentions
+    let hasMention = false;
+    let hasMeMention = false;
+    const currentUsername = discordUser ? discordUser.username : null;
+    const currentGlobalName = discordUser ? discordUser.global_name : null;
+
+    // Escape content and find links/mentions
+    let formattedContent = '';
     const trimmedContent = message.content.trim();
     const isImageOnly = trimmedContent.match(/^https?:\/\/.*?\.(gif|jpe?g|png|webp|svg)(\?.*)?$/i) ||
         trimmedContent.match(/^https?:\/\/media\d?\.giphy\.com\/media\/[a-zA-Z0-9]+\/giphy\.gif$/) ||
         trimmedContent.includes('tenor.com/view/');
 
-    let formattedContent;
     if (isImageOnly) {
-        formattedContent = `<img src="${escapeHtml(trimmedContent)}" class="chat-inline-gif" alt="GIF">`;
+        const isFaved = gifFavorites.includes(trimmedContent);
+        formattedContent = `
+            <div class="chat-image-wrapper">
+                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" onclick="toggleFavoriteGif('${trimmedContent}', event)">
+                    <i class="${isFaved ? 'fas' : 'far'} fa-heart"></i>
+                </div>
+                <img src="${escapeHtml(trimmedContent)}" class="chat-inline-gif chat-uploaded-image" alt="GIF" onclick="openImageZoom('${trimmedContent}')">
+            </div>`;
     } else {
-        // Escape content and find links
-        const escaped = escapeHtml(message.content);
-        formattedContent = escaped.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+        let content = escapeHtml(message.content);
+
+        // Linkifying
+        content = content.replace(/(https?:\/\/[^\s]+)/g, (url) => {
             const displayUrl = url.length > 40 ? url.substring(0, 37) + '...' : url;
             return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link"><i class="fas fa-link"></i> ${displayUrl}</a>`;
         });
+
+        // Mentions (@user or @everyone)
+        content = content.replace(/(@everyone|@[a-zA-Z0-9_.]+)/g, (mention) => {
+            const name = mention.substring(1);
+            const isMe = (currentUsername && name.equalsIgnoreCase(currentUsername)) ||
+                (currentGlobalName && name.equalsIgnoreCase(currentGlobalName)) ||
+                mention === '@everyone';
+
+            if (isMe) {
+                hasMeMention = true;
+                return `<span class="chat-mention me">${mention}</span>`;
+            }
+            hasMention = true;
+            return `<span class="chat-mention">${mention}</span>`;
+        });
+
+        formattedContent = content;
     }
+
+    if (hasMeMention) messageEl.classList.add('mentioned-me');
+    else if (hasMention) messageEl.classList.add('mentioned');
 
     // Build reactions HTML
     const reactionsHtml = buildReactionsHtml(message);
@@ -2408,7 +2494,9 @@ function appendChatMessage(message, scrollToBottom = true) {
                 ${formattedContent}
             </div>` : ''}
             ${message.image_data ? `
-            <img src="${message.image_data}" class="chat-inline-gif chat-uploaded-image" alt="Image" loading="lazy" onclick="openImageZoom('${message.image_data}')">
+            <div class="chat-image-wrapper">
+                <img src="${message.image_data}" class="chat-inline-gif chat-uploaded-image" alt="Image" loading="lazy" onclick="openImageZoom('${message.image_data}')">
+            </div>
             ` : ''}
             ${message.song_data ? `
             <div class="song-embed">
@@ -2429,6 +2517,11 @@ function appendChatMessage(message, scrollToBottom = true) {
     `;
 
     messagesContainer.appendChild(messageEl);
+
+    // Notify if mentioned but not by myself
+    if (hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
+        showNotification(`${message.user.global_name || message.user.username} mentioned you in chat!`, 'fas fa-at');
+    }
 
     // Auto-scroll logic for new messages
     if (scrollToBottom) {
@@ -3168,12 +3261,18 @@ function displayGifs(gifs) {
 
     if (gifs.length > 0) {
         gifs.forEach(gif => {
-            const img = document.createElement('img');
             const url = gif.images.fixed_height.url;
-            img.src = url;
-            img.alt = gif.title;
-            img.onclick = () => selectGif(url);
-            resultsContainer.appendChild(img);
+            const isFaved = gifFavorites.includes(url);
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'chat-image-wrapper';
+            wrapper.innerHTML = `
+                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" onclick="toggleFavoriteGif('${url}', event)">
+                    <i class="${isFaved ? 'fas' : 'far'} fa-heart"></i>
+                </div>
+                <img src="${url}" alt="${gif.title || 'GIF'}" onclick="selectGif('${url}')">
+            `;
+            resultsContainer.appendChild(wrapper);
         });
     } else {
         resultsContainer.innerHTML = '<div class="chat-error">No GIFs found.</div>';

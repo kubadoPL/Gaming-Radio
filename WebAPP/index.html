@@ -248,8 +248,19 @@
                     <!-- GIF Picker Container -->
                     <div id="chat-gif-picker" class="chat-gif-picker hidden">
                         <div class="gif-picker-header">
-                            <input type="text" id="gif-search-input" placeholder="Search GIPHY..." autocomplete="off">
-                            <i class="fas fa-search"></i>
+                            <div class="gif-search-wrapper">
+                                <input type="text" id="gif-search-input" placeholder="Search GIPHY..."
+                                    autocomplete="off">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <div class="gif-picker-tabs">
+                                <button class="gif-tab active" data-tab="trending" onclick="switchGifTab('trending')">
+                                    <i class="fas fa-bolt"></i> Trending
+                                </button>
+                                <button class="gif-tab" data-tab="favorites" onclick="switchGifTab('favorites')">
+                                    <i class="fas fa-heart"></i> Favorites
+                                </button>
+                            </div>
                         </div>
                         <div id="gif-results" class="gif-results">
                             <!-- GIFs populate here -->
