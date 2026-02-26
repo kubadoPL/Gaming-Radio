@@ -2200,6 +2200,24 @@ window.closeOnlineUsersModal = function (event) {
     if (overlay) overlay.classList.add('hidden');
 };
 
+function formatRelativeTime(isoString) {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) {
+        const mins = Math.floor(diffInSeconds / 60);
+        return `${mins} min${mins > 1 ? 's' : ''} ago`;
+    }
+    if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    }
+    const days = Math.floor(diffInSeconds / 86400);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+}
+
 function renderOnlineUsers() {
     const container = document.getElementById('online-users-list');
     if (!container) return;
@@ -2215,14 +2233,21 @@ function renderOnlineUsers() {
         const item = document.createElement('div');
         item.className = 'share-guild-item'; // Reuse existing styles
         item.style.cursor = 'default';
+        if (!user.is_online) item.style.opacity = '0.7';
+
+        const statusLabel = user.is_online ? 'Online' : formatRelativeTime(user.last_seen);
+        const badgeStyle = user.is_online
+            ? 'background: rgba(0, 255, 140, 0.1); border-color: rgba(0, 255, 140, 0.2); color: #00ff8c;'
+            : 'background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: #888;';
+
         item.innerHTML = `
             <img class="share-guild-icon" src="${user.avatar_url}" alt="${user.username}">
             <div class="share-guild-info">
                 <div class="share-guild-name">${user.global_name || user.username}</div>
-                <div class="share-guild-desc">Listening to ${user.current_station || 'Radio GAMING'}</div>
+                <div class="share-guild-desc">Listened to ${user.current_station || 'Radio GAMING'}</div>
             </div>
-            <div class="chat-online-badge" style="margin-left: auto; background: rgba(0, 255, 140, 0.1); border-color: rgba(0, 255, 140, 0.2); color: #00ff8c; cursor: default;">
-                <i class="fas fa-circle" style="font-size: 8px;"></i> Online
+            <div class="chat-online-badge" style="margin-left: auto; ${badgeStyle} cursor: default; white-space: nowrap;">
+                <i class="fas fa-circle" style="font-size: 8px; color: ${user.is_online ? '#00ff8c' : '#777'};"></i> ${statusLabel}
             </div>
         `;
         container.appendChild(item);

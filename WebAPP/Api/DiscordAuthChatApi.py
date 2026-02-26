@@ -48,13 +48,16 @@ online_users = {}  # station_key -> {user_id -> last_activity_timestamp}
 MAX_MESSAGES_PER_CHANNEL = 100
 message_cooldowns = {}
 MESSAGE_COOLDOWN_SECONDS = 2
-ONLINE_THRESHOLD_SECONDS = 60
+OFFLINE_THRESHOLD_SECONDS = 86400  # 24 hours
+all_user_activity = {}  # user_id -> last_activity_timestamp (global)
 
 
 def update_user_activity(user_id, station_key, playing_station=None):
+    now = datetime.utcnow()
     if station_key not in online_users:
         online_users[station_key] = {}
-    online_users[station_key][user_id] = datetime.utcnow()
+    online_users[station_key][user_id] = now
+    all_user_activity[user_id] = now
     if playing_station:
         user_last_station[user_id] = playing_station
     else:
@@ -63,20 +66,7 @@ def update_user_activity(user_id, station_key, playing_station=None):
 
 
 def get_online_users_list(station_key):
-    if station_key not in online_users:
-        return []
     now = datetime.utcnow()
-    # Clean up and get active user IDs
-    active_uids = [
-        uid
-        for uid, ts in online_users[station_key].items()
-        if (now - ts).total_seconds() < ONLINE_THRESHOLD_SECONDS
-    ]
-    # Update the internal dict to clean up expired ones
-    online_users[station_key] = {
-        uid: online_users[station_key][uid] for uid in active_uids
-    }
-
     # Station display names
     station_names = {
         "RADIOGAMING": "Radio GAMING",
@@ -84,18 +74,50 @@ def get_online_users_list(station_key):
         "RADIOGAMINGMARONFM": "Radio GAMING MARON FM",
     }
 
-    # Return profiles with their current station
-    profiles = []
-    for uid in active_uids:
+    # Get all users who ever listened to this station (within 24h)
+    uids_for_station = []
+    if station_key in online_users:
+        uids_for_station = [
+            uid
+            for uid, ts in online_users[station_key].items()
+            if (now - ts).total_seconds() < OFFLINE_THRESHOLD_SECONDS
+        ]
+        # Clean up very old entries from the dict
+        online_users[station_key] = {
+            uid: online_users[station_key][uid] for uid in uids_for_station
+        }
+
+    # Generate results
+    results = []
+    for uid in uids_for_station:
         if uid in user_profiles:
+            last_ts = online_users[station_key][uid]
+            diff = (now - last_ts).total_seconds()
+
             p = user_profiles[uid].copy()
-            # Use the actual station from user_last_station
             station_val = user_last_station.get(uid, "Radio GAMING")
-            # If it's a key like RADIOGAMINGDARK, map it to a nice name,
-            # but if it's already a nice name (from header), use it as is
             p["current_station"] = station_names.get(station_val, station_val)
-            profiles.append(p)
-    return profiles
+            p["last_seen"] = last_ts.isoformat()
+            p["is_online"] = diff < ONLINE_THRESHOLD_SECONDS
+            results.append(p)
+
+    # Sort: Online first, then by last seen
+    results.sort(key=lambda x: (x["is_online"], x["last_seen"]), reverse=True)
+    return results
+
+
+def get_online_count(station_key):
+    # Only return truly online count for the badge
+    now = datetime.utcnow()
+    if station_key not in online_users:
+        return 0
+    return len(
+        [
+            uid
+            for uid, ts in online_users[station_key].items()
+            if (now - ts).total_seconds() < ONLINE_THRESHOLD_SECONDS
+        ]
+    )
 
 
 def get_online_count(station_key):
