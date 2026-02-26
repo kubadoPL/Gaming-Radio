@@ -2935,7 +2935,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
         });
 
         // Custom Emojis (<:name:id>)
-        content = content.replace(/&lt;:([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)&gt;/g, (match, name, id) => {
+        content = content.replace(/&lt;:([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
             const c = customEmojis.find(e => e.id === id);
             if (c) {
                 return `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">`;
@@ -3056,7 +3056,7 @@ async function ensureEmojisForMessages(messages) {
     for (const msg of messages) {
         // Check content for <:name:id>
         if (msg.content && msg.content.includes('<:')) {
-            const matches = msg.content.matchAll(/<:[a-zA-Z0-9_]+:([a-zA-Z0-9_]+)>/g);
+            const matches = msg.content.matchAll(/<:[a-zA-Z0-9_-]+:([a-zA-Z0-9_-]+)>/g);
             for (const match of matches) {
                 if (!customEmojis.find(e => e.id === match[1])) {
                     needsFetch = true;
