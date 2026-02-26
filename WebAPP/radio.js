@@ -1368,8 +1368,85 @@ let currentChatStation = 'RADIOGAMING';
 let isSongShared = false;
 let sharedSongData = null; // Stores specific song data (from history) if sharing specific song
 
-let gifFavorites = JSON.parse(localStorage.getItem('RadioGaming-gifFavorites') || '[]');
+// ========================
+// UNLIMITED FAVORITES (IndexedDB)
+// ========================
+
+const dbName = "RadioGamingDB";
+const storeName = "Favorites";
+
+const favoriteStore = {
+    db: null,
+    async init() {
+        return new Promise((resolve) => {
+            const request = indexedDB.open(dbName, 1);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(storeName)) {
+                    db.createObjectStore(storeName, { keyPath: "id" });
+                }
+            };
+            request.onsuccess = (e) => {
+                this.db = e.target.result;
+                this.migrateFromLocalStorage().then(resolve);
+            };
+            request.onerror = () => {
+                console.error("[IDB] Init error, falling back to empty favorites.");
+                resolve();
+            };
+        });
+    },
+    async migrateFromLocalStorage() {
+        const legacy = JSON.parse(localStorage.getItem('RadioGaming-gifFavorites') || '[]');
+        if (legacy.length > 0) {
+            console.log("[IDB] Migrating favorites from legacy storage...");
+            for (const url of legacy) {
+                await this.save(url);
+            }
+            localStorage.removeItem('RadioGaming-gifFavorites');
+            console.log("[IDB] Migration complete!");
+        }
+    },
+    async getAll() {
+        if (!this.db) return [];
+        return new Promise((resolve) => {
+            const tx = this.db.transaction(storeName, "readonly");
+            const store = tx.objectStore(storeName);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result.map(item => item.id));
+            request.onerror = () => resolve([]);
+        });
+    },
+    async save(url) {
+        if (!this.db) return;
+        return new Promise((resolve) => {
+            const tx = this.db.transaction(storeName, "readwrite");
+            const store = tx.objectStore(storeName);
+            store.put({ id: url, timestamp: Date.now() });
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+        });
+    },
+    async delete(url) {
+        if (!this.db) return;
+        return new Promise((resolve) => {
+            const tx = this.db.transaction(storeName, "readwrite");
+            const store = tx.objectStore(storeName);
+            store.delete(url);
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+        });
+    }
+};
+
+let gifFavorites = [];
 let currentGifTab = 'trending';
+
+// Load favorites at startup
+favoriteStore.init().then(async () => {
+    gifFavorites = await favoriteStore.getAll();
+    console.log(`[CHAT] Initialized ${gifFavorites.length} favorites from IndexedDB.`);
+});
 
 window.switchGifTab = function (tab) {
     currentGifTab = tab;
@@ -1388,7 +1465,7 @@ window.switchGifTab = function (tab) {
     }
 };
 
-window.toggleFavoriteGif = function (btn, event) {
+window.toggleFavoriteGif = async function (btn, event) {
     if (event) event.stopPropagation();
 
     const url = btn.getAttribute('data-media-url');
@@ -1396,7 +1473,6 @@ window.toggleFavoriteGif = function (btn, event) {
 
     const index = gifFavorites.indexOf(url);
     const isAdding = index === -1;
-    const oldFavorites = [...gifFavorites];
 
     // 1. Update memory
     if (isAdding) {
@@ -1405,20 +1481,22 @@ window.toggleFavoriteGif = function (btn, event) {
         if (index > -1) gifFavorites.splice(index, 1);
     }
 
-    // 2. Attempt storage
+    // 2. Persist to IndexedDB
     let storageSuccess = false;
-    try {
-        localStorage.setItem('RadioGaming-gifFavorites', JSON.stringify(gifFavorites));
-        storageSuccess = true;
-    } catch (e) {
-        console.warn('[STORAGE] LocalStorage full!', e);
-        gifFavorites = oldFavorites; // Revert memory on failure
+    if (isAdding) {
+        storageSuccess = await favoriteStore.save(url);
+    } else {
+        storageSuccess = await favoriteStore.delete(url);
     }
 
-    // Determine final state based on storage success
-    const finalFavoriteState = storageSuccess ? isAdding : !isAdding;
+    // Handle failure (unlikely with IndexedDB)
+    if (!storageSuccess) {
+        showNotification('Błąd zapisu danych!', 'fas fa-exclamation-triangle');
+        return;
+    }
 
     // 3. Sync ALL icons on the page
+    const finalFavoriteState = isAdding; // Since storage succeeded
     const allMediaBtns = document.getElementsByClassName('chat-media-fav-btn');
     for (let i = 0; i < allMediaBtns.length; i++) {
         const otherBtn = allMediaBtns[i];
@@ -1433,20 +1511,14 @@ window.toggleFavoriteGif = function (btn, event) {
 
     // 4. Notifications
     if (isAdding) {
-        if (storageSuccess) {
-            showNotification('Dodano do ulubionych!', 'fas fa-heart');
-        } else {
-            const isBase64 = url.startsWith('data:image/');
-            const msg = isBase64 ? 'Ten obrazek jest za duży!' : 'Błąd zapisu: Kolekcja jest pełna!';
-            showNotification(msg, 'fas fa-exclamation-triangle');
-        }
-    } else if (storageSuccess) {
+        showNotification('Dodano do ulubionych!', 'fas fa-heart');
+    } else {
         showNotification('Usunięto z ulubionych!', 'far fa-heart');
     }
 
     // 5. Context-aware removal (ONLY if inside GIF picker in Favorites tab)
     const pickerContainer = btn.closest('#chat-gif-picker');
-    if (currentGifTab === 'favorites' && pickerContainer && storageSuccess && !isAdding) {
+    if (currentGifTab === 'favorites' && pickerContainer && !isAdding) {
         const wrapper = btn.closest('.chat-image-wrapper');
         if (wrapper) {
             wrapper.style.opacity = '0';
@@ -1455,7 +1527,6 @@ window.toggleFavoriteGif = function (btn, event) {
             setTimeout(() => {
                 if (wrapper.parentNode) {
                     wrapper.remove();
-                    // Optional refresh to re-layout or check if empty
                     if (currentGifTab === 'favorites') switchGifTab('favorites');
                 }
             }, 200);
@@ -2598,7 +2669,9 @@ function appendChatMessage(message, scrollToBottom = true) {
 // ========================
 
 let customEmojis = [
-    { id: 'custom_kekw', name: 'kekw', url: 'https://i.iplsc.com/000H02HTFRKMGFP9-C323-F4.webp', creator_id: 'system' }
+    { id: 'custom_kekw', name: 'kekw', url: 'https://i.iplsc.com/000H02HTFRKMGFP9-C323-F4.webp', creator_id: 'system' },
+    { id: 'custom_obamium', name: 'obamium', url: 'https://img.itch.zone/aW1nLzU1NjA1MDkuZ2lm/original/qAldOG.gif', creator_id: 'system' },
+    { id: 'custom_poggers', name: 'poggers', url: 'https://cdn3.emoji.gg/emojis/7893-poggerchug.png', creator_id: 'system' }
 ]; // List of {id, name, url, creator_id}
 
 async function fetchCustomEmojis() {
