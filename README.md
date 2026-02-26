@@ -24,47 +24,52 @@ What started as a simple university coursework project quickly evolved into a pa
 *   **Media Session Integration**: Control playback and view track info directly from your OS media controls, keyboard media keys, or mobile lock screen.
 
 ### 🎨 Visuals & Immersion
-*   **Smart Album Art**: Automatically fetches high-resolution covers using the **Spotify API**, with intelligent fallbacks to **YouTube** and manual databases.
-*   **Audio Visualizer**: A built-in, beat-reactive visualizer that pulses interface elements and album art in sync with the bass.
-*   **Dynamic Theming**: UI accents and glow effects adapt to match the identity of the active station.
-*   **Fullscreen Mode**: Enable distraction-free immersion with a single click (or `F11`).
+*   **Smart Album Art**: Automatically fetches high-resolution covers using a multi-source engine (**Spotify**, **iTunes**, **Deezer**, and **YouTube**) with intelligent similarity scoring.
+*   **Beat-Reactive Visualizer**: A built-in visualizer that pulses interface elements and album art in sync with the audio frequencies.
+*   **Dynamic Theming**: UI accents and glow effects adapt in real-time to match the identity of the active station.
+*   **Immersive Modes**: Toggle between Grid and List views for your song history, and use **Fullscreen Mode** (`F11`) for distraction-free gaming.
 
-### 💻 Desktop App Exclusives
-*   **Discord Rich Presence (RPC)**: Automatically updates your Discord status to show what station and song you're listening to in real-time.
-*   **Global Hotkeys**:
-    *   `F11`: Toggle Fullscreen
-    *   `Shift + F7`: Quick Cache Clear & Reload
-
-### 🌐 Social & Discord Integration
-*   **Station Chat**: Log in with Discord to chat with other listeners in real-time, with separate channels for each station.
-*   **Now Playing Webhooks**: Share what you're listening to directly to your favorite Discord servers.
-    *   **Official Server Support**: One-click sharing to supported community servers.
-    *   **Custom Webhooks**: Paste your own Discord Webhook URL to share tracks to your private servers or friend groups.
-    *   **Rich Embeds**: shares include album art, song title, and a direct link to tune in.
+### 🌐 Social & Discord Ecosystem
+*   **Real-Time Station Chat**: Log in with Discord to connect with other listeners.
+    *   **Custom Emojis & Reactions**: Upload your own icons and react to messages with a variety of emojis.
+    *   **Image Sharing**: Share screenshots or gameplay moments directly in chat (up to 6MB).
+    *   **GIF Picker**: Full **Giphy** integration with a personal "Favorites" system for your most-used GIFs.
+*   **Smart Presence**: See who's online, what they're listening to, and their Discord profiles in the active listener's list.
+*   **Now Playing Webhooks**: Share tracks directly to Discord with rich embeds including art and direct links.
+*   **Mention System**: Get notified instantly when someone tags you in the chat across any station.
 
 ### 🛠️ User Tools
-*   **Song History**: Automatically tracking recently played songs so you never lose a new favorite.
-*   **Favorites System**: Mark tracks as favorites to save them for later.
-*   **Persistent Settings**: Your volume preferences and visualizer settings are saved automatically between sessions.
-*   **Smart Notifications**: Non-intrusive in-app toasts for track changes and status updates.
+*   **Song History & Favorites**: View your recently played tracks and build a collection of your favorites.
+*   **Persistent Experience**: Your volume, visualizer settings, and GIF favorites are saved automatically between sessions.
+*   **Smart Notifications**: Non-intrusive in-app toasts for track changes, mentions, and system updates.
 
-### 🎙️ Broadcaster Tools
-*   **Dedicated Streamer Desktop App**: A comprehensive broadcasting suite to stream directly to our Zeno FM Icecast servers.
-    *   **Versatile Media Sources**:
-        *   **Link & Play**: Paste **YouTube** or **Spotify** links to queue tracks instantly.
-        *   **Smart Search**: Just type a song name to find and play it.
-        *   **Local Files**: Drag and drop your own **MP3** library.
-    *   **Live Hosting**: Seamless microphone integration for voice-overs and announcements.
-    *   **Direct Integration**: Connects seamlessly with station credentials for stable, high-quality broadcasts.
+### 💻 Desktop Application
+Experience **Radio GAMING** as a native application with dedicated features:
+*   **Discord Rich Presence (RPC)**: Automatically syncs your active station, current song, and album art to your Discord status.
+*   **Smart Persistence**: Unlike browsers that may clear data, the Desktop App uses dedicated local storage in `AppData` to keep your tokens, themes, and favorites safe.
+*   **Native Performance**: Built with a lightweight webview for low memory footprint and fast startup.
+*   **Custom Hotkeys**:
+    *   `F11`: Deep-immersion Fullscreen.
+    *   `Shift + F7`: Instant cache purge and application refresh.
+*   **Easy Installation**: Includes a standalone installer (`.exe`) for quick setup on Windows.
+
+### 🎙️ Broadcaster Suite
+A professional-grade broadcasting tool for our live streamers:
+*   **Link & Play**: Queue tracks directly from **YouTube** or **Spotify**.
+*   **Hybrid Sources**: Mix local **MP3s** with cloud searches and live microphone input.
+*   **Direct Zeno Integration**: Low-latency broadcasting with automated metadata syncing.
+
+
 
 ## 🛠️ Built With
 
-This project brings together a variety of technologies to create a cohesive experience:
+*   **Frontend**: Vanilla HTML5, CSS3, JavaScript (Reactive UI)
+*   **Backend Services**: 
+    *   **Python (Flask)**: Custom Discord OAuth & Chat API
+    *   **Proxy Services**: Enhanced metadata fetchers for iTunes & Deezer
+*   **Streaming Platform**: Zeno FM Icecast Infrastructure
+*   **Integrations**: Spotify Web API, YouTube Data API, Giphy API, Discord OAuth2
 
-*   **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
-*   **Backend Logic**: Python
-*   **Streaming Server**: External ICECAST Zeno FM server
-*   **APIs**: Spotify Web API (for rich media integration)
 
 ---
 
@@ -77,11 +82,12 @@ Don't just take my word for it. Experience the radio directly in your browser:
 
 ## 📥 Download
 
-Take Radio GAMING with you! Download the dedicated application for your preferred platform:
+Take **Radio GAMING** beyond the browser! Download our standalone application for the best experience:
 
-*   **Desktop App**: [Download for Windows](https://radio-gaming.stream)
+*   **📦 Windows Desktop App**: [Download Stable Release (v.latest)](https://radio-gaming.stream)
+    *   *Includes: Auto-updater, Discord RPC, and Global Hotkeys.*
 
-*(You can also find the latest releases directly in this repository)*
+
 
 ---
 
