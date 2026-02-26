@@ -1,6 +1,6 @@
 const albumCovers = {};
 const eventSources = new Map();
-const YOUTUBE_API_KEY = '';
+
 
 if (!String.prototype.equalsIgnoreCase) {
     String.prototype.equalsIgnoreCase = function (str) {
@@ -68,6 +68,7 @@ let globalCurrentColor = "#7300ff"; // Default color for the loading screen and 
 let fetching = false; // Flag to prevent multiple fetches
 let tokenPromise = null; // Shared promise for token fetching
 let giphyTokenPromise = null; // Shared promise for Giphy token fetching
+let youtubeTokenPromise = null; // Shared promise for YouTube token fetching
 let cooldown = false;
 let IsChangingStation = false; // Flag to prevent multiple station changes
 var notificationTimeout;
@@ -378,6 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fetch Spotify and Giphy tokens early for loading progress
     getSpotifyAccessToken();
     getGiphyAccessToken();
+    getYouTubeAccessToken();
 
     // Mute/Restore icons setup
     const volDown = document.getElementById('volume-down');
@@ -566,6 +568,54 @@ async function getGiphyAccessToken() {
     return giphyTokenPromise;
 }
 
+async function getYouTubeAccessToken() {
+    const now = Date.now();
+    let cachedToken = localStorage.getItem('RadioGaming-youtubeAccessToken');
+    let tokenExpiresAt = parseInt(localStorage.getItem('RadioGaming-youtubeTokenExpiresAt'), 10) || 0;
+
+    // Use cached token if valid
+    if (cachedToken && now < tokenExpiresAt) {
+        return cachedToken;
+    }
+
+    // If already fetching, return the existing promise
+    if (youtubeTokenPromise) {
+        return youtubeTokenPromise;
+    }
+
+    // Create a new promise for fetching the token
+    youtubeTokenPromise = (async () => {
+        const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/youtube/token';
+
+        try {
+            const response = await fetch(tokenUrl);
+            const data = await response.json();
+
+            if (response.ok) {
+                const newToken = data.access_token;
+                const expiresIn = data.expires_in || 3600;
+                const createdAt = new Date(data.created_at).getTime();
+                const newExpiry = createdAt + expiresIn * 1000 - 60000;
+
+                localStorage.setItem('RadioGaming-youtubeAccessToken', newToken);
+                localStorage.setItem('RadioGaming-youtubeTokenExpiresAt', newExpiry.toString());
+
+                console.log(`New YouTube token fetched. Expires at ${new Date(newExpiry).toLocaleString()}.`);
+                return newToken;
+            } else {
+                throw new Error('Failed to fetch YouTube access token');
+            }
+        } catch (error) {
+            console.error('YouTube Auth Error:', error);
+            return null;
+        } finally {
+            youtubeTokenPromise = null; // Clear promise after completion
+        }
+    })();
+
+    return youtubeTokenPromise;
+}
+
 async function fetchAlbumCovers() {
     updateLoadingProgress(10, "Loading Artwork Data...");
     try {
@@ -663,10 +713,11 @@ async function fetchSpotifyCoverData(query) {
 }
 
 async function fetchYouTubeCoverData(query) {
-    if (!YOUTUBE_API_KEY) return null;
+    const youtubeKey = await getYouTubeAccessToken();
+    if (!youtubeKey) return null;
 
     try {
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=5&key=${YOUTUBE_API_KEY}`;
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=5&key=${youtubeKey}`;
         const response = await fetch(url);
         const data = await response.json();
 
