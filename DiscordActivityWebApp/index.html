@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Internet radio player with support for multiple stations.">
+    <meta name="keywords" content="Radio, Internet Radio, Zeno Fm, Gaming, Gaming music, Radio Gaming">
+    <meta name="author" content="K5 Studio">
+    <meta property="og:image" content="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp">
+    <meta name="twitter:image" content="https://radio-gaming.stream/Images/Radio-Gaming-Dark-background.webp">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radio GAMING</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Discord Embedded App SDK (loaded via esm.sh CDN - no npm required) -->
+    <script type="module">
+        import { DiscordSDK } from 'https://esm.sh/@discord/embedded-app-sdk@2.0.0';
+        // Expose SDK globally so radio.js (non-module) can access it
+        window.DiscordSDK = DiscordSDK;
+        window._discordSdkLoaded = true;
+        document.dispatchEvent(new Event('discord-sdk-ready'));
+    </script>
+    <script src="radio.js?v=7.3" defer></script>
+    <link rel="stylesheet" href="radio.css?v=7.3">
+
+</head>
+
+<body data-discord-client-id="1199866038569947217">
+    <!-- Loading screen -->
+    <div class="loading-screen">
+        <div class="loading-bg-glow">
+            <div class="glow-1"></div>
+            <div class="glow-2"></div>
+        </div>
+        <div class="loading-content">
+            <div class="lds-ripple">
+                <div></div>
+                <div></div>
+            </div>
+            <div class="loading-text">
+                <span id="loading-status">Initializing...</span>
+                <span id="loading-percentage">0%</span>
+            </div>
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar-container">
+                    <div id="loading-progress-bar"></div>
+                </div>
+                <div class="progress-glow"></div>
+            </div>
+        </div>
+    </div>
+    <!--<div id="notificationPopup"></div> -->
+    <div id="notificationContainer"></div>
+
+    <header>
+        <nav>
+            <div class="header-content">
+                <a href="javascript:void(0)" onclick="switchSection('home')" class="logo">
+                    <img src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp" alt="Logo">
+                    <span>Radio GAMING</span>
+                </a>
+                <ul>
+                    <li><a href="javascript:void(0)" onclick="switchSection('home')" class="active-nav-link"><i
+                                class="fas fa-home"></i>
+                            <span>Home</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="switchSection('chat')"><i class="fas fa-comments"></i>
+                            <span>Chat</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="switchSection('download')"><i class="fas fa-download"></i>
+                            <span>Download</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="switchSection('info')"><i class="fas fa-info-circle"></i>
+                            <span>Info</span></a></li>
+                </ul>
+                <div class="header-right">
+                    <div class="vis-toggle-btn" onclick="toggleVisualizations()" title="Toggle Visualizations">
+                        <i id="vis-toggle-icon" class="fas fa-eye"></i>
+                        <span>Visuals</span>
+                    </div>
+                    <div class="history-toggle-btn" onclick="toggleHistoryDrawer()" title="Song History">
+                        <i class="fas fa-history"></i>
+                        <span>History</span>
+                    </div>
+                    <div id="stream-status-badge" class="status-badge loading">
+                        <span class="dot"></span>
+                        <span id="status-text">INITIALIZING</span>
+                    </div>
+                    <!-- Discord Login Button -->
+                    <div id="discord-auth-container" class="discord-auth">
+                        <button id="discord-login-btn" class="discord-btn" onclick="initiateDiscordLogin()">
+                            <i class="fab fa-discord"></i>
+                            <span>Login</span>
+                        </button>
+                        <div id="discord-user-info" class="discord-user hidden" onclick="openDiscordProfileModal()">
+                            <img id="discord-user-avatar" class="discord-avatar" src="" alt="Avatar">
+                            <span id="discord-user-name"></span>
+                            <button class="discord-logout-btn" onclick="logoutDiscord(); event.stopPropagation()"
+                                title="Logout">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main>
+        <section id="home-section" class="page-section active">
+            <!--<div class="section-title">Now Playing</div>-->
+            <h1 id="StationNameInh1">Radio GAMING</h1>
+
+            <!--<div class="section-title">Select Station</div>-->
+            <div class="station-selector">
+                <div class="station-photo active"
+                    onclick="changeStation('https://stream.zeno.fm/es4ngpu7ud6tv', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
+                    <img src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp" alt="Radio GAMING">
+                    <div class="tooltip">
+                        <img src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
+                            alt="Album Cover" class="tooltip-cover" />
+                        <div class="tooltip-track">Loading...</div>
+                        <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
+                    </div>
+                </div>
+
+                <div class="station-photo"
+                    onclick="changeStation('https://stream.zeno.fm/pfg9eajshnjtv', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
+                    <img src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp"
+                        alt="Radio GAMING DARK">
+                    <div class="tooltip">
+                        <img src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
+                            alt="Album Cover" class="tooltip-cover" />
+                        <div class="tooltip-track">Loading...</div>
+                        <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
+                    </div>
+                </div>
+                <div class="station-photo"
+                    onclick="changeStation('https://stream.zeno.fm/5nhy0myl4jpuv', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
+                    <img src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp"
+                        alt="Radio GAMING MARON FM">
+                    <div class="tooltip">
+                        <img src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
+                            alt="Album Cover" class="tooltip-cover" />
+                        <div class="tooltip-track">Loading...</div>
+                        <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="audio-player" id="radioPlayer">
+                <audio id="audioPlayer" controls crossorigin="anonymous">
+                    <source src="https://stream.zeno.fm/es4ngpu7ud6tv" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <div class="album-cover-and-title">
+                    <img id="albumCover"
+                        src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
+                        alt="Album Cover" class="album-cover">
+                    <div id="streamTitle"></div>
+                </div>
+                <div class="player-controls">
+                    <div id="playPauseIcon" onclick="playPause()">
+                        <i class="fas fa-play"></i>
+                        <div class="lds-ripple-small">
+                            <div></div>
+                            <div></div>
+                        </div>
+                    </div>
+                    <div class="controls-center">
+                        <div id="timeDisplay">
+                            <span id="currentTime">00:00</span> / <span id="liveIndicator">🟣LIVE</span>
+                        </div>
+                        <i id="favoriteIcon" class="far fa-heart favorite-icon" onclick="toggleCurrentFavorite()"
+                            title="Add to Favorites"></i>
+                        <i id="shareDiscordIcon" class="fab fa-discord share-discord-icon" onclick="openShareModal()"
+                            title="Share on Discord"></i>
+                    </div>
+                    <div class="volume-control">
+                        <i id="volume-down" class="fas fa-volume-down volume-icon"></i>
+                        <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="0.1"
+                            oninput="changeVolume(this.value)">
+                        <i id="volume-up" class="fas fa-volume-up volume-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="info-section" class="page-section">
+            <div class="info-card">
+                <h1>Welcome to Radio GAMING!</h1>
+                <p>Are you ready to immerse yourself in the ultimate music experience? Whether you're a casual gamer, a
+                    competitive esports enthusiast, or simply someone who loves great music, Radio GAMING has something
+                    for everyone.</p>
+                <p><strong>Radio GAMING - Powering Your Gaming Experience.</strong></p>
+
+                <div class="cta-section">
+                    <a href="https://github.com/kubadoPL/Gaming-Radio/tree/main" target="_blank" class="btn">
+                        <i class="fab fa-github"></i> View Documentation
+                    </a>
+                    <a href="https://k5studio.dev/" target="_blank" class="btn">
+                        <i class="fas fa-project-diagram"></i> Other Projects
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chat Section -->
+        <section id="chat-section" class="page-section">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2><i class="fas fa-comments"></i> Station Chat</h2>
+                    <div class="chat-channel-selector">
+                        <div class="chat-station-indicator" onclick="toggleChannelDropdown()">
+                            <span class="chat-station-dot"></span>
+                            <span id="chat-current-station">Radio GAMING</span>
+                            <i class="fas fa-chevron-down channel-chevron"></i>
+                        </div>
+                        <div class="chat-online-badge" onclick="openOnlineUsersModal()"><i class="fas fa-users"></i>
+                            <span id="chat-online-count">1</span> online
+                        </div>
+
+                        <div id="channel-dropdown" class="channel-dropdown hidden">
+                            <div class="channel-option" data-station="Radio GAMING"
+                                onclick="switchChatChannel('Radio GAMING')">Radio GAMING <span
+                                    class="chat-online-badge">...</span></div>
+                            <div class="channel-option" data-station="Radio GAMING DARK"
+                                onclick="switchChatChannel('Radio GAMING DARK')">Radio GAMING DARK <span
+                                    class="chat-online-badge">...</span></div>
+                            <div class="channel-option" data-station="Radio GAMING MARON FM"
+                                onclick="switchChatChannel('Radio GAMING MARON FM')">MARON FM <span
+                                    class="chat-online-badge">...</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-auth-required" id="chat-auth-prompt">
+                    <div class="auth-prompt-content">
+                        <i class="fab fa-discord auth-prompt-icon"></i>
+                        <h3>Login to Chat</h3>
+                        <p>Connect with Discord to join the conversation with other listeners!</p>
+                        <button class="discord-btn large" onclick="initiateDiscordLogin()">
+                            <i class="fab fa-discord"></i>
+                            <span>Login with Discord</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chat-main hidden" id="chat-main">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-welcome">
+                            <i class="fas fa-music"></i>
+                            <p>Welcome to the chat! Say hello to other listeners.</p>
+                        </div>
+                    </div>
+
+                    <!-- GIF Picker Container -->
+                    <div id="chat-gif-picker" class="chat-gif-picker hidden">
+                        <div class="gif-picker-header">
+                            <div class="gif-search-wrapper">
+                                <input type="text" id="gif-search-input" placeholder="Search GIPHY..."
+                                    autocomplete="off">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <div class="gif-picker-tabs">
+                                <button class="gif-tab active" data-tab="trending" onclick="switchGifTab('trending')">
+                                    <i class="fas fa-bolt"></i> Trending
+                                </button>
+                                <button class="gif-tab" data-tab="favorites" onclick="switchGifTab('favorites')">
+                                    <i class="fas fa-heart"></i> Favorites
+                                </button>
+                            </div>
+                        </div>
+                        <div id="gif-results" class="gif-results">
+                            <!-- GIFs populate here -->
+                        </div>
+                    </div>
+
+                    <div class="chat-input-container">
+                        <div class="chat-user-badge">
+                            <img id="chat-user-avatar" class="chat-avatar" src="" alt="">
+                        </div>
+                        <div class="chat-input-wrapper">
+                            <div id="chat-song-preview" class="chat-song-preview hidden">
+                                <span class="preview-song-name"></span>
+                                <i class="fas fa-times remove-preview" onclick="toggleSongShare(false)"></i>
+                            </div>
+                            <div id="chat-image-preview" class="chat-image-preview hidden">
+                                <img id="chat-image-preview-img" src="" alt="Preview">
+                                <div class="chat-image-preview-info">
+                                    <span id="chat-image-preview-name" class="preview-song-name"></span>
+                                    <span id="chat-image-preview-size" class="chat-image-size"></span>
+                                </div>
+                                <i class="fas fa-times remove-preview" onclick="clearImageUpload()"></i>
+                            </div>
+                            <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
+                                maxlength="205" autocomplete="off">
+                            <div id="chat-mention-suggestions" class="chat-mention-suggestions hidden"></div>
+                            <div id="chat-char-count" class="chat-char-count">0/200</div>
+                        </div>
+                        <input type="file" id="chat-image-input" accept="image/png,image/jpeg,image/gif,image/webp"
+                            style="display: none;" onchange="handleImageUpload(event)">
+                        <button class="chat-image-btn" onclick="document.getElementById('chat-image-input').click()"
+                            title="Wyślij obrazek (max 2MB)">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        <button id="chat-gif-btn" class="chat-gif-btn" onclick="toggleGifPicker()" title="Send a GIF">
+                            <i class="fas fa-sticky-note"></i>
+                        </button>
+                        <button id="chat-emoji-btn" class="chat-emoji-btn" onclick="toggleEmojiPickerForInput(this)"
+                            title="Emoji">
+                            <i class="far fa-smile"></i>
+                        </button>
+                        <button id="chat-share-song-btn" class="chat-share-song-btn" onclick="toggleSongShare()"
+                            title="Reference current song">
+                            <i class="fas fa-music"></i>
+                        </button>
+                        <button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="download-section" class="page-section">
+            <div class="hero-section">
+                <h1>Get Radio GAMING</h1>
+                <p class="subtitle">Experience the ultimate gaming radio on your desktop. Stay tuned while you play with
+                    our dedicated Windows application.</p>
+            </div>
+
+            <div class="download-grid">
+                <div class="download-card">
+                    <i class="fab fa-windows"></i>
+                    <h3>Desktop Launcher</h3>
+                    <p>Installer for Windows 10/11.<br>Includes automatic updates.</p>
+                    <a href="https://github.com/kubadoPL/Gaming-Radio/raw/main/DesktopAPP/Radio%20Gaming%20Desktop%20Launcher%20Installer.exe"
+                        target="_blank" class="btn">
+                        <i class="fas fa-download"></i> Download Launcher (Auto updates)
+                    </a>
+                </div>
+
+                <div class="download-card">
+                    <i class="fab fa-windows"></i>
+                    <h3>Standalone EXE</h3>
+                    <p>Portable version for Windows.<br>No installation required.</p>
+                    <a href="https://github.com/kubadoPL/Gaming-Radio/raw/main/DesktopAPP/Radio%20Gaming%20Desktop.exe"
+                        target="_blank" class="btn">
+                        <i class="fas fa-download"></i> Download Standalone EXE
+                    </a>
+                </div>
+
+                <div class="download-card data-management-card">
+                    <i class="fas fa-database main-icon"></i>
+                    <h3>Data Management</h3>
+                    <p>Backup or restore your favorites, history, and settings.</p>
+                    <div class="data-actions">
+                        <button onclick="exportUserData()" class="btn btn-secondary">
+                            <i class="fas fa-file-export"></i> Export
+                        </button>
+                        <button onclick="document.getElementById('import-input').click()" class="btn btn-secondary">
+                            <i class="fas fa-file-import"></i> Import
+                        </button>
+                        <input type="file" id="import-input" accept=".json" style="display: none;"
+                            onchange="importUserData(event)">
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+
+    <div class="animation-wrapper">
+        <div class="particle particle-1"></div>
+        <div class="particle particle-2"></div>
+        <div class="particle particle-3"></div>
+        <div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+        <div class="particle particle-6"></div>
+        <div class="particle particle-7"></div>
+    </div>
+
+    <!-- Song History Drawer -->
+    <div id="history-overlay" class="history-overlay" onclick="toggleHistoryDrawer()"></div>
+    <div id="history-drawer" class="history-drawer">
+        <div class="history-header">
+            <h3><i class="fas fa-history"></i> Song History</h3>
+            <div class="history-controls">
+                <div class="history-tabs">
+                    <button class="history-tab active" data-tab="history"
+                        onclick="switchHistoryTab('history')">Recent</button>
+                    <button class="history-tab" data-tab="favorites" onclick="switchHistoryTab('favorites')"><i
+                            class="fas fa-heart"></i> Favorites</button>
+                    <button class="history-tab" data-tab="stats" onclick="switchHistoryTab('stats')"><i
+                            class="fas fa-chart-bar"></i> Stats</button>
+                </div>
+                <button class="view-mode-toggle" id="view-mode-toggle" onclick="toggleHistoryMode()"
+                    title="Toggle View Mode">
+                    <i class="fas fa-th-large"></i>
+                </button>
+            </div>
+            <button class="history-close" onclick="toggleHistoryDrawer()"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="history-list" class="history-list">
+            <div class="history-empty">
+                <i class="fas fa-music"></i>
+                <p>No songs played yet. Start listening!</p>
+            </div>
+        </div>
+        <div id="favorites-list" class="history-list" style="display: none;">
+            <div class="history-empty">
+                <i class="fas fa-heart"></i>
+                <p>No favorites yet. Heart a song to save it!</p>
+            </div>
+        </div>
+        <div id="stats-view" class="history-list stats-view" style="display: none;">
+            <div class="history-empty">
+                <i class="fas fa-chart-line"></i>
+                <p>Statistics are being gathered. Keep listening!</p>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-left">
+                &copy; 2026 K5 Studio - All Rights Reserved.
+            </div>
+            <div class="footer-center">
+                <div class="social-links">
+                    <a href="https://k5studio.dev/" target="_blank" title="My Website"><i class="fas fa-globe"></i></a>
+                    <a href="https://www.linkedin.com/in/jakub-dru%C5%BCbi%C5%84ski-53a240347/" target="_blank"
+                        title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                    <a href="https://www.fiverr.com/kubado515" target="_blank" title="Fiverr"><i
+                            class="fas fa-briefcase"></i></a>
+                    <a href="https://www.youtube.com/@kubado515" target="_blank" title="YouTube"><i
+                            class="fab fa-youtube"></i></a>
+                    <a href="mailto:DruzbinskiJakub@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+                </div>
+            </div>
+            <div class="footer-right">
+                Developed with <i class="fas fa-heart" style="color: #a200ff; animation: heartBeat 1.5s infinite;"></i>
+                by K5 Studio | Version 7.5
+            </div>
+        </div>
+    </footer>
+
+    <!-- Discord Share Modal -->
+    <div id="share-modal-overlay" class="share-modal-overlay hidden" onclick="closeShareModal(event)">
+        <div class="share-modal" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <i class="fab fa-discord"></i>
+                <h3>Share to Discord</h3>
+                <button class="share-modal-close" onclick="closeShareModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="share-modal-body">
+                <div class="share-section">
+                    <div class="share-section-label">Server Channels</div>
+                    <div id="share-guild-list" class="share-guild-list">
+                        <!-- Guild entries populated by JS -->
+                    </div>
+                </div>
+                <div class="share-divider">
+                    <span>or</span>
+                </div>
+                <div class="share-section">
+                    <div class="share-section-label">Custom Webhook</div>
+                    <div id="saved-webhooks-list" class="share-guild-list">
+                        <!-- Saved webhook entries populated by JS -->
+                    </div>
+                    <div class="share-custom-webhook">
+                        <input type="text" id="custom-webhook-input" class="share-webhook-input"
+                            placeholder="Paste Discord webhook URL here..." autocomplete="off">
+                        <button id="share-custom-webhook-btn" class="share-webhook-btn"
+                            onclick="shareToCustomWebhook()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discord Profile Modal -->
+    <div id="discord-profile-modal-overlay" class="share-modal-overlay hidden"
+        onclick="closeDiscordProfileModal(event)">
+        <div class="share-modal profile-modal" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <i class="fab fa-discord"></i>
+                <h3>Discord Profile</h3>
+                <button class="share-modal-close" onclick="closeDiscordProfileModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="share-modal-body">
+                <div class="profile-card">
+                    <div class="profile-banner"></div>
+                    <div class="profile-avatar-container">
+                        <img id="modal-discord-avatar" class="profile-modal-avatar" src="" alt="Avatar">
+                    </div>
+                    <div class="profile-content">
+                        <div id="modal-discord-name" class="profile-modal-name"></div>
+                        <div id="modal-discord-username" class="profile-modal-username"></div>
+
+                        <div class="profile-divider"></div>
+
+                        <div class="profile-section">
+                            <div class="profile-label">Supported Servers MemberShips</div>
+                            <div id="profile-guild-list" class="profile-guild-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <button class="profile-logout-btn" onclick="logoutDiscord(); closeDiscordProfileModal()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Online Users Modal -->
+    <div id="online-users-modal-overlay" class="share-modal-overlay hidden" onclick="closeOnlineUsersModal(event)">
+        <div class="share-modal" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <i class="fas fa-users"></i>
+                <h3>Online Listeners</h3>
+                <button class="share-modal-close" onclick="closeOnlineUsersModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="share-modal-body">
+                <div id="online-users-list" class="share-guild-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Zoom Modal -->
+    <div id="image-zoom-overlay" class="image-zoom-overlay" onclick="closeImageZoom()">
+        <div class="zoom-content" onclick="event.stopPropagation()">
+            <button class="zoom-close" onclick="closeImageZoom()">&times;</button>
+            <img id="zoomed-image" src="" alt="Zoomed view">
+        </div>
+    </div>
+
+</body>
+
+</html>o
