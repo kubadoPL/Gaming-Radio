@@ -300,8 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupMetadataConnection(url) {
         if (currentEventSource) currentEventSource.close();
 
-        console.log("Initializing metadata connection to:", url);
-        const es = new EventSource(url);
+        console.log("Initializing metadata connection to:", proxyUrl(url));
+        const es = new EventSource(proxyUrl(url));
         currentEventSource = es;
 
         es.onmessage = handleMainStreamMessage;
@@ -488,7 +488,7 @@ async function getSpotifyAccessToken() {
     // Create a new promise for fetching the token
     tokenPromise = (async () => {
         updateLoadingProgress(40, "Authenticating with Spotify...");
-        const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/spotify/token';
+        const tokenUrl = K5_API_BASE + '/spotify/token';
 
         try {
             const response = await fetch(tokenUrl);
@@ -547,7 +547,7 @@ async function getGiphyAccessToken() {
 
     // Create a new promise for fetching the token
     giphyTokenPromise = (async () => {
-        const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/giphy/token';
+        const tokenUrl = K5_API_BASE + '/giphy/token';
 
         try {
             const response = await fetch(tokenUrl);
@@ -595,7 +595,7 @@ async function getYouTubeAccessToken() {
 
     // Create a new promise for fetching the token
     youtubeTokenPromise = (async () => {
-        const tokenUrl = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/youtube/token';
+        const tokenUrl = K5_API_BASE + '/youtube/token';
 
         try {
             const response = await fetch(tokenUrl);
@@ -643,7 +643,7 @@ async function fetchAlbumCovers() {
 fetchAlbumCovers();
 
 async function fetchBestCover(query) {
-    const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+    const fallbackCover = proxyUrl('https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png');
     const coverElem = document.getElementById('albumCover');
 
     try {
@@ -1164,7 +1164,7 @@ function changeStation(source, name, metadataURL) {
 
     const stationDetails = {
         "https://stream.zeno.fm/es4ngpu7ud6tv": {
-            backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Background.webp')",
+            backgroundImage: `url('${proxyUrl('https://radio-gaming.stream/Images/Radio-Gaming-Background.webp')}')`,
             borderColor: "#7300ff",
             secondaryColor: "#a855f7",
             glowColor: "rgba(115, 0, 255, 0.6)",
@@ -1173,7 +1173,7 @@ function changeStation(source, name, metadataURL) {
             streamTitleColor: "#7300ff"
         },
         "https://stream.zeno.fm/pfg9eajshnjtv": {
-            backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Dark-background.webp')",
+            backgroundImage: `url('${proxyUrl('https://radio-gaming.stream/Images/Radio-Gaming-Dark-background.webp')}')`,
             borderColor: "#293cca",
             secondaryColor: "#3e5aff",
             glowColor: "rgba(41, 60, 202, 0.6)",
@@ -1182,7 +1182,7 @@ function changeStation(source, name, metadataURL) {
             streamTitleColor: "#0039ff"
         },
         "https://stream.zeno.fm/5nhy0myl4jpuv": {
-            backgroundImage: "url('https://radio-gaming.stream/Images/Radio-Gaming-Maron-FM-background-Polished.webp')",
+            backgroundImage: `url('${proxyUrl('https://radio-gaming.stream/Images/Radio-Gaming-Maron-FM-background-Polished.webp')}')`,
             borderColor: "#272956",
             secondaryColor: "#4a4e8a",
             glowColor: "rgba(39, 41, 86, 0.6)",
@@ -1204,7 +1204,6 @@ function changeStation(source, name, metadataURL) {
     const ls = document.querySelector('.loading-screen');
     if (ls) {
         ls.style.backgroundColor = config.loadingBackgroundColor;
-        ls.style.display = 'flex';
         updateLoadingProgress(10, "Switching to " + name + "...");
     }
     updateStatusBadge('loading');
@@ -1221,7 +1220,7 @@ function changeStation(source, name, metadataURL) {
 
     if (audio) {
         updateLoadingProgress(40, "Buffering Audio Stream...");
-        audio.src = source;
+        audio.src = proxyUrl(source);
         audio.load();
         audio.play().catch(e => console.error("Playback failed:", e));
         updatePlayPauseUI('loading');
@@ -1240,7 +1239,7 @@ function changeStation(source, name, metadataURL) {
 
     // Use the same robust connection logic as initial load
     const setupMetadataConnection = (url) => {
-        const es = new EventSource(url);
+        const es = new EventSource(proxyUrl(url));
         currentEventSource = es;
         es.onmessage = handleMainStreamMessage;
         es.onerror = (err) => {
@@ -1422,7 +1421,7 @@ async function fetchSpotifyCovertooltip(query, tooltipElement) {
 }
 
 function handleEventSource(metadataUrl, tooltipElement) {
-    const es = new EventSource(metadataUrl);
+    const es = new EventSource(proxyUrl(metadataUrl));
     es.onmessage = async (event) => {
         try {
             const data = JSON.parse(event.data);
@@ -1636,8 +1635,29 @@ const K5_API_BASE = _inDiscordActivityProxy
     ? '/K5ApiManager'
     : 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager';
 const ZENO_API_BASE = _inDiscordActivityProxy
-    ? '/ZenoFMApi'
-    : 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi';
+    ? '/zeno-api'
+    : 'https://api.zeno.fm';
+const ZENO_STREAM_BASE = _inDiscordActivityProxy
+    ? '/zeno-stream'
+    : 'https://stream.zeno.fm';
+const IMAGES_BASE = _inDiscordActivityProxy
+    ? '/Images'
+    : 'https://radio-gaming.stream/Images';
+
+/**
+ * Helper to proxy URLs when running in Discord Activity.
+ */
+function proxyUrl(url) {
+    if (!_inDiscordActivityProxy) return url;
+    if (!url) return url;
+
+    return url
+        .replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi', CHAT_API_BASE)
+        .replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager', K5_API_BASE)
+        .replace('https://api.zeno.fm', ZENO_API_BASE)
+        .replace('https://stream.zeno.fm', ZENO_STREAM_BASE)
+        .replace('https://radio-gaming.stream/Images', IMAGES_BASE);
+}
 let discordAuthToken = localStorage.getItem('RadioGaming-discordAuthToken');
 let discordUser = null;
 
