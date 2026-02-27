@@ -114,7 +114,11 @@ def update_user_activity(user_id, station_key, playing_station=None):
         user_last_station[user_id] = station_key
 
 
-def get_online_users_list(station_key):
+# Caching for online users to prevent backend lag
+online_users_cache = {}  # station_key -> {"list": [], "count": 0, "expires": datetime}
+
+
+def get_online_users_list_raw(station_key):
     now = datetime.utcnow()
     # Station display names
     station_names = {
@@ -155,18 +159,33 @@ def get_online_users_list(station_key):
     return results
 
 
-def get_online_count(station_key):
-    # Only return truly online count for the badge
+def get_online_data(station_key):
     now = datetime.utcnow()
-    if station_key not in online_users:
-        return 0
-    return len(
-        [
-            uid
-            for uid, ts in online_users[station_key].items()
-            if (now - ts).total_seconds() < ONLINE_THRESHOLD_SECONDS
-        ]
-    )
+    cached = online_users_cache.get(station_key)
+
+    # Cache for 5 seconds to reduce CPU load during heavy polling
+    if cached and cached["expires"] > now:
+        return cached["list"], cached["count"]
+
+    results = get_online_users_list_raw(station_key)
+    count = len([u for u in results if u.get("is_online")])
+
+    online_users_cache[station_key] = {
+        "list": results,
+        "count": count,
+        "expires": now + timedelta(seconds=5),
+    }
+    return results, count
+
+
+def get_online_users_list(station_key):
+    users_list, _ = get_online_data(station_key)
+    return users_list
+
+
+def get_online_count(station_key):
+    _, count = get_online_data(station_key)
+    return count
 
 
 @chat_api.route("/")
@@ -376,14 +395,15 @@ def get_chat_history(station):
                 user_sessions[token]["id"], station_key, playing_header
             )
 
-    online_users_list = get_online_users_list(station_key)
-    online_count = len([u for u in online_users_list if u.get("is_online")])
+    exclude_users = request.args.get("exclude_users") == "1"
+    online_users_list, online_count = get_online_data(station_key)
+
     return jsonify(
         {
             "station": station_key,
             "messages": chat_messages[station_key][-50:],
             "online_count": online_count,
-            "online_users": online_users_list,
+            "online_users": [] if exclude_users else online_users_list,
             "server_time": datetime.utcnow().isoformat() + "Z",
         }
     )
@@ -418,13 +438,14 @@ def poll_messages(station):
         except:
             pass
 
-    online_users_list = get_online_users_list(station_key)
-    online_count = len([u for u in online_users_list if u.get("is_online")])
+    exclude_users = request.args.get("exclude_users") == "1"
+    online_users_list, online_count = get_online_data(station_key)
+
     return jsonify(
         {
             "messages": messages[-50:],
             "online_count": online_count,
-            "online_users": online_users_list,
+            "online_users": [] if exclude_users else online_users_list,
             "server_time": datetime.utcnow().isoformat() + "Z",
         }
     )

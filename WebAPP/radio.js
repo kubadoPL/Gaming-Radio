@@ -2566,7 +2566,7 @@ async function preloadAllChatMentions() {
 
     for (const station of stations) {
         try {
-            const response = await fetch(`${CHAT_API_BASE}/chat/history/${station}`, { headers });
+            const response = await fetch(`${CHAT_API_BASE}/chat/history/${station}?exclude_users=1`, { headers });
             if (!response.ok) continue;
 
             const data = await response.json();
@@ -2621,7 +2621,10 @@ async function loadChatHistory() {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, { headers });
+        const excludeUsers = !document.getElementById('online-users-modal-overlay') || document.getElementById('online-users-modal-overlay').classList.contains('hidden');
+        const url = `${CHAT_API_BASE}/chat/history/${currentChatStation}${excludeUsers ? '?exclude_users=1' : ''}`;
+
+        const response = await fetch(url, { headers });
         const data = await response.json();
 
         if (data.online_count !== undefined) {
@@ -2683,7 +2686,13 @@ async function pollNewMessages() {
     pollCount++;
 
     try {
-        const since = lastMessageTimestamp ? `?since=${encodeURIComponent(lastMessageTimestamp)}` : '';
+        const sinceParam = lastMessageTimestamp ? `since=${encodeURIComponent(lastMessageTimestamp)}` : '';
+        const excludeUsers = !document.getElementById('online-users-modal-overlay') || document.getElementById('online-users-modal-overlay').classList.contains('hidden');
+        const excludeParam = excludeUsers ? 'exclude_users=1' : '';
+
+        const queryParams = [sinceParam, excludeParam].filter(p => p).join('&');
+        const url = `${CHAT_API_BASE}/chat/poll/${currentChatStation}${queryParams ? '?' + queryParams : ''}`;
+
         const playingStation = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
         const headers = {
             'X-Playing-Station': playingStation
@@ -2693,10 +2702,10 @@ async function pollNewMessages() {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`, { headers });
+        const response = await fetch(url, { headers });
         const data = await response.json();
 
-        // Always update online count and users list
+        // Always update online count and users list (if users list is empty but provided, it will clear it)
         if (data.online_count !== undefined) {
             updateOnlineCountUI(data.online_count, data.online_users);
         }
