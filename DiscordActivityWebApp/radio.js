@@ -1,6 +1,41 @@
 const albumCovers = {};
 const eventSources = new Map();
 
+// In Discord Activity, all requests must go through Discord's proxy via relative paths.
+// URL Mappings in Discord Developer Portal route these to the real servers.
+const _inDiscordActivityProxy = (window.location.hostname.includes('discordsays.com') || window.location.hostname.includes('discord.com') || window.location.search.includes('frame_id'));
+
+const CHAT_API_BASE = _inDiscordActivityProxy
+    ? '/DiscordAuthChatApi'
+    : 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi';
+const K5_API_BASE = _inDiscordActivityProxy
+    ? '/K5ApiManager'
+    : 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager';
+const ZENO_API_BASE = _inDiscordActivityProxy
+    ? '/zeno-api'
+    : 'https://api.zeno.fm';
+const ZENO_STREAM_BASE = _inDiscordActivityProxy
+    ? '/zeno-stream'
+    : 'https://stream.zeno.fm';
+const IMAGES_BASE = _inDiscordActivityProxy
+    ? '/Images'
+    : 'https://radio-gaming.stream/Images';
+
+/**
+ * Helper to proxy URLs when running in Discord Activity.
+ */
+function proxyUrl(url) {
+    if (!_inDiscordActivityProxy) return url;
+    if (!url) return url;
+
+    return url
+        .replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi', CHAT_API_BASE)
+        .replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager', K5_API_BASE)
+        .replace('https://api.zeno.fm', ZENO_API_BASE)
+        .replace('https://stream.zeno.fm', ZENO_STREAM_BASE)
+        .replace('https://radio-gaming.stream/Images', IMAGES_BASE);
+}
+
 
 if (!String.prototype.equalsIgnoreCase) {
     String.prototype.equalsIgnoreCase = function (str) {
@@ -284,6 +319,14 @@ document.addEventListener('DOMContentLoaded', () => {
     playPauseIcon = document.getElementById('playPauseIcon');
     stationName = document.querySelector('h1');
 
+    // Set initial status
+    updateStatusBadge('loading');
+
+    // Ensure initial audio source is set and proxied
+    if (audio && !audio.src) {
+        audio.src = proxyUrl('https://stream.zeno.fm/es4ngpu7ud6tv');
+    }
+
     // Initial setup with safety checks
     const loadingScreen = document.querySelector('.loading-screen');
     if (loadingScreen) {
@@ -312,14 +355,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Check if we are still on the same station before retrying
             setTimeout(() => {
+                // In proxy mode, currentEventSource.url might be relative, so we compare with proxyUrl(url)
                 const currentUrl = currentEventSource ? currentEventSource.url : null;
-                if (currentUrl === url) {
+                const targetUrl = proxyUrl(url);
+
+                // Compare relative vs relative OR absolute vs absolute
+                const isMatch = currentUrl === targetUrl || (currentUrl && targetUrl && currentUrl.endsWith(targetUrl));
+
+                if (isMatch) {
                     setupMetadataConnection(url);
                 }
             }, 5000);
 
             if (document.querySelector('.loading-screen') && document.querySelector('.loading-screen').style.display !== 'none') {
-                updateLoadingProgress(100, "Connection issues detected - still trying...");
+                updateLoadingProgress(100, "Ready! (Connection issues detected, retrying metadata...)");
             }
         };
 
@@ -629,7 +678,7 @@ async function getYouTubeAccessToken() {
 async function fetchAlbumCovers() {
     updateLoadingProgress(10, "Loading Artwork Data...");
     try {
-        const response = await fetch('https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/albumCovers.json?t=' + Date.now());
+        const response = await fetch(proxyUrl('https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/albumCovers.json?t=') + Date.now());
         const data = await response.json();
         Object.assign(albumCovers, data);
         console.log('Album covers fetched successfully:', albumCovers);
@@ -1625,39 +1674,8 @@ function hexToRgb(color) {
 // DISCORD AUTH & CHAT SYSTEM
 // ========================
 
-// In Discord Activity, all requests must go through Discord's proxy via relative paths.
-// URL Mappings in Discord Developer Portal route these to the real servers.
-const _inDiscordActivityProxy = (window.location.hostname.includes('discordsays.com') || window.location.hostname.includes('discord.com'));
-const CHAT_API_BASE = _inDiscordActivityProxy
-    ? '/DiscordAuthChatApi'
-    : 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi';
-const K5_API_BASE = _inDiscordActivityProxy
-    ? '/K5ApiManager'
-    : 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager';
-const ZENO_API_BASE = _inDiscordActivityProxy
-    ? '/zeno-api'
-    : 'https://api.zeno.fm';
-const ZENO_STREAM_BASE = _inDiscordActivityProxy
-    ? '/zeno-stream'
-    : 'https://stream.zeno.fm';
-const IMAGES_BASE = _inDiscordActivityProxy
-    ? '/Images'
-    : 'https://radio-gaming.stream/Images';
+// (Moved to top)
 
-/**
- * Helper to proxy URLs when running in Discord Activity.
- */
-function proxyUrl(url) {
-    if (!_inDiscordActivityProxy) return url;
-    if (!url) return url;
-
-    return url
-        .replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi', CHAT_API_BASE)
-        .replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager', K5_API_BASE)
-        .replace('https://api.zeno.fm', ZENO_API_BASE)
-        .replace('https://stream.zeno.fm', ZENO_STREAM_BASE)
-        .replace('https://radio-gaming.stream/Images', IMAGES_BASE);
-}
 let discordAuthToken = localStorage.getItem('RadioGaming-discordAuthToken');
 let discordUser = null;
 

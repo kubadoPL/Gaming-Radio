@@ -10,7 +10,7 @@
     <meta name="twitter:image" content="/Images/Radio-Gaming-Dark-background.webp">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radio GAMING</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <link rel="stylesheet" href="/font-awesome/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,19 +58,22 @@
     <header>
         <nav>
             <div class="header-content">
-                <a href="javascript:void(0)" onclick="switchSection('home')" class="logo">
+                <a href="#" onclick="event.preventDefault(); switchSection('home')" class="logo">
                     <img src="/Images/Logos/Radio-Gaming-Logo.webp" alt="Logo">
                     <span>Radio GAMING</span>
                 </a>
                 <ul>
-                    <li><a href="javascript:void(0)" onclick="switchSection('home')" class="active-nav-link"><i
+                    <li><a href="#" onclick="event.preventDefault(); switchSection('home')" class="active-nav-link"><i
                                 class="fas fa-home"></i>
                             <span>Home</span></a></li>
-                    <li><a href="javascript:void(0)" onclick="switchSection('chat')"><i class="fas fa-comments"></i>
+                    <li><a href="#" onclick="event.preventDefault(); switchSection('chat')"><i
+                                class="fas fa-comments"></i>
                             <span>Chat</span></a></li>
-                    <li><a href="javascript:void(0)" onclick="switchSection('download')"><i class="fas fa-download"></i>
+                    <li><a href="#" onclick="event.preventDefault(); switchSection('download')"><i
+                                class="fas fa-download"></i>
                             <span>Download</span></a></li>
-                    <li><a href="javascript:void(0)" onclick="switchSection('info')"><i class="fas fa-info-circle"></i>
+                    <li><a href="#" onclick="event.preventDefault(); switchSection('info')"><i
+                                class="fas fa-info-circle"></i>
                             <span>Info</span></a></li>
                 </ul>
                 <div class="header-right">
@@ -116,8 +119,8 @@
                     onclick="changeStation('https://stream.zeno.fm/es4ngpu7ud6tv', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
                     <img src="/Images/Logos/Radio-Gaming-Logo.webp" alt="Radio GAMING">
                     <div class="tooltip">
-                        <img src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
-                            alt="Album Cover" class="tooltip-cover" />
+                        <img src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png" alt="Album Cover"
+                            class="tooltip-cover" />
                         <div class="tooltip-track">Loading...</div>
                         <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
                     </div>
@@ -125,22 +128,20 @@
 
                 <div class="station-photo"
                     onclick="changeStation('https://stream.zeno.fm/pfg9eajshnjtv', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
-                    <img src="/Images/Logos/Radio-Gaming-dark-logo.webp"
-                        alt="Radio GAMING DARK">
+                    <img src="/Images/Logos/Radio-Gaming-dark-logo.webp" alt="Radio GAMING DARK">
                     <div class="tooltip">
-                        <img src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
-                            alt="Album Cover" class="tooltip-cover" />
+                        <img src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png" alt="Album Cover"
+                            class="tooltip-cover" />
                         <div class="tooltip-track">Loading...</div>
                         <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
                     </div>
                 </div>
                 <div class="station-photo"
                     onclick="changeStation('https://stream.zeno.fm/5nhy0myl4jpuv', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
-                    <img src="/Images/Logos/Radio-Gaming-Maron-fm-logo.webp"
-                        alt="Radio GAMING MARON FM">
+                    <img src="/Images/Logos/Radio-Gaming-Maron-fm-logo.webp" alt="Radio GAMING MARON FM">
                     <div class="tooltip">
-                        <img src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
-                            alt="Album Cover" class="tooltip-cover" />
+                        <img src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png" alt="Album Cover"
+                            class="tooltip-cover" />
                         <div class="tooltip-track">Loading...</div>
                         <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
                     </div>
@@ -148,13 +149,9 @@
             </div>
 
             <div class="audio-player" id="radioPlayer">
-                <audio id="audioPlayer" controls crossorigin="anonymous">
-                    <source src="https://stream.zeno.fm/es4ngpu7ud6tv" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                </audio>
+                <audio id="audioPlayer" controls crossorigin="anonymous"></audio>
                 <div class="album-cover-and-title">
-                    <img id="albumCover"
-                        src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
+                    <img id="albumCover" src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
                         alt="Album Cover" class="album-cover">
                     <div id="streamTitle"></div>
                 </div>
