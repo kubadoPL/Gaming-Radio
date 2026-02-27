@@ -2864,7 +2864,13 @@ function checkMessageForMention(message) {
     });
 
     if (hasMeMention) {
-        showNotification(message.content, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
+        // Parse emojis for notification
+        const escapedContent = escapeHtml(message.content);
+        const contentWithEmojis = escapedContent.replace(/&lt;:([^:]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
+            const c = customEmojis.find(e => e.id === id);
+            return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : match;
+        });
+        showNotification(contentWithEmojis, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
         return true;
     }
     return false;
@@ -2935,7 +2941,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
         });
 
         // Custom Emojis (<:name:id>)
-        content = content.replace(/&lt;:([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
+        content = content.replace(/&lt;:([^:]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
             const c = customEmojis.find(e => e.id === id);
             if (c) {
                 return `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">`;
@@ -2993,7 +2999,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     // Notify if mentioned but not by myself
     // Deduping is handled inside showNotification via notifiedMessages set
     if (hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
-        showNotification(message.content, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
+        showNotification(formattedContent, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
     }
 
     // Auto-scroll logic for new messages
@@ -3056,9 +3062,9 @@ async function ensureEmojisForMessages(messages) {
     for (const msg of messages) {
         // Check content for <:name:id>
         if (msg.content && msg.content.includes('<:')) {
-            const matches = msg.content.matchAll(/<:[a-zA-Z0-9_-]+:([a-zA-Z0-9_-]+)>/g);
+            const matches = msg.content.matchAll(/<:([^:]+):([a-zA-Z0-9_-]+)>/g);
             for (const match of matches) {
-                if (!customEmojis.find(e => e.id === match[1])) {
+                if (!customEmojis.find(e => e.id === match[2])) {
                     needsFetch = true;
                     break;
                 }
