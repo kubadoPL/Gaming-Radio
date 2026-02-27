@@ -49,56 +49,52 @@ if (!String.prototype.equalsIgnoreCase) {
 }
 
 function switchSection(sectionId) {
+    console.log("[NAV] Switching to section:", sectionId);
+
+    // Emergency hide loading screen if it's blocking clicks
+    const ls = document.querySelector('.loading-screen');
+    if (ls && ls.style.display !== 'none') {
+        ls.style.display = 'none';
+        ls.style.opacity = '1';
+    }
+
     const sections = document.querySelectorAll('.page-section');
     const targetSection = document.getElementById(sectionId + '-section');
 
-    if (!targetSection) return;
+    if (!targetSection) {
+        console.error("[NAV] Section not found:", sectionId + '-section');
+        return;
+    }
 
-    // Find currently active section
-    const currentSection = document.querySelector('.page-section.active');
-
-    // If clicking the same section, do nothing
-    if (currentSection && currentSection.id === sectionId + '-section') return;
-
-    // Update nav links active state immediately for responsiveness
+    // Immediately update nav links for visual feedback
     const navLinks = document.querySelectorAll('nav ul li a');
     navLinks.forEach(link => {
         link.classList.remove('active-nav-link');
-        if (link.getAttribute('onclick') && link.getAttribute('onclick').includes(`'${sectionId}'`)) {
+        const onclick = link.getAttribute('onclick');
+        if (onclick && onclick.includes(`'${sectionId}'`)) {
             link.classList.add('active-nav-link');
         }
     });
 
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Hide all sections
+    sections.forEach(s => {
+        s.classList.remove('active', 'entering', 'exiting');
+    });
 
-    // If there's a current section, animate it out first
-    if (currentSection) {
-        currentSection.classList.add('exiting');
-        currentSection.classList.remove('active');
+    // Show target section
+    targetSection.classList.add('active');
 
-        // After exit animation completes, show the new section
+    // Final check for loading screen (ensure it doesn't block events)
+    if (ls) {
+        ls.style.opacity = '0';
+        ls.style.pointerEvents = 'none'; // Ensure it's not blocking clicks even if visible
         setTimeout(() => {
-            currentSection.classList.remove('exiting');
-
-            // Show target section with entrance animation
-            targetSection.classList.add('entering');
-            targetSection.classList.add('active');
-
-            // Remove entering class after animation
-            setTimeout(() => {
-                targetSection.classList.remove('entering');
-            }, 500);
-        }, 300);
-    } else {
-        // No current section, just show the target
-        targetSection.classList.add('entering');
-        targetSection.classList.add('active');
-
-        setTimeout(() => {
-            targetSection.classList.remove('entering');
-        }, 500);
+            ls.style.display = 'none';
+        }, 800);
     }
+
+    // Scroll to top
+    window.scrollTo(0, 0);
 }
 
 let hasInitialLoadFinished = false;
@@ -211,6 +207,7 @@ async function processStatusQueue() {
                 const ls = document.querySelector('.loading-screen');
                 if (ls) {
                     ls.style.opacity = '0';
+                    ls.style.pointerEvents = 'none'; // CRITICAL: Stop blocking clicks immediately
                     setTimeout(() => {
                         ls.style.display = 'none';
                         ls.style.opacity = '1';
@@ -503,8 +500,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // One final fallback to ensure loading screen MUST hide if we got this far
         setTimeout(() => {
-            if (lastPercentage < 100) updateLoadingProgress(100, "Done!");
-        }, 1000);
+            if (!hasInitialLoadFinished) {
+                console.log("[INIT] Safety timeout triggered - forcing loading screen hide");
+                updateLoadingProgress(100, "Ready!");
+            }
+        }, 4000);
 
     } catch (err) {
         console.error("[CRITICAL] Initialization failed:", err);
