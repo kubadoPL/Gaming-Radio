@@ -3,7 +3,12 @@ const eventSources = new Map();
 
 // In Discord Activity, all requests must go through Discord's proxy via relative paths.
 // URL Mappings in Discord Developer Portal route these to the real servers.
-const _inDiscordActivityProxy = (window.location.hostname.includes('discordsays.com') || window.location.hostname.includes('discord.com') || window.location.search.includes('frame_id'));
+const _inDiscordActivityProxy = (
+    window.location.hostname.includes('discordsays.com') ||
+    window.location.hostname.includes('discord.com') ||
+    window.location.search.includes('frame_id') ||
+    (window.self !== window.top) // Likely in an iframe, common for Activities
+);
 
 const CHAT_API_BASE = _inDiscordActivityProxy
     ? '/DiscordAuthChatApi'
@@ -204,7 +209,7 @@ async function processStatusQueue() {
         if (lastPercentage >= 100 && statusQueue.length === 0) {
             setTimeout(() => {
                 const ls = document.querySelector('.loading-screen');
-                if (ls && !IsChangingStation) {
+                if (ls) {
                     ls.style.opacity = '0';
                     setTimeout(() => {
                         ls.style.display = 'none';
@@ -224,7 +229,7 @@ async function processStatusQueue() {
                         }
                     }, 500);
                 }
-            }, 500);
+            }, 800);
         }
     }
     isProcessingQueue = false;
@@ -261,6 +266,9 @@ function updateStatusBadge(status) {
             badge.classList.add('offline');
             text.textContent = 'OFFLINE';
             updatePlayPauseUI('paused');
+            break;
+        default:
+            text.textContent = status.toUpperCase();
             break;
     }
 }
@@ -312,197 +320,199 @@ function handleMainStreamMessage(event) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    updateLoadingProgress(5, "Initializing UI...");
-    audio = document.getElementById('audioPlayer');
-    streamTitleElement = document.getElementById('streamTitle');
-    playPauseIcon = document.getElementById('playPauseIcon');
-    stationName = document.querySelector('h1');
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        console.log("[INIT] DOM Loaded. In Proxy Mode:", _inDiscordActivityProxy);
+        updateLoadingProgress(5, "Initializing UI...");
 
-    // Set initial status
-    updateStatusBadge('loading');
+        audio = document.getElementById('audioPlayer');
+        streamTitleElement = document.getElementById('streamTitle');
+        playPauseIcon = document.getElementById('playPauseIcon');
+        stationName = document.querySelector('h1');
 
-    // Ensure initial audio source is set and proxied
-    if (audio && !audio.src) {
-        audio.src = proxyUrl('https://stream.zeno.fm/es4ngpu7ud6tv');
-    }
+        // Set initial status and immediately force it to LOADING (replaces hardcoded INITIALIZING)
+        updateStatusBadge('loading');
 
-    // Initial setup with safety checks
-    const loadingScreen = document.querySelector('.loading-screen');
-    if (loadingScreen) {
-        loadingScreen.style.backgroundColor = "#7300ff";
-        loadingScreen.style.display = 'flex';
-    }
-
-    document.documentElement.style.setProperty('--scrollbar-thumb-color', '#7300ff');
-    document.documentElement.style.setProperty('--active-station-glow-rgb', hexToRgb('#7300ff').join(','));
-
-    updateLoadingProgress(70, "Connecting to Stream...");
-
-    // Improved Metadata Connection with retry logic
-    function setupMetadataConnection(url) {
-        if (currentEventSource) currentEventSource.close();
-
-        console.log("Initializing metadata connection to:", proxyUrl(url));
-        const es = new EventSource(proxyUrl(url));
-        currentEventSource = es;
-
-        es.onmessage = handleMainStreamMessage;
-
-        es.onerror = function (error) {
-            console.error('Metadata connection error. Retrying in 5s...', error);
-            es.close();
-
-            // Check if we are still on the same station before retrying
-            setTimeout(() => {
-                // In proxy mode, currentEventSource.url might be relative, so we compare with proxyUrl(url)
-                const currentUrl = currentEventSource ? currentEventSource.url : null;
-                const targetUrl = proxyUrl(url);
-
-                // Compare relative vs relative OR absolute vs absolute
-                const isMatch = currentUrl === targetUrl || (currentUrl && targetUrl && currentUrl.endsWith(targetUrl));
-
-                if (isMatch) {
-                    setupMetadataConnection(url);
-                }
-            }, 5000);
-
-            if (document.querySelector('.loading-screen') && document.querySelector('.loading-screen').style.display !== 'none') {
-                updateLoadingProgress(100, "Ready! (Connection issues detected, retrying metadata...)");
-            }
-        };
-
-        return es;
-    }
-
-    eventSource = setupMetadataConnection('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
-
-    // Event listener setup for station photos
-    document.querySelectorAll('.station-photo').forEach(station => {
-        station.addEventListener('mouseover', function () {
-            const tooltip = this.querySelector('.tooltip');
-            const onclickAttr = this.getAttribute('onclick');
-            if (!onclickAttr) return;
-
-            const parts = onclickAttr.split(", ");
-            if (parts.length < 3) return;
-
-            const metadataUrl = parts[2].replace(/[')]/g, '').trim();
-
-            if (metadataUrl) {
-                if (eventSources.has(metadataUrl)) {
-                    eventSources.get(metadataUrl).close();
-                }
-                const newEventSource = handleEventSource(metadataUrl, tooltip);
-                eventSources.set(metadataUrl, newEventSource);
-            }
-        });
-
-        station.addEventListener('mouseleave', function () {
-            const onclickAttr = this.getAttribute('onclick');
-            if (!onclickAttr) return;
-
-            const parts = onclickAttr.split(", ");
-            if (parts.length < 3) return;
-
-            const metadataUrl = parts[2].replace(/[')]/g, '').trim();
-
-            if (metadataUrl && eventSources.has(metadataUrl)) {
-                eventSources.get(metadataUrl).close();
-                eventSources.delete(metadataUrl);
-            }
-        });
-    });
-
-    // Initial listener update setup
-    setTimeout(function () {
-        console.log("Updating all online users 6 sec after page load");
-        updateAllOnlineUsers();
-        setInterval(updateAllOnlineUsers, 10000); // Poll every 10 seconds for faster Chat API updates
-    }, 6000);
-
-    // Audio time update listener
-    const currentTimeElement = document.getElementById('currentTime');
-    if (audio && currentTimeElement) {
-        audio.addEventListener('timeupdate', function () {
-            currentTimeElement.textContent = formatTime(audio.currentTime);
-        });
-    }
-
-    const savedVolume = localStorage.getItem('RadioGaming-volume');
-    const initialVolume = savedVolume !== null ? parseFloat(savedVolume) : 0.1;
-    changeVolume(initialVolume);
-    const volumeSlider = document.querySelector('.volume-slider');
-    if (volumeSlider) volumeSlider.value = initialVolume;
-
-    // Fetch Spotify and Giphy tokens early for loading progress
-    getSpotifyAccessToken();
-    getGiphyAccessToken();
-    getYouTubeAccessToken();
-
-    // Mute/Restore icons setup
-    const volDown = document.getElementById('volume-down');
-    const volUp = document.getElementById('volume-up');
-    if (volDown) volDown.addEventListener('click', () => window.muteVolume());
-    if (volUp) volUp.addEventListener('click', () => window.restoreVolume());
-
-    // Audio Event Listeners for Status Badge
-    if (audio) {
-        audio.addEventListener('playing', () => updateStatusBadge('playing'));
-        audio.addEventListener('waiting', () => updateStatusBadge('loading'));
-        audio.addEventListener('pause', () => updateStatusBadge('paused'));
-        audio.addEventListener('error', () => updateStatusBadge('error'));
-        audio.addEventListener('stalled', () => updateStatusBadge('loading'));
-        audio.addEventListener('loadstart', () => updateStatusBadge('loading'));
-        audio.addEventListener('canplay', () => {
-            if (!audio.paused) updateStatusBadge('playing');
-            else updateStatusBadge('paused');
-        });
-    }
-
-    showNotification("Welcome to Radio GAMING!");
-
-    // Fullscreen change detection (handles both F11 and Fullscreen API)
-    function checkFullscreen() {
-        // Check Fullscreen API
-        const isFullscreenAPI = document.fullscreenElement || document.webkitFullscreenElement ||
-            document.mozFullScreenElement || document.msFullscreenElement;
-
-        // Check F11/browser fullscreen (window matches screen size)
-        const isF11Fullscreen = window.innerWidth === screen.width && window.innerHeight === screen.height;
-
-        if (isFullscreenAPI || isF11Fullscreen) {
-            document.body.classList.add('is-fullscreen');
-        } else {
-            document.body.classList.remove('is-fullscreen');
+        // Ensure initial audio source is set and proxied
+        if (audio && !audio.src) {
+            audio.src = proxyUrl('https://stream.zeno.fm/es4ngpu7ud6tv');
         }
+
+        // Initial setup with safety checks
+        const loadingScreen = document.querySelector('.loading-screen');
+        if (loadingScreen) {
+            loadingScreen.style.backgroundColor = "#7300ff";
+            loadingScreen.style.display = 'flex';
+        }
+
+        document.documentElement.style.setProperty('--scrollbar-thumb-color', '#7300ff');
+        document.documentElement.style.setProperty('--active-station-glow-rgb', hexToRgb('#7300ff').join(','));
+
+        updateLoadingProgress(30, "Checking Authorization...");
+
+        // Fetch tokens and wait for them to finish (or fail) before hiding loading screen
+        await Promise.allSettled([
+            getSpotifyAccessToken(),
+            getGiphyAccessToken(),
+            getYouTubeAccessToken()
+        ]);
+
+        updateLoadingProgress(70, "Connecting to Stream...");
+
+        // Improved Metadata Connection with retry logic
+        function setupMetadataConnection(url) {
+            if (currentEventSource) currentEventSource.close();
+
+            console.log("Initializing metadata connection to:", proxyUrl(url));
+            const es = new EventSource(proxyUrl(url));
+            currentEventSource = es;
+
+            es.onmessage = handleMainStreamMessage;
+
+            es.onerror = function (error) {
+                console.error('Metadata connection error:', error);
+                es.close();
+
+                setTimeout(() => {
+                    const currentUrl = currentEventSource ? currentEventSource.url : null;
+                    const targetUrl = proxyUrl(url);
+                    const isMatch = currentUrl === targetUrl || (currentUrl && targetUrl && currentUrl.endsWith(targetUrl));
+
+                    if (isMatch) {
+                        setupMetadataConnection(url);
+                    }
+                }, 5000);
+
+                if (document.querySelector('.loading-screen') && document.querySelector('.loading-screen').style.display !== 'none') {
+                    // Force complete if metadata is slow
+                    updateLoadingProgress(100, "Connection established (Metadata delayed)");
+                }
+            };
+
+            return es;
+        }
+
+        eventSource = setupMetadataConnection('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
+
+        // Event listener setup for station photos
+        document.querySelectorAll('.station-photo').forEach(station => {
+            station.addEventListener('mouseover', function () {
+                const tooltip = this.querySelector('.tooltip');
+                const onclickAttr = this.getAttribute('onclick');
+                if (!onclickAttr) return;
+
+                const parts = onclickAttr.split(", ");
+                if (parts.length < 3) return;
+
+                const metadataUrl = parts[2].replace(/[')]/g, '').trim();
+
+                if (metadataUrl) {
+                    if (eventSources.has(metadataUrl)) {
+                        eventSources.get(metadataUrl).close();
+                    }
+                    const newEventSource = handleEventSource(metadataUrl, tooltip);
+                    eventSources.set(metadataUrl, newEventSource);
+                }
+            });
+
+            station.addEventListener('mouseleave', function () {
+                const onclickAttr = this.getAttribute('onclick');
+                if (!onclickAttr) return;
+
+                const parts = onclickAttr.split(", ");
+                if (parts.length < 3) return;
+
+                const metadataUrl = parts[2].replace(/[')]/g, '').trim();
+
+                if (metadataUrl && eventSources.has(metadataUrl)) {
+                    eventSources.get(metadataUrl).close();
+                    eventSources.delete(metadataUrl);
+                }
+            });
+        });
+
+        // Initial listener update setup
+        setTimeout(function () {
+            updateAllOnlineUsers();
+            setInterval(updateAllOnlineUsers, 10000);
+        }, 6000);
+
+        // Audio time update listener
+        const currentTimeElement = document.getElementById('currentTime');
+        if (audio && currentTimeElement) {
+            audio.addEventListener('timeupdate', function () {
+                currentTimeElement.textContent = formatTime(audio.currentTime);
+            });
+        }
+
+        const savedVolume = localStorage.getItem('RadioGaming-volume');
+        const initialVolume = savedVolume !== null ? parseFloat(savedVolume) : 0.1;
+        changeVolume(initialVolume);
+        const volumeSlider = document.querySelector('.volume-slider');
+        if (volumeSlider) volumeSlider.value = initialVolume;
+
+        // Mute/Restore icons setup
+        const volDown = document.getElementById('volume-down');
+        const volUp = document.getElementById('volume-up');
+        if (volDown) volDown.addEventListener('click', () => window.muteVolume());
+        if (volUp) volUp.addEventListener('click', () => window.restoreVolume());
+
+        // Audio Event Listeners for Status Badge
+        if (audio) {
+            audio.addEventListener('playing', () => updateStatusBadge('playing'));
+            audio.addEventListener('waiting', () => updateStatusBadge('loading'));
+            audio.addEventListener('pause', () => updateStatusBadge('paused'));
+            audio.addEventListener('error', () => updateStatusBadge('error'));
+            audio.addEventListener('stalled', () => updateStatusBadge('loading'));
+            audio.addEventListener('loadstart', () => updateStatusBadge('loading'));
+            audio.addEventListener('canplay', () => {
+                if (!audio.paused) updateStatusBadge('playing');
+                else updateStatusBadge('paused');
+            });
+        }
+
+        showNotification("Welcome to Radio GAMING!");
+
+        // Fullscreen check logic...
+        function checkFullscreen() {
+            const isFullscreenAPI = document.fullscreenElement || document.webkitFullscreenElement ||
+                document.mozFullScreenElement || document.msFullscreenElement;
+            const isF11Fullscreen = window.innerWidth === screen.width && window.innerHeight === screen.height;
+            if (isFullscreenAPI || isF11Fullscreen) {
+                document.body.classList.add('is-fullscreen');
+            } else {
+                document.body.classList.remove('is-fullscreen');
+            }
+        }
+
+        applyVisualizationState();
+        const historyDrawer = document.getElementById('history-drawer');
+        if (historyDrawer && historyViewMode === 'grid') {
+            historyDrawer.classList.add('immersive-mode');
+            const toggleIcon = document.querySelector('#view-mode-toggle i');
+            if (toggleIcon) toggleIcon.className = 'fas fa-list';
+        }
+
+        document.addEventListener('fullscreenchange', checkFullscreen);
+        document.addEventListener('webkitfullscreenchange', checkFullscreen);
+        document.addEventListener('mozfullscreenchange', checkFullscreen);
+        document.addEventListener('MSFullscreenChange', checkFullscreen);
+        window.addEventListener('resize', checkFullscreen);
+        checkFullscreen();
+        startListeningTimer();
+
+        // One final fallback to ensure loading screen MUST hide if we got this far
+        setTimeout(() => {
+            if (lastPercentage < 100) updateLoadingProgress(100, "Done!");
+        }, 1000);
+
+    } catch (err) {
+        console.error("[CRITICAL] Initialization failed:", err);
+        // Emergency hide loading screen if error occurs
+        const ls = document.querySelector('.loading-screen');
+        if (ls) ls.style.display = 'none';
+        updateStatusBadge('error');
     }
-
-    // Apply initial visualization state
-    applyVisualizationState();
-
-    // Initial history view mode setup based on saved preference
-    const historyDrawer = document.getElementById('history-drawer');
-    if (historyDrawer && historyViewMode === 'grid') {
-        historyDrawer.classList.add('immersive-mode');
-        const toggleIcon = document.querySelector('#view-mode-toggle i');
-        if (toggleIcon) toggleIcon.className = 'fas fa-list';
-    }
-
-    // Listen for Fullscreen API changes
-    document.addEventListener('fullscreenchange', checkFullscreen);
-    document.addEventListener('webkitfullscreenchange', checkFullscreen);
-    document.addEventListener('mozfullscreenchange', checkFullscreen);
-    document.addEventListener('MSFullscreenChange', checkFullscreen);
-
-    // Listen for F11/window resize
-    window.addEventListener('resize', checkFullscreen);
-
-    // Initial check
-    checkFullscreen();
-
-    // Start stats tracking
-    startListeningTimer();
 });
 
 async function getSpotifyAccessToken() {
