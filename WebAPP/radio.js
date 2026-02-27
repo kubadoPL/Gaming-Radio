@@ -365,11 +365,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Track tab visibility and active section for polling optimizations
+    window.isTabActive = true;
+    window.currentActiveSection = 'home';
+    document.addEventListener('visibilitychange', () => {
+        window.isTabActive = !document.hidden;
+    });
+
     // Initial listener update setup
     setTimeout(function () {
-        console.log("Updating all online users 6 sec after page load");
+        console.log("[System] Initializing background polling...");
         updateAllOnlineUsers();
-        setInterval(updateAllOnlineUsers, 10000); // Poll every 10 seconds for faster Chat API updates
+        setInterval(updateAllOnlineUsers, 30000); // 30s instead of 10s to save backend resources
     }, 6000);
 
     // Audio time update listener
@@ -1497,7 +1504,7 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
 
         // Fetch Logic
         const fetchPromises = [
-            fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?since=${Date.now()}`, { headers }).then(r => r.json())
+            fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?exclude_messages=1&exclude_users=1`, { headers }).then(r => r.json())
         ];
 
         if (shouldFetchZeno) {
@@ -1594,6 +1601,9 @@ function updateTooltip(tooltipElement, zenoCount, finalCount, sName, isError = f
 }
 
 function updateAllOnlineUsers() {
+    // Optimization: Don't poll all stations if window is hidden OR we aren't even on the home page
+    if (!window.isTabActive || window.currentActiveSection !== 'home') return;
+
     document.querySelectorAll('.station-photo').forEach(async (station) => {
         const tooltip = station.querySelector('.tooltip');
         const onclickAttr = station.getAttribute('onclick');
@@ -2673,16 +2683,24 @@ async function loadChatHistory() {
 
 let pollCount = 0;
 async function pollNewMessages() {
+    if (isChatLoading) return;
     const isFirstPoll = !lastMessageTimestamp;
 
-    // If chat is not visible, only poll every ~9s (3 ticks * 3s) for background pings
-    if (!isChatVisible) {
-        if (isFirstPoll) return; // Don't poll background if we don't have a baseline yet
+    // Polling Optimization Logic
+    if (!window.isTabActive) {
+        // Tab hidden: Poll every ~45s (15 ticks * 3s) just to keep "online" status on backend
+        if (pollCount % 15 !== 0) {
+            pollCount++;
+            return;
+        }
+    } else if (!isChatVisible) {
+        // Tab visible but chat closed: Poll every ~9s (3 ticks * 3s)
         if (pollCount % 3 !== 0) {
             pollCount++;
             return;
         }
     }
+
     pollCount++;
 
     try {
@@ -4120,6 +4138,7 @@ const originalSwitchSection = window.switchSection || switchSection;
 window.switchSection = function (sectionId) {
     originalSwitchSection(sectionId);
 
+    window.currentActiveSection = sectionId;
     isChatVisible = (sectionId === 'chat');
 
     if (isChatVisible) {

@@ -396,12 +396,13 @@ def get_chat_history(station):
             )
 
     exclude_users = request.args.get("exclude_users") == "1"
+    exclude_messages = request.args.get("exclude_messages") == "1"
     online_users_list, online_count = get_online_data(station_key)
 
     return jsonify(
         {
             "station": station_key,
-            "messages": chat_messages[station_key][-50:],
+            "messages": [] if exclude_messages else chat_messages[station_key][-50:],
             "online_count": online_count,
             "online_users": [] if exclude_users else online_users_list,
             "server_time": datetime.utcnow().isoformat() + "Z",
@@ -426,24 +427,32 @@ def poll_messages(station):
                 user_sessions[token]["id"], station_key, playing_header
             )
 
-    messages = chat_messages[station_key]
-    if since:
+    messages = chat_messages.get(station_key, [])
+    if since and since.strip():
         try:
-            since_time = datetime.fromisoformat(since.replace("Z", ""))
-            messages = [
-                m
-                for m in messages
-                if datetime.fromisoformat(m["timestamp"]) > since_time
-            ]
-        except:
+            # Handle potential numeric timestamp or non-ISO strings by not crashing
+            if "T" in since:
+                since_dt = datetime.fromisoformat(since.replace("Z", "+00:00"))
+                messages = [
+                    m
+                    for m in messages
+                    if datetime.fromisoformat(m["timestamp"].replace("Z", "+00:00"))
+                    > since_dt
+                ]
+            else:
+                # If it doesn't look like ISO, assume it's invalid or old
+                pass
+        except Exception as e:
+            print(f"Error parsing since param {since}: {e}")
             pass
 
     exclude_users = request.args.get("exclude_users") == "1"
+    exclude_messages = request.args.get("exclude_messages") == "1"
     online_users_list, online_count = get_online_data(station_key)
 
     return jsonify(
         {
-            "messages": messages[-50:],
+            "messages": [] if exclude_messages else messages[-50:],
             "online_count": online_count,
             "online_users": [] if exclude_users else online_users_list,
             "server_time": datetime.utcnow().isoformat() + "Z",
