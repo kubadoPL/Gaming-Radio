@@ -703,9 +703,6 @@ def search_deezer():
         return jsonify({"error": str(e)}), 500
 
 
-app.register_blueprint(chat_api, url_prefix="/DiscordAuthChatApi")
-app.register_blueprint(chat_api, name="chat_api_root")
-
 # ========================
 # DISCORD ACTIVITIES ENDPOINTS
 # ========================
@@ -835,6 +832,10 @@ def discord_activity_login():
 
     except Exception as e:
         return jsonify({"error": f"Activity login error: {str(e)}"}), 500
+
+
+app.register_blueprint(chat_api, url_prefix="/DiscordAuthChatApi")
+app.register_blueprint(chat_api, name="chat_api_root")
 
 
 @app.route("/")
