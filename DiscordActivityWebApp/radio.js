@@ -426,16 +426,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         eventSource = setupMetadataConnection('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
 
         // Event listener setup for station photos
+        // Station Tooltips logic (Establishing metadata connection on hover)
         document.querySelectorAll('.station-photo').forEach(station => {
-            station.addEventListener('mouseover', function () {
+            station.addEventListener('mouseenter', function () {
                 const tooltip = this.querySelector('.tooltip');
-                const onclickAttr = this.getAttribute('onclick');
-                if (!onclickAttr) return;
-
-                const parts = onclickAttr.split(", ");
-                if (parts.length < 3) return;
-
-                const metadataUrl = parts[2].replace(/[')]/g, '').trim();
+                const metadataUrl = this.dataset.metadata;
 
                 if (metadataUrl) {
                     if (eventSources.has(metadataUrl)) {
@@ -447,13 +442,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             station.addEventListener('mouseleave', function () {
-                const onclickAttr = this.getAttribute('onclick');
-                if (!onclickAttr) return;
-
-                const parts = onclickAttr.split(", ");
-                if (parts.length < 3) return;
-
-                const metadataUrl = parts[2].replace(/[')]/g, '').trim();
+                const metadataUrl = this.dataset.metadata;
 
                 if (metadataUrl && eventSources.has(metadataUrl)) {
                     eventSources.get(metadataUrl).close();
@@ -1300,6 +1289,7 @@ function changeStation(source, name, metadataURL) {
         ls.style.opacity = '1';
         ls.style.pointerEvents = 'auto';
         ls.style.backgroundColor = config.loadingBackgroundColor;
+        lastPercentage = 0; // Reset progress for station switch
         updateLoadingProgress(10, "Switching to " + name + "...");
     }
     updateStatusBadge('loading');
@@ -1452,7 +1442,7 @@ async function metaDataUrlToStationName(url) {
 }
 
 async function fetchSpotifyCovertooltip(query, tooltipElement) {
-    const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+    const fallbackCover = proxyUrl('https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png');
     const img = tooltipElement.querySelector('.tooltip-cover');
 
     try {
@@ -1510,9 +1500,9 @@ async function fetchSpotifyCovertooltip(query, tooltipElement) {
 
         console.log(`[Tooltip Search] "${query}" | Scores -> Manual: ${logManual}, Spotify: ${logSpotify}, iTunes: ${logITunes}, Deezer: ${logDeezer}, YouTube: ${logYouTube} | Result: ${chosenSource} (${highestScore.toFixed(2)})`);
 
-        if (img) img.src = bestUrl;
+        if (img) img.src = proxyUrl(bestUrl);
     } catch (e) {
-        if (img) img.src = fallbackCover;
+        if (img) img.src = proxyUrl(fallbackCover);
     }
 }
 
@@ -3238,7 +3228,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
             ` : ''}
             ${message.song_data ? `
             <div class="song-embed">
-                <img class="song-embed-cover" src="${proxyUrl(message.song_data.artwork)}" alt="Album Cover">
+                <img class="song-embed-cover" src="${proxyUrl(message.song_data.artwork)}" alt="Album Cover" onerror="this.src='${proxyUrl(fallbackCover)}'">
                 <div class="song-embed-info">
                     <div class="song-embed-title">${escapeHtml(message.song_data.title)}</div>
                     <div class="song-embed-station">${escapeHtml(message.song_data.station)}</div>
@@ -3619,7 +3609,7 @@ function renderEmojiGrid(messageId, filter = '') {
             if (emojiId.startsWith('custom_')) {
                 const c = customEmojis.find(e => e.id === emojiId);
                 if (c) {
-                    btn.innerHTML = `<img src="${c.url}" alt="${c.name}">`;
+                    btn.innerHTML = `<img src="${proxyUrl(c.url)}" alt="${c.name}">`;
                     btn.title = c.name;
                 }
             } else {
@@ -4685,7 +4675,7 @@ function renderStatsView() {
         'Radio GAMING DARK': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp',
         'Radio GAMING MARON FM': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp',
     };
-    const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+    const fallbackLogo = proxyUrl('https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png');
 
     // Sort songs by listening time
     const sortedSongs = Object.entries(listeningStats.songs)
@@ -4755,7 +4745,7 @@ function renderStatsView() {
         const barWidth = Math.round((data.time / maxStationTime) * 100);
         html += `
             <div class="station-stat-item" style="animation-delay: ${i * 0.08}s">
-                <img class="station-stat-logo" src="${logo}" alt="${name}" onerror="this.src='${fallbackLogo}'">
+                <img class="station-stat-logo" src="${proxyUrl(logo)}" alt="${name}" onerror="this.src='${proxyUrl(fallbackLogo)}'">
                 <div class="station-stat-info">
                     <div class="station-stat-header">
                         <span class="station-stat-name">${name}</span>
@@ -4781,7 +4771,7 @@ function renderStatsView() {
         return `
             <div class="stats-song-item" style="animation-delay: ${i * 0.05}s">
                 <div class="stats-rank">${i + 1}</div>
-                <img class="stats-cover" src="${data.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                <img class="stats-cover" src="${proxyUrl(data.cover)}" alt="Cover" onerror="this.src='${proxyUrl(fallbackLogo)}'">
                 <div class="stats-info">
                     <div class="stats-title">${title}</div>
                     <div class="stats-meta">${data.playCount} plays • ${mins}m ${secs}s</div>
@@ -4803,8 +4793,7 @@ function renderHistoryList() {
         'Radio GAMING DARK': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp',
         'Radio GAMING MARON FM': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp',
     };
-    const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
-
+    const fallbackLogo = proxyUrl('https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png');
 
     if (songHistory.length === 0) {
         list.innerHTML = `<div class="history-empty"><i class="fas fa-music"></i><p>No songs played yet. Start listening!</p></div>`;
@@ -4826,7 +4815,7 @@ function renderHistoryList() {
         const sLogo1 = stationLogos[stationName] || fallbackLogo;
         html += `
             <div class="station-group-header">
-                <img src="${sLogo1}" alt="${stationName}" class="station-group-logo" onerror="this.src='${fallbackLogo}'">
+                <img src="${proxyUrl(sLogo1)}" alt="${stationName}" class="station-group-logo" onerror="this.src='${proxyUrl(fallbackLogo)}'">
                 <h3>${stationName}</h3>
                 <span class="song-count">${stationSongs.length} songs</span>
             </div>
@@ -4842,7 +4831,7 @@ function renderHistoryList() {
                 return `
                     <div class="grid-item" style="animation-delay: ${i * 0.05}s">
                         <div class="grid-cover-wrapper">
-                            <img class="grid-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                            <img class="grid-cover" src="${proxyUrl(song.cover)}" alt="Cover" onerror="this.src='${proxyUrl(fallbackLogo)}'">
                         </div>
                         <div class="grid-info">
                             <div class="grid-title" title="${song.title}">${song.title}</div>
@@ -4915,7 +4904,7 @@ function renderFavoritesList() {
         'Radio GAMING DARK': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp',
         'Radio GAMING MARON FM': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp',
     };
-    const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+    const fallbackLogo = proxyUrl('https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png');
 
     // Group songs by station
     const groups = songFavorites.reduce((acc, song) => {
@@ -4932,7 +4921,7 @@ function renderFavoritesList() {
         const sLogo2 = stationLogos[stationName] || fallbackLogo;
         html += `
             <div class="station-group-header">
-                <img src="${sLogo2}" alt="${stationName}" class="station-group-logo" onerror="this.src='${fallbackLogo}'">
+                <img src="${proxyUrl(sLogo2)}" alt="${stationName}" class="station-group-logo" onerror="this.src='${proxyUrl(fallbackLogo)}'">
                 <h3>${stationName}</h3>
                 <span class="song-count">${stationSongs.length} favorites</span>
             </div>
@@ -4947,7 +4936,7 @@ function renderFavoritesList() {
                 return `
                     <div class="grid-item" style="animation-delay: ${i * 0.05}s">
                         <div class="grid-cover-wrapper">
-                            <img class="grid-cover" src="${song.cover}" alt="Cover" onerror="this.src='https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png'">
+                            <img class="grid-cover" src="${proxyUrl(song.cover)}" alt="Cover" onerror="this.src='${proxyUrl(fallbackLogo)}'">
                         </div>
                         <div class="grid-info">
                             <div class="grid-title" title="${song.title}">${song.title}</div>
