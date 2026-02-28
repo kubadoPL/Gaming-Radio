@@ -92,11 +92,11 @@ function switchSection(sectionId) {
     }
 
     // Immediately update nav links for visual feedback
+    // Update nav links for visual feedback
     const navLinks = document.querySelectorAll('nav ul li a');
     navLinks.forEach(link => {
         link.classList.remove('active-nav-link');
-        const onclick = link.getAttribute('onclick');
-        if (onclick && onclick.includes(`'${sectionId}'`)) {
+        if (link.id === 'nav-' + sectionId) {
             link.classList.add('active-nav-link');
         }
     });
@@ -5150,6 +5150,8 @@ function setupInteractivity() {
     bind('playPauseIcon', 'click', () => playPause());
     bind('favoriteIcon', 'click', () => toggleCurrentFavorite());
     bind('shareDiscordIcon', 'click', () => openShareModal());
+    bind('volume-down', 'click', () => muteVolume());
+    bind('volume-up', 'click', () => restoreVolume());
 
     const volumeSlider = document.getElementById('volume-slider');
     if (volumeSlider) volumeSlider.addEventListener('input', (e) => changeVolume(e.target.value));
