@@ -131,6 +131,7 @@ let itunesCoverCache = JSON.parse(localStorage.getItem('RadioGaming-itunesCoverC
 let deezerCoverCache = JSON.parse(localStorage.getItem('RadioGaming-deezerCoverCache') || '{}');
 let listeningTimer = null;
 let notifiedMessages = new Set(JSON.parse(localStorage.getItem('RadioGaming-notifiedMessages') || '[]'));
+let lastUserFetchTime = 0; // Track when we last fetched the full user list
 
 window.toggleVisualizations = function () {
     isVisualizerEnabled = !isVisualizerEnabled;
@@ -2874,8 +2875,8 @@ async function pollNewMessages() {
     const isFirstPoll = !lastMessageTimestamp;
 
     // If chat is not visible, only poll every ~9s (3 ticks * 3s) for background pings
-    if (!isChatVisible) {
-        if (isFirstPoll) return; // Don't poll background if we don't have a baseline yet
+    // UNLESS the user is logged in, then we keep at 3s to get mentions promptly
+    if (!isChatVisible && !discordAuthToken) {
         if (pollCount % 3 !== 0) {
             pollCount++;
             return;
@@ -2894,7 +2895,12 @@ async function pollNewMessages() {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`, { headers });
+        // Only fetch full user list every 60 seconds to save server resources
+        const shouldFetchUsers = (Date.now() - lastUserFetchTime > 60000) && isChatVisible;
+        const userParam = shouldFetchUsers ? '&full_users=1' : '';
+        if (shouldFetchUsers) lastUserFetchTime = Date.now();
+
+        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}${since ? userParam : '?' + userParam.substring(1)}`, { headers });
         const data = await response.json();
 
         // Always update online count and users list
@@ -2924,12 +2930,22 @@ async function pollNewMessages() {
                 }
             });
 
-            // Update last timestamp
-            lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
+            // Always use server_time to advance the polling window
+            if (data.server_time) {
+                lastMessageTimestamp = data.server_time;
+            }
         }
 
-        if (data.server_time) {
-            lastMessageTimestamp = lastMessageTimestamp || data.server_time;
+        // Process mentions from other stations
+        if (data.other_mentions && data.other_mentions.length > 0) {
+            console.log(`[CHAT] Received ${data.other_mentions.length} other mentions`);
+            // Ensure emojis for other mentions too
+            await ensureEmojisForMessages(data.other_mentions);
+
+            data.other_mentions.forEach(mention => {
+                // Background notification check with station name
+                checkMessageForMention(mention, mention.station_name);
+            });
         }
     } catch (error) {
         if (isChatVisible) console.error('[CHAT] Polling error:', error);
@@ -3046,7 +3062,7 @@ function renderOnlineUsers() {
         container.appendChild(item);
     });
 }
-function checkMessageForMention(message) {
+function checkMessageForMention(message, stationName = null) {
     if (!discordUser || message.user.id === discordUser.id || !message.content) return false;
 
     const currentUsername = discordUser.username;
@@ -3065,7 +3081,18 @@ function checkMessageForMention(message) {
     });
 
     if (hasMeMention) {
-        showNotification(message.content, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
+        // Parse emojis for notification
+        const escapedContent = escapeHtml(message.content);
+        const contentWithEmojis = escapedContent.replace(/&lt;:([^:]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
+            const c = customEmojis.find(e => e.id === id);
+            return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : match;
+        });
+        const senderName = message.user.global_name || message.user.username;
+        const notificationTitle = stationName
+            ? `${senderName} in ${stationName}`
+            : senderName;
+
+        showNotification(contentWithEmojis, 'fas fa-at', notificationTitle, message.user.avatar_url, message.id);
         return true;
     }
     return false;
@@ -3136,7 +3163,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
         });
 
         // Custom Emojis (<:name:id>)
-        content = content.replace(/&lt;:([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
+        content = content.replace(/&lt;:([^:]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
             const c = customEmojis.find(e => e.id === id);
             if (c) {
                 return `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">`;
@@ -3194,7 +3221,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     // Notify if mentioned but not by myself
     // Deduping is handled inside showNotification via notifiedMessages set
     if (hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
-        showNotification(message.content, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
+        showNotification(formattedContent, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
     }
 
     // Auto-scroll logic for new messages
@@ -3257,9 +3284,9 @@ async function ensureEmojisForMessages(messages) {
     for (const msg of messages) {
         // Check content for <:name:id>
         if (msg.content && msg.content.includes('<:')) {
-            const matches = msg.content.matchAll(/<:[a-zA-Z0-9_-]+:([a-zA-Z0-9_-]+)>/g);
+            const matches = msg.content.matchAll(/<:([^:]+):([a-zA-Z0-9_-]+)>/g);
             for (const match of matches) {
-                if (!customEmojis.find(e => e.id === match[1])) {
+                if (!customEmojis.find(e => e.id === match[2])) {
                     needsFetch = true;
                     break;
                 }
