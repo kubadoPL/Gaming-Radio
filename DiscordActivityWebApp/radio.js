@@ -451,8 +451,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // Initial listener update setup
+        // Initial listener update setup + background metadata for tooltips
         setTimeout(function () {
+            initBackgroundMetadataListeners(); // Start persistent SSE for all station tooltips
             updateAllOnlineUsers();
             setInterval(updateAllOnlineUsers, 10000);
         }, 6000);
@@ -1678,6 +1679,63 @@ function updateTooltip(tooltipElement, zenoCount, finalCount, sName, isError = f
     }
 }
 
+// Background cache for current track on each station (populated by persistent EventSources)
+const stationTrackCache = new Map(); // metadataUrl -> { title, coverUrl }
+const backgroundEventSources = new Map(); // metadataUrl -> EventSource
+
+function initBackgroundMetadataListeners() {
+    document.querySelectorAll('.station-photo').forEach(station => {
+        const metadataUrl = station.dataset.metadata;
+        if (!metadataUrl || backgroundEventSources.has(metadataUrl)) return;
+
+        const tooltip = station.querySelector('.tooltip');
+        const es = new EventSource(proxyUrl(metadataUrl));
+
+        es.onmessage = async (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.streamTitle) {
+                    const cleaned = cleanTitle(data.streamTitle);
+                    const cached = stationTrackCache.get(metadataUrl);
+
+                    // Skip if title hasn't changed
+                    if (cached && cached.title === cleaned) return;
+
+                    stationTrackCache.set(metadataUrl, { title: cleaned, coverUrl: null });
+                    console.log(`[BGMetadata] ${metadataUrl} -> "${cleaned}"`);
+
+                    // Update this tooltip immediately
+                    if (tooltip) {
+                        const trackElem = tooltip.querySelector('.tooltip-track');
+                        if (trackElem) {
+                            trackElem.textContent = cleaned;
+                            if (isFavorited(cleaned)) {
+                                const heart = document.createElement('i');
+                                heart.className = 'fas fa-heart';
+                                heart.style.color = 'var(--active-station-color)';
+                                heart.style.marginLeft = '6px';
+                                heart.style.filter = 'drop-shadow(0 0 5px var(--active-station-glow))';
+                                trackElem.appendChild(heart);
+                            }
+                        }
+                        await fetchSpotifyCovertooltip(cleaned, tooltip);
+                    }
+                }
+            } catch (e) { console.error('[BGMetadata] Parse error:', e); }
+        };
+
+        es.onerror = () => {
+            console.warn(`[BGMetadata] Connection lost for ${metadataUrl}, reconnecting in 10s...`);
+            es.close();
+            backgroundEventSources.delete(metadataUrl);
+            // Auto-reconnect after delay
+            setTimeout(() => initBackgroundMetadataListeners(), 10000);
+        };
+
+        backgroundEventSources.set(metadataUrl, es);
+    });
+}
+
 function updateAllOnlineUsers() {
     document.querySelectorAll('.station-photo').forEach(async (station) => {
         const tooltip = station.querySelector('.tooltip');
@@ -1687,32 +1745,22 @@ function updateAllOnlineUsers() {
         const sName = await metaDataUrlToStationName(metadataUrl);
         updateOnlineUsersTooltip(tooltip, sName, metadataUrl);
 
-        // Also fetch current track name for tooltip via direct HTTP
-        try {
-            const response = await fetch(proxyUrl(metadataUrl), {
-                headers: { 'Accept': 'application/json' }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                if (data.streamTitle) {
-                    const cleaned = cleanTitle(data.streamTitle);
-                    const trackElem = tooltip.querySelector('.tooltip-track');
-                    if (trackElem && (trackElem.textContent === 'Loading...' || trackElem.textContent !== cleaned)) {
-                        trackElem.textContent = cleaned;
-                        if (isFavorited(cleaned)) {
-                            const heart = document.createElement('i');
-                            heart.className = 'fas fa-heart';
-                            heart.style.color = 'var(--active-station-color)';
-                            heart.style.marginLeft = '6px';
-                            heart.style.filter = 'drop-shadow(0 0 5px var(--active-station-glow))';
-                            trackElem.appendChild(heart);
-                        }
-                        await fetchSpotifyCovertooltip(cleaned, tooltip);
-                    }
+        // Use cached track data from background EventSource to update tooltip
+        const cached = stationTrackCache.get(metadataUrl);
+        if (cached && cached.title && tooltip) {
+            const trackElem = tooltip.querySelector('.tooltip-track');
+            if (trackElem && trackElem.textContent === 'Loading...') {
+                trackElem.textContent = cached.title;
+                if (isFavorited(cached.title)) {
+                    const heart = document.createElement('i');
+                    heart.className = 'fas fa-heart';
+                    heart.style.color = 'var(--active-station-color)';
+                    heart.style.marginLeft = '6px';
+                    heart.style.filter = 'drop-shadow(0 0 5px var(--active-station-glow))';
+                    trackElem.appendChild(heart);
                 }
+                fetchSpotifyCovertooltip(cached.title, tooltip);
             }
-        } catch (e) {
-            console.log(`[Tooltip] Could not fetch track for ${sName}:`, e.message);
         }
     });
 }
@@ -3302,10 +3350,10 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
 // ========================
 
 let customEmojis = [
-    { id: 'custom_kekw', name: 'kekw', url: 'https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/Static/Images/Emojis/kekw.webp', creator_id: 'system' },
-    { id: 'custom_obamium', name: 'obamium', url: 'https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/Static/Images/Emojis/obamium.gif', creator_id: 'system' },
-    { id: 'custom_poggers', name: 'poggers', url: 'https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/Static/Images/Emojis/poggers.png', creator_id: 'system' },
-    { id: 'custom_dwayne_eyebrow', name: 'dwayne_eyebrow', url: 'https://raw.githubusercontent.com/kubadoPL/Gaming-Radio/main/WebAPP/Static/Images/Emojis/dwayne_eyebrow.png', creator_id: 'system' }
+    { id: 'custom_kekw', name: 'kekw', url: 'https://i.iplsc.com/000H02HTFRKMGFP9-C323-F4.webp', creator_id: 'system' },
+    { id: 'custom_obamium', name: 'obamium', url: 'https://img.itch.zone/aW1nLzU1NjA1MDkuZ2lm/original/qAldOG.gif', creator_id: 'system' },
+    { id: 'custom_poggers', name: 'poggers', url: 'https://cdn3.emoji.gg/emojis/7893-poggerchug.png', creator_id: 'system' },
+    { id: 'custom_dwayne_eyebrow', name: 'dwayne_eyebrow', url: 'https://cdn3.emoji.gg/emojis/4221-dwayneeyebrow.png', creator_id: 'system' }
 ]; // List of {id, name, url, creator_id}
 
 async function fetchCustomEmojis() {
@@ -3403,7 +3451,7 @@ function buildReactionsHtml(message) {
         if (emoji.startsWith('custom_')) {
             const custom = customEmojis.find(e => e.id === emoji);
             if (custom) {
-                emojiDisplay = `<img src="${custom.url}" alt="${custom.name}" title="${custom.name}">`;
+                emojiDisplay = `<img src="${proxyUrl(custom.url)}" alt="${custom.name}" title="${custom.name}">`;
             } else {
                 emojiDisplay = '❓';
             }
