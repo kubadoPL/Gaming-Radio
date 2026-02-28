@@ -2823,7 +2823,8 @@ async function loadChatHistory() {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, { headers });
+        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}?full_users=1`, { headers });
+        lastUserFetchTime = Date.now();
         const data = await response.json();
 
         if (data.online_count !== undefined) {
@@ -2845,9 +2846,6 @@ async function loadChatHistory() {
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                     isChatAtBottom = true;
                 }, 300);
-
-                // Track last message timestamp
-                lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
             } else if (messagesContainer.querySelector('.chat-loading')) {
                 // No messages and we were loading - show welcome message
                 messagesContainer.innerHTML = `
@@ -2860,7 +2858,7 @@ async function loadChatHistory() {
         }
 
         if (data.server_time) {
-            lastMessageTimestamp = lastMessageTimestamp || data.server_time;
+            lastMessageTimestamp = data.server_time;
         }
     } catch (error) {
         console.error('[CHAT] Error loading history:', error);
@@ -2873,6 +2871,7 @@ async function loadChatHistory() {
 let pollCount = 0;
 async function pollNewMessages() {
     const isFirstPoll = !lastMessageTimestamp;
+    isChatVisible = (document.querySelector('.page-section.active')?.id === 'chat-section');
 
     // If chat is not visible, only poll every ~9s (3 ticks * 3s) for background pings
     // UNLESS the user is logged in, then we keep at 3s to get mentions promptly
@@ -2988,7 +2987,8 @@ window.openOnlineUsersModal = async function () {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, { headers });
+        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}?full_users=1`, { headers });
+        lastUserFetchTime = Date.now();
         const data = await response.json();
         console.log('[CHAT] Online users data:', data);
 
