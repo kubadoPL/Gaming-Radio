@@ -26,6 +26,10 @@ const IMAGES_BASE = _inDiscordActivityProxy
     ? '/Images'
     : 'https://radio-gaming.stream/Images';
 
+const ZENO_STATS_BASE = _inDiscordActivityProxy
+    ? '/zeno-stats'
+    : 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi';
+
 /**
  * Helper to proxy URLs when running in Discord Activity.
  */
@@ -38,6 +42,8 @@ function proxyUrl(url) {
         return url.replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi', CHAT_API_BASE);
     if (url.startsWith('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager'))
         return url.replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager', K5_API_BASE);
+    if (url.startsWith('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi'))
+        return url.replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi', ZENO_STATS_BASE);
     if (url.startsWith('https://api.zeno.fm'))
         return url.replace('https://api.zeno.fm', ZENO_API_BASE);
     if (url.startsWith('https://stream.zeno.fm'))
@@ -57,11 +63,13 @@ function proxyUrl(url) {
     // External CDNs & Images (Requires URL Mappings in Discord Dev Portal)
     if (url.startsWith('https://i.scdn.co')) return url.replace('https://i.scdn.co', '/spotify-img');
     if (url.startsWith('https://i.ytimg.com')) return url.replace('https://i.ytimg.com', '/youtube-img');
-    if (url.startsWith('https://media.giphy.com')) return url.replace('https://media.giphy.com', '/giphy-img');
+    if (url.match(/^https:\/\/media\d*\.giphy\.com/)) return url.replace(/^https:\/\/media\d*\.giphy\.com/, '/giphy-img');
+    if (url.startsWith('https://media.tenor.com')) return url.replace('https://media.tenor.com', '/tenor-img');
     if (url.includes('ssl.mzstatic.com')) return url.replace(/https:\/\/[^/]+/, '/itunes-img');
     if (url.startsWith('https://e-cdns-images.dzcdn.net')) return url.replace('https://e-cdns-images.dzcdn.net', '/deezer-img');
     if (url.startsWith('https://cdn.discordapp.com')) return url.replace('https://cdn.discordapp.com', '/discord-cdn');
     if (url.startsWith('https://media.discordapp.net')) return url.replace('https://media.discordapp.net', '/discord-media');
+    if (url.startsWith('https://imgur.com') || url.startsWith('https://i.imgur.com')) return url.replace(/^https:\/\/(i\.)?imgur\.com/, '/imgur-img');
 
     return url;
 }
@@ -76,22 +84,13 @@ if (!String.prototype.equalsIgnoreCase) {
 function switchSection(sectionId) {
     console.log("[NAV] Switching to section:", sectionId);
 
-    // Emergency hide loading screen if it's blocking clicks
     const ls = document.querySelector('.loading-screen');
-    if (ls && ls.style.display !== 'none') {
-        ls.style.display = 'none';
-        ls.style.opacity = '1';
-    }
-
     const sections = document.querySelectorAll('.page-section');
     const targetSection = document.getElementById(sectionId + '-section');
+    const currentSection = document.querySelector('.page-section.active');
 
-    if (!targetSection) {
-        console.error("[NAV] Section not found:", sectionId + '-section');
-        return;
-    }
+    if (!targetSection || targetSection === currentSection) return;
 
-    // Immediately update nav links for visual feedback
     // Update nav links for visual feedback
     const navLinks = document.querySelectorAll('nav ul li a');
     navLinks.forEach(link => {
@@ -101,24 +100,33 @@ function switchSection(sectionId) {
         }
     });
 
-    // Hide all sections
-    sections.forEach(s => {
-        s.classList.remove('active', 'entering', 'exiting');
-    });
+    // Animate out current section
+    if (currentSection) {
+        currentSection.classList.add('exiting');
+        currentSection.classList.remove('active');
+        setTimeout(() => {
+            currentSection.classList.remove('exiting', 'entering');
+            currentSection.style.display = 'none';
+        }, 400);
+    }
 
-    // Show target section
-    targetSection.classList.add('active');
+    // Animate in target section
+    targetSection.style.display = 'flex';
+    targetSection.classList.add('entering', 'active');
+    setTimeout(() => {
+        targetSection.classList.remove('entering');
+    }, 500);
 
     // Final check for loading screen (ensure it doesn't block events)
-    if (ls) {
+    if (ls && ls.style.display !== 'none') {
         ls.style.opacity = '0';
-        ls.style.pointerEvents = 'none'; // Ensure it's not blocking clicks even if visible
+        ls.style.pointerEvents = 'none';
         setTimeout(() => {
             ls.style.display = 'none';
+            ls.style.opacity = '1';
         }, 800);
     }
 
-    // Scroll to top
     window.scrollTo(0, 0);
 }
 
@@ -1288,6 +1296,9 @@ function changeStation(source, name, metadataURL) {
 
     const ls = document.querySelector('.loading-screen');
     if (ls) {
+        ls.style.display = 'flex';
+        ls.style.opacity = '1';
+        ls.style.pointerEvents = 'auto';
         ls.style.backgroundColor = config.loadingBackgroundColor;
         updateLoadingProgress(10, "Switching to " + name + "...");
     }
@@ -1295,7 +1306,7 @@ function changeStation(source, name, metadataURL) {
 
     document.body.style.backgroundImage = config.backgroundImage;
     document.querySelectorAll('.station-photo').forEach(photo => {
-        photo.classList.toggle('active', photo.getAttribute('onclick').includes(source));
+        photo.classList.toggle('active', photo.dataset.url === source);
         if (photo.classList.contains('active')) photo.style.borderColor = config.borderColor;
     });
 
@@ -1585,7 +1596,7 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
         ];
 
         if (shouldFetchZeno) {
-            fetchPromises.push(fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationId).then(r => r.json()));
+            fetchPromises.push(fetch(proxyUrl('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationId)).then(r => r.json()));
         }
 
         const results = await Promise.allSettled(fetchPromises);
@@ -1680,11 +1691,9 @@ function updateTooltip(tooltipElement, zenoCount, finalCount, sName, isError = f
 function updateAllOnlineUsers() {
     document.querySelectorAll('.station-photo').forEach(async (station) => {
         const tooltip = station.querySelector('.tooltip');
-        const onclickAttr = station.getAttribute('onclick');
-        if (!onclickAttr) return;
-        const parts = onclickAttr.split(", ");
-        if (parts.length < 3) return;
-        const metadataUrl = parts[2].replace(/[')]/g, '').trim();
+        const metadataUrl = station.dataset.metadata;
+        if (!metadataUrl) return;
+
         const sName = await metaDataUrlToStationName(metadataUrl);
         updateOnlineUsersTooltip(tooltip, sName, metadataUrl);
     });
