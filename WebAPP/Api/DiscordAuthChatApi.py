@@ -1,6 +1,7 @@
 import os
 import sys
 import secrets
+import re
 from datetime import datetime, timedelta
 
 # Set the script and parent directory
@@ -118,6 +119,18 @@ def normalize_station(name):
     if not name:
         return ""
     return name.upper().replace("-", "").replace(" ", "")
+
+
+def safe_parse_datetime(dt_str):
+    """Safely parse ISO datetime strings, handling 'Z' suffix."""
+    if not dt_str:
+        return datetime.min
+    try:
+        # Handle 'Z' by replacing with '+00:00' for older Python versions
+        clean_str = dt_str.replace("Z", "+00:00")
+        return datetime.fromisoformat(clean_str)
+    except Exception:
+        return datetime.min
 
 
 def update_user_activity(user_id, station_key, playing_station=None):
@@ -447,15 +460,11 @@ def poll_messages(station):
 
     messages = chat_messages[station_key]
     if since:
-        try:
-            since_time = datetime.fromisoformat(since.replace("Z", ""))
+        since_time = safe_parse_datetime(since)
+        if since_time != datetime.min:
             messages = [
-                m
-                for m in messages
-                if datetime.fromisoformat(m["timestamp"]) > since_time
+                m for m in messages if safe_parse_datetime(m["timestamp"]) > since_time
             ]
-        except:
-            pass
 
     online_count, online_users_list = get_online_data(station_key)
 
@@ -474,17 +483,27 @@ def poll_messages(station):
                     if s_key == station_key:
                         continue
 
-                    # Check for mentions in this station's new messages
                     for m in msgs:
-                        if datetime.fromisoformat(m["timestamp"]) > since_time:
+                        m_time = safe_parse_datetime(m["timestamp"])
+                        if m_time > since_time:
                             content = m.get("content", "").lower()
                             is_met = False
-                            if "@everyone" in content or "@here" in content:
-                                is_met = True
-                            elif f"@{username}" in content:
-                                is_met = True
-                            elif global_name and f"@{global_name}" in content:
-                                is_met = True
+
+                            # Mention patterns: @everyone, @here, @username, @global_name
+                            patterns = [r"@everyone", r"@here"]
+                            if username:
+                                patterns.append(
+                                    r"@" + re.escape(username) + r"(?![a-zA-Z0-9])"
+                                )
+                            if global_name:
+                                patterns.append(
+                                    r"@" + re.escape(global_name) + r"(?![a-zA-Z0-9])"
+                                )
+
+                            for p in patterns:
+                                if re.search(p, content):
+                                    is_met = True
+                                    break
 
                             # If mentioned and not the author, add to other_mentions
                             if is_met and m["user"]["id"] != user_id:

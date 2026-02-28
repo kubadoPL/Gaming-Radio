@@ -2734,11 +2734,16 @@ async function pollNewMessages() {
             });
 
             // Update last timestamp
-            lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
+            if (data.messages && data.messages.length > 0) {
+                lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
+            } else if (data.server_time) {
+                lastMessageTimestamp = data.server_time;
+            }
         }
 
         // Process mentions from other stations
         if (data.other_mentions && data.other_mentions.length > 0) {
+            console.log(`[CHAT] Received ${data.other_mentions.length} other mentions`);
             // Ensure emojis for other mentions too
             await ensureEmojisForMessages(data.other_mentions);
 
@@ -2746,10 +2751,6 @@ async function pollNewMessages() {
                 // Background notification check with station name
                 checkMessageForMention(mention, mention.station_name);
             });
-        }
-
-        if (data.server_time) {
-            lastMessageTimestamp = lastMessageTimestamp || data.server_time;
         }
     } catch (error) {
         if (isChatVisible) console.error('[CHAT] Polling error:', error);
