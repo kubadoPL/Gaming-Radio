@@ -58,27 +58,26 @@
     <header>
         <nav>
             <div class="header-content">
-                <a href="javascript:void(0)" onclick="switchSection('home')" class="logo">
+                <a href="javascript:void(0)" id="logo-link" class="logo">
                     <img src="/Images/Logos/Radio-Gaming-Logo.webp" alt="Logo">
                     <span>Radio GAMING</span>
                 </a>
                 <ul>
-                    <li><a href="javascript:void(0)" onclick="switchSection('home')" class="active-nav-link"><i
-                                class="fas fa-home"></i>
+                    <li><a href="javascript:void(0)" id="nav-home" class="active-nav-link"><i class="fas fa-home"></i>
                             <span>Home</span></a></li>
-                    <li><a href="javascript:void(0)" onclick="switchSection('chat')"><i class="fas fa-comments"></i>
+                    <li><a href="javascript:void(0)" id="nav-chat"><i class="fas fa-comments"></i>
                             <span>Chat</span></a></li>
-                    <li><a href="javascript:void(0)" onclick="switchSection('download')"><i class="fas fa-download"></i>
+                    <li><a href="javascript:void(0)" id="nav-download"><i class="fas fa-download"></i>
                             <span>Download</span></a></li>
-                    <li><a href="javascript:void(0)" onclick="switchSection('info')"><i class="fas fa-info-circle"></i>
+                    <li><a href="javascript:void(0)" id="nav-info"><i class="fas fa-info-circle"></i>
                             <span>Info</span></a></li>
                 </ul>
                 <div class="header-right">
-                    <div class="vis-toggle-btn" onclick="toggleVisualizations()" title="Toggle Visualizations">
+                    <div class="vis-toggle-btn" id="vis-toggle-btn" title="Toggle Visualizations">
                         <i id="vis-toggle-icon" class="fas fa-eye"></i>
                         <span>Visuals</span>
                     </div>
-                    <div class="history-toggle-btn" onclick="toggleHistoryDrawer()" title="Song History">
+                    <div class="history-toggle-btn" id="history-toggle-btn" title="Song History">
                         <i class="fas fa-history"></i>
                         <span>History</span>
                     </div>
@@ -88,15 +87,14 @@
                     </div>
                     <!-- Discord Login Button -->
                     <div id="discord-auth-container" class="discord-auth">
-                        <button id="discord-login-btn" class="discord-btn" onclick="initiateDiscordLogin()">
+                        <button id="discord-login-btn" class="discord-btn">
                             <i class="fab fa-discord"></i>
                             <span>Login</span>
                         </button>
-                        <div id="discord-user-info" class="discord-user hidden" onclick="openDiscordProfileModal()">
+                        <div id="discord-user-info" class="discord-user hidden">
                             <img id="discord-user-avatar" class="discord-avatar" src="" alt="Avatar">
                             <span id="discord-user-name"></span>
-                            <button class="discord-logout-btn" onclick="logoutDiscord(); event.stopPropagation()"
-                                title="Logout">
+                            <button id="discord-logout-btn" class="discord-logout-btn" title="Logout">
                                 <i class="fas fa-sign-out-alt"></i>
                             </button>
                         </div>
@@ -112,8 +110,9 @@
 
             <!--<div class="section-title">Select Station</div>-->
             <div class="station-selector">
-                <div class="station-photo active"
-                    onclick="changeStation('https://stream.zeno.fm/es4ngpu7ud6tv', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
+                <div class="station-photo active" id="station-main" data-url="https://stream.zeno.fm/es4ngpu7ud6tv"
+                    data-name="Radio GAMING"
+                    data-metadata="https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv">
                     <img src="/Images/Logos/Radio-Gaming-Logo.webp" alt="Radio GAMING">
                     <div class="tooltip">
                         <img src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png" alt="Album Cover"
@@ -123,8 +122,9 @@
                     </div>
                 </div>
 
-                <div class="station-photo"
-                    onclick="changeStation('https://stream.zeno.fm/pfg9eajshnjtv', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
+                <div class="station-photo" id="station-dark" data-url="https://stream.zeno.fm/pfg9eajshnjtv"
+                    data-name="Radio GAMING DARK"
+                    data-metadata="https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv">
                     <img src="/Images/Logos/Radio-Gaming-dark-logo.webp" alt="Radio GAMING DARK">
                     <div class="tooltip">
                         <img src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png" alt="Album Cover"
@@ -133,8 +133,9 @@
                         <div class="tooltip-Online-Users">Loading Live Listeners Count...</div>
                     </div>
                 </div>
-                <div class="station-photo"
-                    onclick="changeStation('https://stream.zeno.fm/5nhy0myl4jpuv', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
+                <div class="station-photo" id="station-maron" data-url="https://stream.zeno.fm/5nhy0myl4jpuv"
+                    data-name="Radio GAMING MARON FM"
+                    data-metadata="https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv">
                     <img src="/Images/Logos/Radio-Gaming-Maron-fm-logo.webp" alt="Radio GAMING MARON FM">
                     <div class="tooltip">
                         <img src="/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png" alt="Album Cover"
@@ -153,7 +154,7 @@
                     <div id="streamTitle"></div>
                 </div>
                 <div class="player-controls">
-                    <div id="playPauseIcon" onclick="playPause()">
+                    <div id="playPauseIcon">
                         <i class="fas fa-play"></i>
                         <div class="lds-ripple-small">
                             <div></div>
@@ -164,15 +165,13 @@
                         <div id="timeDisplay">
                             <span id="currentTime">00:00</span> / <span id="liveIndicator">🟣LIVE</span>
                         </div>
-                        <i id="favoriteIcon" class="far fa-heart favorite-icon" onclick="toggleCurrentFavorite()"
-                            title="Add to Favorites"></i>
-                        <i id="shareDiscordIcon" class="fab fa-discord share-discord-icon" onclick="openShareModal()"
-                            title="Share on Discord"></i>
+                        <i id="favoriteIcon" class="far fa-heart favorite-icon" title="Add to Favorites"></i>
+                        <i id="shareDiscordIcon" class="fab fa-discord share-discord-icon" title="Share on Discord"></i>
                     </div>
                     <div class="volume-control">
                         <i id="volume-down" class="fas fa-volume-down volume-icon"></i>
-                        <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="0.1"
-                            oninput="changeVolume(this.value)">
+                        <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01"
+                            value="0.1">
                         <i id="volume-up" class="fas fa-volume-up volume-icon"></i>
                     </div>
                 </div>
@@ -204,24 +203,21 @@
                 <div class="chat-header">
                     <h2><i class="fas fa-comments"></i> Station Chat</h2>
                     <div class="chat-channel-selector">
-                        <div class="chat-station-indicator" onclick="toggleChannelDropdown()">
+                        <div class="chat-station-indicator" id="chat-channel-toggle">
                             <span class="chat-station-dot"></span>
                             <span id="chat-current-station">Radio GAMING</span>
                             <i class="fas fa-chevron-down channel-chevron"></i>
                         </div>
-                        <div class="chat-online-badge" onclick="openOnlineUsersModal()"><i class="fas fa-users"></i>
+                        <div class="chat-online-badge" id="chat-online-badge"><i class="fas fa-users"></i>
                             <span id="chat-online-count">1</span> online
                         </div>
 
                         <div id="channel-dropdown" class="channel-dropdown hidden">
-                            <div class="channel-option" data-station="Radio GAMING"
-                                onclick="switchChatChannel('Radio GAMING')">Radio GAMING <span
+                            <div class="channel-option" data-station="Radio GAMING">Radio GAMING <span
                                     class="chat-online-badge">...</span></div>
-                            <div class="channel-option" data-station="Radio GAMING DARK"
-                                onclick="switchChatChannel('Radio GAMING DARK')">Radio GAMING DARK <span
+                            <div class="channel-option" data-station="Radio GAMING DARK">Radio GAMING DARK <span
                                     class="chat-online-badge">...</span></div>
-                            <div class="channel-option" data-station="Radio GAMING MARON FM"
-                                onclick="switchChatChannel('Radio GAMING MARON FM')">MARON FM <span
+                            <div class="channel-option" data-station="Radio GAMING MARON FM">MARON FM <span
                                     class="chat-online-badge">...</span></div>
                         </div>
                     </div>
@@ -232,7 +228,7 @@
                         <i class="fab fa-discord auth-prompt-icon"></i>
                         <h3>Login to Chat</h3>
                         <p>Connect with Discord to join the conversation with other listeners!</p>
-                        <button class="discord-btn large" onclick="initiateDiscordLogin()">
+                        <button id="chat-discord-login-btn" class="discord-btn large">
                             <i class="fab fa-discord"></i>
                             <span>Login with Discord</span>
                         </button>
@@ -256,10 +252,10 @@
                                 <i class="fas fa-search"></i>
                             </div>
                             <div class="gif-picker-tabs">
-                                <button class="gif-tab active" data-tab="trending" onclick="switchGifTab('trending')">
+                                <button class="gif-tab active" id="gif-tab-trending" data-tab="trending">
                                     <i class="fas fa-bolt"></i> Trending
                                 </button>
-                                <button class="gif-tab" data-tab="favorites" onclick="switchGifTab('favorites')">
+                                <button class="gif-tab" id="gif-tab-favorites" data-tab="favorites">
                                     <i class="fas fa-heart"></i> Favorites
                                 </button>
                             </div>
@@ -276,7 +272,7 @@
                         <div class="chat-input-wrapper">
                             <div id="chat-song-preview" class="chat-song-preview hidden">
                                 <span class="preview-song-name"></span>
-                                <i class="fas fa-times remove-preview" onclick="toggleSongShare(false)"></i>
+                                <i class="fas fa-times remove-preview" id="remove-song-preview"></i>
                             </div>
                             <div id="chat-image-preview" class="chat-image-preview hidden">
                                 <img id="chat-image-preview-img" src="" alt="Preview">
@@ -284,7 +280,7 @@
                                     <span id="chat-image-preview-name" class="preview-song-name"></span>
                                     <span id="chat-image-preview-size" class="chat-image-size"></span>
                                 </div>
-                                <i class="fas fa-times remove-preview" onclick="clearImageUpload()"></i>
+                                <i class="fas fa-times remove-preview" id="remove-image-preview"></i>
                             </div>
                             <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..."
                                 maxlength="205" autocomplete="off">
@@ -292,23 +288,20 @@
                             <div id="chat-char-count" class="chat-char-count">0/200</div>
                         </div>
                         <input type="file" id="chat-image-input" accept="image/png,image/jpeg,image/gif,image/webp"
-                            style="display: none;" onchange="handleImageUpload(event)">
-                        <button class="chat-image-btn" onclick="document.getElementById('chat-image-input').click()"
-                            title="Wyślij obrazek (max 2MB)">
+                            style="display: none;">
+                        <button id="chat-image-btn" class="chat-image-btn" title="Wyślij obrazek (max 2MB)">
                             <i class="fas fa-image"></i>
                         </button>
-                        <button id="chat-gif-btn" class="chat-gif-btn" onclick="toggleGifPicker()" title="Send a GIF">
+                        <button id="chat-gif-btn" class="chat-gif-btn" title="Send a GIF">
                             <i class="fas fa-sticky-note"></i>
                         </button>
-                        <button id="chat-emoji-btn" class="chat-emoji-btn" onclick="toggleEmojiPickerForInput(this)"
-                            title="Emoji">
+                        <button id="chat-emoji-btn-input" class="chat-emoji-btn" title="Emoji">
                             <i class="far fa-smile"></i>
                         </button>
-                        <button id="chat-share-song-btn" class="chat-share-song-btn" onclick="toggleSongShare()"
-                            title="Reference current song">
+                        <button id="chat-share-song-btn" class="chat-share-song-btn" title="Reference current song">
                             <i class="fas fa-music"></i>
                         </button>
-                        <button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()">
+                        <button id="chat-send-btn" class="chat-send-btn">
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
@@ -349,14 +342,13 @@
                     <h3>Data Management</h3>
                     <p>Backup or restore your favorites, history, and settings.</p>
                     <div class="data-actions">
-                        <button onclick="exportUserData()" class="btn btn-secondary">
+                        <button id="export-data-btn" class="btn btn-secondary">
                             <i class="fas fa-file-export"></i> Export
                         </button>
-                        <button onclick="document.getElementById('import-input').click()" class="btn btn-secondary">
+                        <button id="import-data-btn" class="btn btn-secondary">
                             <i class="fas fa-file-import"></i> Import
                         </button>
-                        <input type="file" id="import-input" accept=".json" style="display: none;"
-                            onchange="importUserData(event)">
+                        <input type="file" id="import-input" accept=".json" style="display: none;">
                     </div>
                 </div>
             </div>
@@ -376,25 +368,23 @@
     </div>
 
     <!-- Song History Drawer -->
-    <div id="history-overlay" class="history-overlay" onclick="toggleHistoryDrawer()"></div>
+    <div id="history-overlay" class="history-overlay"></div>
     <div id="history-drawer" class="history-drawer">
         <div class="history-header">
             <h3><i class="fas fa-history"></i> Song History</h3>
             <div class="history-controls">
                 <div class="history-tabs">
-                    <button class="history-tab active" data-tab="history"
-                        onclick="switchHistoryTab('history')">Recent</button>
-                    <button class="history-tab" data-tab="favorites" onclick="switchHistoryTab('favorites')"><i
+                    <button class="history-tab active" id="history-tab-recent" data-tab="history">Recent</button>
+                    <button class="history-tab" id="history-tab-favorites" data-tab="favorites"><i
                             class="fas fa-heart"></i> Favorites</button>
-                    <button class="history-tab" data-tab="stats" onclick="switchHistoryTab('stats')"><i
-                            class="fas fa-chart-bar"></i> Stats</button>
+                    <button class="history-tab" id="history-tab-stats" data-tab="stats"><i class="fas fa-chart-bar"></i>
+                        Stats</button>
                 </div>
-                <button class="view-mode-toggle" id="view-mode-toggle" onclick="toggleHistoryMode()"
-                    title="Toggle View Mode">
+                <button class="view-mode-toggle" id="view-mode-toggle" title="Toggle View Mode">
                     <i class="fas fa-th-large"></i>
                 </button>
             </div>
-            <button class="history-close" onclick="toggleHistoryDrawer()"><i class="fas fa-times"></i></button>
+            <button class="history-close" id="history-close"><i class="fas fa-times"></i></button>
         </div>
         <div id="history-list" class="history-list">
             <div class="history-empty">
@@ -440,12 +430,12 @@
     </footer>
 
     <!-- Discord Share Modal -->
-    <div id="share-modal-overlay" class="share-modal-overlay hidden" onclick="closeShareModal(event)">
-        <div class="share-modal" onclick="event.stopPropagation()">
+    <div id="share-modal-overlay" class="share-modal-overlay hidden">
+        <div class="share-modal" id="share-modal-content">
             <div class="share-modal-header">
                 <i class="fab fa-discord"></i>
                 <h3>Share to Discord</h3>
-                <button class="share-modal-close" onclick="closeShareModal()">
+                <button class="share-modal-close" id="share-modal-close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -467,8 +457,7 @@
                     <div class="share-custom-webhook">
                         <input type="text" id="custom-webhook-input" class="share-webhook-input"
                             placeholder="Paste Discord webhook URL here..." autocomplete="off">
-                        <button id="share-custom-webhook-btn" class="share-webhook-btn"
-                            onclick="shareToCustomWebhook()">
+                        <button id="share-custom-webhook-btn" class="share-webhook-btn">
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
@@ -478,13 +467,12 @@
     </div>
 
     <!-- Discord Profile Modal -->
-    <div id="discord-profile-modal-overlay" class="share-modal-overlay hidden"
-        onclick="closeDiscordProfileModal(event)">
-        <div class="share-modal profile-modal" onclick="event.stopPropagation()">
+    <div id="discord-profile-modal-overlay" class="share-modal-overlay hidden">
+        <div class="share-modal profile-modal" id="discord-profile-modal-content">
             <div class="share-modal-header">
                 <i class="fab fa-discord"></i>
                 <h3>Discord Profile</h3>
-                <button class="share-modal-close" onclick="closeDiscordProfileModal()">
+                <button class="share-modal-close" id="discord-profile-modal-close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -507,7 +495,7 @@
                             </div>
                         </div>
 
-                        <button class="profile-logout-btn" onclick="logoutDiscord(); closeDiscordProfileModal()">
+                        <button class="profile-logout-btn" id="modal-discord-logout-btn">
                             <i class="fas fa-sign-out-alt"></i>
                             <span>Logout</span>
                         </button>
@@ -518,12 +506,12 @@
     </div>
 
     <!-- Online Users Modal -->
-    <div id="online-users-modal-overlay" class="share-modal-overlay hidden" onclick="closeOnlineUsersModal(event)">
-        <div class="share-modal" onclick="event.stopPropagation()">
+    <div id="online-users-modal-overlay" class="share-modal-overlay hidden">
+        <div class="share-modal" id="online-users-modal-content">
             <div class="share-modal-header">
                 <i class="fas fa-users"></i>
                 <h3>Online Listeners</h3>
-                <button class="share-modal-close" onclick="closeOnlineUsersModal()">
+                <button class="share-modal-close" id="online-users-modal-close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -536,9 +524,9 @@
     </div>
 
     <!-- Image Zoom Modal -->
-    <div id="image-zoom-overlay" class="image-zoom-overlay" onclick="closeImageZoom()">
-        <div class="zoom-content" onclick="event.stopPropagation()">
-            <button class="zoom-close" onclick="closeImageZoom()">&times;</button>
+    <div id="image-zoom-overlay" class="image-zoom-overlay">
+        <div class="zoom-content" id="zoom-content">
+            <button class="zoom-close" id="zoom-close">&times;</button>
             <img id="zoomed-image" src="" alt="Zoomed view">
         </div>
     </div>

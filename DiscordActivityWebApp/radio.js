@@ -1035,7 +1035,7 @@ function showNotification(message, icon = 'fas fa-bell', title = null, imageUrl 
         notification.innerHTML = `
             <div class="notification-icon"><i class="${icon}"></i></div>
             <div class="notification-message">${message}</div>
-            <div class="notification-close" onclick="this.parentElement.classList.add('exiting'); setTimeout(() => this.parentElement.remove(), 500);"><i class="fas fa-times"></i></div>
+            <div class="notification-close" data-action="close-notification"><i class="fas fa-times"></i></div>
         `;
     } else {
         let mediaHtml = `<div class="notification-icon"><i class="${icon}"></i></div>`;
@@ -1048,7 +1048,7 @@ function showNotification(message, icon = 'fas fa-bell', title = null, imageUrl 
                 ${title ? `<div class="notification-title">${title}</div>` : ''}
                 <div class="notification-message">${message}</div>
             </div>
-            <div class="notification-close" onclick="this.parentElement.classList.add('exiting'); setTimeout(() => this.parentElement.remove(), 500);"><i class="fas fa-times"></i></div>
+            <div class="notification-close" data-action="close-notification"><i class="fas fa-times"></i></div>
         `;
     }
 
@@ -3161,10 +3161,10 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
         const isFaved = gifFavorites.includes(trimmedContent);
         formattedContent = `
             <div class="chat-image-wrapper">
-                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" data-media-url="${escapeHtml(trimmedContent)}" onclick="toggleFavoriteGif(this, event)">
+                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" data-action="toggle-gif-fav" data-url="${escapeHtml(trimmedContent)}">
                     <i class="${isFaved ? 'fas' : 'far'} fa-heart"></i>
                 </div>
-                <img src="${proxyUrl(trimmedContent)}" class="chat-inline-gif chat-uploaded-image" alt="GIF" onclick="openImageZoom(this)">
+                <img src="${proxyUrl(trimmedContent)}" class="chat-inline-gif chat-uploaded-image" alt="GIF" data-action="zoom-image">
             </div>`;
     } else {
         let content = escapeHtml(message.content);
@@ -3221,10 +3221,10 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
             </div>` : ''}
             ${message.image_data ? `
             <div class="chat-image-wrapper">
-                <div class="chat-media-fav-btn ${gifFavorites.includes(message.image_data) ? 'active' : ''}" data-media-url="${escapeHtml(message.image_data)}" onclick="toggleFavoriteGif(this, event)">
+                <div class="chat-media-fav-btn ${gifFavorites.includes(message.image_data) ? 'active' : ''}" data-action="toggle-gif-fav" data-url="${escapeHtml(message.image_data)}">
                     <i class="${gifFavorites.includes(message.image_data) ? 'fas' : 'far'} fa-heart"></i>
                 </div>
-                <img src="${proxyUrl(message.image_data)}" class="chat-inline-gif chat-uploaded-image" alt="Image" loading="lazy" onclick="openImageZoom(this)">
+                <img src="${proxyUrl(message.image_data)}" class="chat-inline-gif chat-uploaded-image" alt="Image" loading="lazy" data-action="zoom-image">
             </div>
             ` : ''}
             ${message.song_data ? `
@@ -3240,7 +3240,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
                 ${reactionsHtml}
             </div>
         </div>
-        <button class="chat-reaction-add-btn" onclick="openEmojiPicker('${message.id}', this)" title="Dodaj reakcję">
+        <button class="chat-reaction-add-btn" data-action="add-reaction" data-message-id="${message.id}" title="Dodaj reakcję">
             <i class="far fa-smile"></i>
         </button>
     `;
@@ -3383,7 +3383,7 @@ function buildReactionsHtml(message) {
         }
 
         html += `<button class="chat-reaction-pill ${isActive ? 'active' : ''}" 
-                    onclick="toggleReaction('${message.id}', '${emoji}')"
+                    data-action="toggle-reaction" data-message-id="${message.id}" data-emoji="${emoji}"
                     title="${names}">
                     <span class="chat-reaction-emoji">${emojiDisplay}</span>
                     <span class="chat-reaction-count">${userIds.length}</span>
@@ -3391,7 +3391,7 @@ function buildReactionsHtml(message) {
     }
 
     // Add inline "+" button to add more reactions
-    html += `<button class="chat-reaction-add-inline" onclick="openEmojiPicker('${message.id}', this)" title="Dodaj reakcję">
+    html += `<button class="chat-reaction-add-inline" data-action="add-reaction" data-message-id="${message.id}" title="Dodaj reakcję">
                 <i class="fas fa-plus"></i>
              </button>`;
 
@@ -3430,14 +3430,14 @@ function updateReactionsUI(messageId, reactions, reactionUsers) {
         }
 
         html += `<button class="chat-reaction-pill ${isActive ? 'active' : ''}" 
-                    onclick="toggleReaction('${messageId}', '${emoji}')"
+                    data-action="toggle-reaction" data-message-id="${messageId}" data-emoji="${emoji}"
                     title="${names}">
                     <span class="chat-reaction-emoji">${emojiDisplay}</span>
                     <span class="chat-reaction-count">${userIds.length}</span>
                 </button>`;
     }
 
-    html += `<button class="chat-reaction-add-inline" onclick="openEmojiPicker('${messageId}', this)" title="Dodaj reakcję">
+    html += `<button class="chat-reaction-add-inline" data-action="add-reaction" data-message-id="${messageId}" title="Dodaj reakcję">
                 <i class="fas fa-plus"></i>
              </button>`;
 
@@ -4288,10 +4288,10 @@ function displayGifs(gifs) {
             const wrapper = document.createElement('div');
             wrapper.className = 'chat-image-wrapper';
             wrapper.innerHTML = `
-                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" data-media-url="${escapeHtml(url)}" onclick="toggleFavoriteGif(this, event)">
+                <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" data-action="toggle-gif-fav" data-url="${escapeHtml(url)}">
                     <i class="${isFaved ? 'fas' : 'far'} fa-heart"></i>
                 </div>
-                <img src="${proxyUrl(url)}" alt="${gif.title || 'GIF'}" onclick="selectGif('${url}')">
+                <img src="${proxyUrl(url)}" alt="${gif.title || 'GIF'}" data-action="select-gif" data-url="${url}">
             `;
             resultsContainer.appendChild(wrapper);
         });
@@ -4709,7 +4709,7 @@ function renderStatsView() {
         <div class="stats-container">
             <div class="stats-header-row">
                 <h4 class="stats-subtitle">Listening Overview</h4>
-                <button class="stats-export-btn" onclick="exportUserData()" title="Export Statistics Data">
+                <button class="stats-export-btn" id="export-data-btn-stats" title="Export Statistics Data">
                     <i class="fas fa-file-export"></i> Export Data
                 </button>
             </div>
@@ -4841,16 +4841,16 @@ function renderHistoryList() {
                             <div class="grid-stats">${stats.playCount} plays</div>
                         </div>
                         <div class="grid-actions">
-                            <button class="grid-action-btn ${fav ? 'favorited' : ''}" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')" title="Favorite">
+                            <button class="grid-action-btn ${fav ? 'favorited' : ''}" data-action="toggle-fav" data-title="${song.title.replace(/"/g, '&quot;')}" title="Favorite">
                                 <i class="fas fa-heart"></i>
                             </button>
-                            <button class="grid-action-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
+                            <button class="grid-action-btn" data-action="share-to-chat" data-title="${song.title.replace(/"/g, '&quot;')}" data-cover="${song.cover}" data-station="${song.station}" title="Share">
                                 <i class="fas fa-comment-alt"></i>
                             </button>
-                            <a class="grid-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
+                            <a class="grid-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Spotify">
                                 <i class="fab fa-spotify"></i>
                             </a>
-                            <a class="grid-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="YouTube">
+                            <a class="grid-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="YouTube">
                                 <i class="fab fa-youtube"></i>
                             </a>
                         </div>
@@ -4869,11 +4869,11 @@ function renderHistoryList() {
                         </div>
                     </div>
                     <div class="history-item-actions">
-                        <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')"
+                        <button class="history-action-btn chat-share-btn" data-action="share-to-chat" data-title="${song.title.replace(/"/g, '&quot;')}" data-cover="${song.cover}" data-station="${song.station}"
                             title="Share to Chat">
                             <i class="fas fa-comment-alt"></i>
                         </button>
-                        <button class="history-action-btn ${fav ? 'favorited' : ''}" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
+                        <button class="history-action-btn ${fav ? 'favorited' : ''}" data-action="toggle-fav" data-title="${song.title.replace(/"/g, '&quot;')}"
                             title="${fav ? 'Remove from favorites' : 'Add to favorites'}">
                             <i class="fas fa-heart"></i>
                         </button>
@@ -4946,16 +4946,16 @@ function renderFavoritesList() {
                             <div class="grid-stats">${stats.playCount} plays</div>
                         </div>
                         <div class="grid-actions">
-                            <button class="grid-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')" title="Favorite">
+                            <button class="grid-action-btn favorited" data-action="toggle-fav" data-title="${song.title.replace(/"/g, '&quot;')}" title="Favorite">
                                 <i class="fas fa-heart"></i>
                             </button>
-                            <button class="grid-action-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
+                            <button class="grid-action-btn" data-action="share-to-chat" data-title="${song.title.replace(/"/g, '&quot;')}" data-cover="${song.cover}" data-station="${song.station}" title="Share">
                                 <i class="fas fa-comment-alt"></i>
                             </button>
-                            <a class="grid-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
+                            <a class="grid-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" title="Spotify">
                                 <i class="fab fa-spotify"></i>
                             </a>
-                            <a class="grid-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="YouTube">
+                            <a class="grid-action-btn youtube-btn" href="https://www.youtube.com/results?search_query=${encodedTitle}" target="_blank" title="YouTube">
                                 <i class="fab fa-youtube"></i>
                             </a>
                         </div>
@@ -4974,11 +4974,11 @@ function renderFavoritesList() {
                         </div>
                     </div>
                     <div class="history-item-actions">
-                        <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')"
+                        <button class="history-action-btn chat-share-btn" data-action="share-to-chat" data-title="${song.title.replace(/"/g, '&quot;')}" data-cover="${song.cover}" data-station="${song.station}"
                             title="Share to Chat">
                             <i class="fas fa-comment-alt"></i>
                         </button>
-                        <button class="history-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
+                        <button class="history-action-btn favorited" data-action="toggle-fav" data-title="${song.title.replace(/"/g, '&quot;')}"
                             title="Remove from favorites">
                             <i class="fas fa-heart"></i>
                         </button>
@@ -5096,3 +5096,174 @@ window.importUserData = function (event) {
     reader.readAsText(file);
     event.target.value = ''; // Reset input
 };
+
+// ========================
+// CSP-SAFE INTERACTIVITY SETUP
+// ========================
+
+function setupInteractivity() {
+    console.log("[CSP] Initializing safe event listeners...");
+
+    // Header & Navigation
+    const bind = (id, event, fn) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, fn);
+    };
+
+    bind('logo-link', 'click', () => switchSection('home'));
+    bind('nav-home', 'click', () => switchSection('home'));
+    bind('nav-chat', 'click', () => switchSection('chat'));
+    bind('nav-download', 'click', () => switchSection('download'));
+    bind('nav-info', 'click', () => switchSection('info'));
+
+    bind('vis-toggle-btn', 'click', () => toggleVisualizations());
+    bind('history-toggle-btn', 'click', () => toggleHistoryDrawer());
+    bind('history-overlay', 'click', () => toggleHistoryDrawer());
+    bind('history-close', 'click', () => toggleHistoryDrawer());
+    bind('history-tab-recent', 'click', () => switchHistoryTab('history'));
+    bind('history-tab-favorites', 'click', () => switchHistoryTab('favorites'));
+    bind('history-tab-stats', 'click', () => switchHistoryTab('stats'));
+    bind('view-mode-toggle', 'click', () => toggleHistoryMode());
+
+    bind('discord-login-btn', 'click', () => initiateDiscordLogin());
+    bind('discord-user-info', 'click', () => openDiscordProfileModal());
+    bind('discord-logout-btn', 'click', (e) => { e.stopPropagation(); logoutDiscord(); });
+
+    // Chat
+    bind('chat-channel-toggle', 'click', () => toggleChannelDropdown());
+    bind('chat-online-badge', 'click', () => openOnlineUsersModal());
+    bind('chat-discord-login-btn', 'click', () => initiateDiscordLogin());
+    bind('gif-tab-trending', 'click', () => switchGifTab('trending'));
+    bind('gif-tab-favorites', 'click', () => switchGifTab('favorites'));
+    bind('remove-song-preview', 'click', () => toggleSongShare(false));
+    bind('remove-image-preview', 'click', () => clearImageUpload());
+    bind('chat-image-btn', 'click', () => document.getElementById('chat-image-input').click());
+    bind('chat-gif-btn', 'click', () => toggleGifPicker());
+    bind('chat-emoji-btn-input', 'click', function () { toggleEmojiPickerForInput(this); });
+    bind('chat-share-song-btn', 'click', () => toggleSongShare());
+    bind('chat-send-btn', 'click', () => sendChatMessage());
+
+    const chatImageInput = document.getElementById('chat-image-input');
+    if (chatImageInput) chatImageInput.addEventListener('change', handleImageUpload);
+
+    // Player
+    bind('playPauseIcon', 'click', () => playPause());
+    bind('favoriteIcon', 'click', () => toggleCurrentFavorite());
+    bind('shareDiscordIcon', 'click', () => openShareModal());
+
+    const volumeSlider = document.getElementById('volume-slider');
+    if (volumeSlider) volumeSlider.addEventListener('input', (e) => changeVolume(e.target.value));
+
+    // Data Management
+    bind('export-data-btn', 'click', () => exportUserData());
+    bind('export-data-btn-stats', 'click', () => exportUserData());
+    bind('import-data-btn', 'click', () => document.getElementById('import-input').click());
+    const importInput = document.getElementById('import-input');
+    if (importInput) importInput.addEventListener('change', importUserData);
+
+    // Modals
+    bind('share-modal-overlay', 'click', (e) => closeShareModal(e));
+    bind('share-modal-content', 'click', (e) => e.stopPropagation());
+    bind('share-modal-close', 'click', () => closeShareModal());
+    bind('share-custom-webhook-btn', 'click', () => shareToCustomWebhook());
+
+    bind('discord-profile-modal-overlay', 'click', (e) => closeDiscordProfileModal(e));
+    bind('discord-profile-modal-content', 'click', (e) => e.stopPropagation());
+    bind('discord-profile-modal-close', 'click', () => closeDiscordProfileModal());
+    bind('modal-discord-logout-btn', 'click', () => { logoutDiscord(); closeDiscordProfileModal(); });
+
+    bind('online-users-modal-overlay', 'click', (e) => closeOnlineUsersModal(e));
+    bind('online-users-modal-content', 'click', (e) => e.stopPropagation());
+    bind('online-users-modal-close', 'click', () => closeOnlineUsersModal());
+
+    bind('image-zoom-overlay', 'click', () => closeImageZoom());
+    bind('zoom-content', 'click', (e) => e.stopPropagation());
+    bind('zoom-close', 'click', () => closeImageZoom());
+
+    // Station Selectors
+    document.querySelectorAll('.station-photo').forEach(el => {
+        el.addEventListener('click', function () {
+            const url = this.dataset.url;
+            const name = this.dataset.name;
+            const meta = this.dataset.metadata;
+            if (url && name && meta) changeStation(url, name, meta);
+        });
+    });
+
+    // Global Event Delegation for Dynamic Elements
+    document.addEventListener('click', function (e) {
+        const target = e.target;
+
+        // Notification Close
+        if (target.closest('[data-action="close-notification"]')) {
+            const notification = target.closest('.notificationPopup');
+            if (notification) {
+                notification.classList.add('exiting');
+                setTimeout(() => notification.remove(), 500);
+            }
+        }
+
+        // Chat Channel Switch
+        const channelOpt = target.closest('.channel-option');
+        if (channelOpt && !channelOpt.onclick) { // Ensure we don't double bind if CSP allows
+            const station = channelOpt.dataset.station;
+            if (station) switchChatChannel(station);
+        }
+
+        // Toggle GIF Favorite
+        const gifFavBtn = target.closest('[data-action="toggle-gif-fav"]');
+        if (gifFavBtn) {
+            const url = gifFavBtn.dataset.url;
+            toggleFavoriteGif(gifFavBtn, e);
+        }
+
+        // Zoom Image
+        const zoomImg = target.closest('[data-action="zoom-image"]');
+        if (zoomImg) {
+            openImageZoom(zoomImg);
+        }
+
+        // Add Reaction Picker
+        const addReactionBtn = target.closest('[data-action="add-reaction"]');
+        if (addReactionBtn) {
+            const msgId = addReactionBtn.dataset.messageId;
+            openEmojiPicker(msgId, addReactionBtn);
+        }
+
+        // Toggle Reaction
+        const reactionPill = target.closest('[data-action="toggle-reaction"]');
+        if (reactionPill) {
+            const msgId = reactionPill.dataset.messageId;
+            const emoji = reactionPill.dataset.emoji;
+            toggleReaction(msgId, emoji);
+        }
+
+        // History Actions
+        const favBtn = target.closest('[data-action="toggle-fav"]');
+        if (favBtn) {
+            const title = favBtn.dataset.title;
+            toggleFavorite(title);
+        }
+
+        const shareBtn = target.closest('[data-action="share-to-chat"]');
+        if (shareBtn) {
+            const title = shareBtn.dataset.title;
+            const cover = shareBtn.dataset.cover;
+            const station = shareBtn.dataset.station;
+            shareSongToChat(title, cover, station);
+        }
+
+        // GIF Selection
+        const gifImg = target.closest('[data-action="select-gif"]');
+        if (gifImg) {
+            const url = gifImg.dataset.url;
+            selectGif(url);
+            toggleGifPicker();
+        }
+    });
+}
+
+// Ensure Interactivity is setup on DOM Load
+document.addEventListener('DOMContentLoaded', () => {
+    setupInteractivity();
+});
