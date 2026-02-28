@@ -33,12 +33,37 @@ function proxyUrl(url) {
     if (!_inDiscordActivityProxy) return url;
     if (!url) return url;
 
-    return url
-        .replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi', CHAT_API_BASE)
-        .replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager', K5_API_BASE)
-        .replace('https://api.zeno.fm', ZENO_API_BASE)
-        .replace('https://stream.zeno.fm', ZENO_STREAM_BASE)
-        .replace('https://radio-gaming.stream/Images', IMAGES_BASE);
+    // Primary project APIs
+    if (url.startsWith('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi'))
+        return url.replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi', CHAT_API_BASE);
+    if (url.startsWith('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager'))
+        return url.replace('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager', K5_API_BASE);
+    if (url.startsWith('https://api.zeno.fm'))
+        return url.replace('https://api.zeno.fm', ZENO_API_BASE);
+    if (url.startsWith('https://stream.zeno.fm'))
+        return url.replace('https://stream.zeno.fm', ZENO_STREAM_BASE);
+    if (url.startsWith('https://radio-gaming.stream/Images'))
+        return url.replace('https://radio-gaming.stream/Images', IMAGES_BASE);
+    if (url.startsWith('https://raw.githubusercontent.com'))
+        return url.replace('https://raw.githubusercontent.com', '/github-raw');
+
+    // External APIs (Requires URL Mappings in Discord Dev Portal)
+    if (url.startsWith('https://api.spotify.com')) return url.replace('https://api.spotify.com', '/spotify-api');
+    if (url.startsWith('https://itunes.apple.com')) return url.replace('https://itunes.apple.com', '/itunes-api');
+    if (url.startsWith('https://www.googleapis.com')) return url.replace('https://www.googleapis.com', '/youtube-api');
+    if (url.startsWith('https://api.deezer.com')) return url.replace('https://api.deezer.com', '/deezer-api');
+    if (url.startsWith('https://api.giphy.com')) return url.replace('https://api.giphy.com', '/giphy-api');
+
+    // External CDNs & Images (Requires URL Mappings in Discord Dev Portal)
+    if (url.startsWith('https://i.scdn.co')) return url.replace('https://i.scdn.co', '/spotify-img');
+    if (url.startsWith('https://i.ytimg.com')) return url.replace('https://i.ytimg.com', '/youtube-img');
+    if (url.startsWith('https://media.giphy.com')) return url.replace('https://media.giphy.com', '/giphy-img');
+    if (url.includes('ssl.mzstatic.com')) return url.replace(/https:\/\/[^/]+/, '/itunes-img');
+    if (url.startsWith('https://e-cdns-images.dzcdn.net')) return url.replace('https://e-cdns-images.dzcdn.net', '/deezer-img');
+    if (url.startsWith('https://cdn.discordapp.com')) return url.replace('https://cdn.discordapp.com', '/discord-cdn');
+    if (url.startsWith('https://media.discordapp.net')) return url.replace('https://media.discordapp.net', '/discord-media');
+
+    return url;
 }
 
 
@@ -751,7 +776,7 @@ async function fetchBestCover(query) {
 
         console.log(`[Cover Search] "${query}" | Scores -> Manual: ${logManual}, Spotify: ${logSpotify}, iTunes: ${logITunes}, Deezer: ${logDeezer}, YouTube: ${logYouTube} | Result: ${bestChoice.source} (${bestChoice.score.toFixed(2)})`);
 
-        if (coverElem) coverElem.src = bestChoice.url;
+        if (coverElem) coverElem.src = proxyUrl(bestChoice.url);
         updateMediaSessionMetadata(query, bestChoice.url);
         addToSongHistory(query, bestChoice.url);
     } catch (error) {
@@ -788,7 +813,7 @@ async function fetchSpotifyCoverData(query) {
         const accessToken = await getSpotifyAccessToken();
         if (!accessToken) return null;
 
-        const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`;
+        const url = proxyUrl(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=10`);
         const response = await fetch(url, {
             headers: { 'Authorization': 'Bearer ' + accessToken }
         });
@@ -827,7 +852,7 @@ async function fetchYouTubeCoverData(query) {
     if (!youtubeKey) return null;
 
     try {
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=5&key=${youtubeKey}`;
+        const url = proxyUrl(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=5&key=${youtubeKey}`);
         const response = await fetch(url);
         const data = await response.json();
 
@@ -1773,7 +1798,9 @@ async function initDiscordActivity() {
         });
 
         if (!tokenResponse.ok) {
-            console.warn(`[Discord Activity] Token exchange failed (${tokenResponse.status}). Deploy backend first!`);
+            const errorText = await tokenResponse.text();
+            console.warn(`[Discord Activity] Token exchange failed (${tokenResponse.status}): ${errorText}. Deploy backend first!`);
+            showNotification(`Auth failed: ${tokenResponse.status}`, 'fas fa-exclamation-triangle');
             // Still authenticate without session — page still works
             return;
         }
@@ -1810,7 +1837,9 @@ async function initDiscordActivity() {
                 if (authPrompt) authPrompt.classList.add('hidden');
             }
         } else {
-            console.warn('[Discord Activity] Backend session failed — needs Heroku deploy. Page works without chat auth.');
+            const errorText = await sessionResponse.text();
+            console.warn(`[Discord Activity] Backend session failed (${sessionResponse.status}): ${errorText}`);
+            showNotification('Backend login failed', 'fas fa-shield-alt');
         }
 
     } catch (error) {
@@ -2122,11 +2151,11 @@ function updateAuthUI(isLoggedIn) {
     if (isLoggedIn && discordUser) {
         if (loginBtn) loginBtn.classList.add('hidden');
         if (userInfo) userInfo.classList.remove('hidden');
-        if (userAvatar) userAvatar.src = discordUser.avatar_url;
+        if (userAvatar) userAvatar.src = proxyUrl(discordUser.avatar_url);
         if (userName) userName.textContent = discordUser.global_name || discordUser.username;
         if (chatAuthPrompt) chatAuthPrompt.classList.add('hidden');
         if (chatMain) chatMain.classList.remove('hidden');
-        if (chatUserAvatar) chatUserAvatar.src = discordUser.avatar_url;
+        if (chatUserAvatar) chatUserAvatar.src = proxyUrl(discordUser.avatar_url);
 
         // If user info is fetched, we can pre-check guilds in background with cache
         SHARE_GUILDS.forEach(guild => checkUserInGuild(guild.id));
@@ -2149,7 +2178,7 @@ window.openDiscordProfileModal = async function () {
     const modalBanner = document.querySelector('.profile-banner');
     if (modalBanner) {
         if (discordUser.banner_url) {
-            modalBanner.style.backgroundImage = `url(${discordUser.banner_url})`;
+            modalBanner.style.backgroundImage = `url(${proxyUrl(discordUser.banner_url)})`;
             modalBanner.style.backgroundSize = 'cover';
             modalBanner.style.backgroundPosition = 'center';
             modalBanner.style.backgroundColor = 'transparent';
@@ -2163,7 +2192,7 @@ window.openDiscordProfileModal = async function () {
         }
     }
 
-    document.getElementById('modal-discord-avatar').src = discordUser.avatar_url;
+    document.getElementById('modal-discord-avatar').src = proxyUrl(discordUser.avatar_url);
     document.getElementById('modal-discord-name').textContent = discordUser.global_name || discordUser.username;
     document.getElementById('modal-discord-username').textContent = `@${discordUser.username}`;
 
@@ -3135,7 +3164,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
                 <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" data-media-url="${escapeHtml(trimmedContent)}" onclick="toggleFavoriteGif(this, event)">
                     <i class="${isFaved ? 'fas' : 'far'} fa-heart"></i>
                 </div>
-                <img src="${escapeHtml(trimmedContent)}" class="chat-inline-gif chat-uploaded-image" alt="GIF" onclick="openImageZoom(this)">
+                <img src="${proxyUrl(trimmedContent)}" class="chat-inline-gif chat-uploaded-image" alt="GIF" onclick="openImageZoom(this)">
             </div>`;
     } else {
         let content = escapeHtml(message.content);
@@ -3166,7 +3195,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
         content = content.replace(/&lt;:([^:]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
             const c = customEmojis.find(e => e.id === id);
             if (c) {
-                return `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">`;
+                return `<img src="${proxyUrl(c.url)}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">`;
             }
             return match;
         });
@@ -3181,7 +3210,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     const reactionsHtml = buildReactionsHtml(message);
 
     messageEl.innerHTML = `
-        <img class="chat-message-avatar" src="${message.user.avatar_url}" alt="${message.user.username}">
+        <img class="chat-message-avatar" src="${proxyUrl(message.user.avatar_url)}" alt="${message.user.username}">
         <div class="chat-message-content">
             <div class="chat-message-header">
                 <span class="chat-message-username">${message.user.global_name || message.user.username}</span>
@@ -3195,12 +3224,12 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
                 <div class="chat-media-fav-btn ${gifFavorites.includes(message.image_data) ? 'active' : ''}" data-media-url="${escapeHtml(message.image_data)}" onclick="toggleFavoriteGif(this, event)">
                     <i class="${gifFavorites.includes(message.image_data) ? 'fas' : 'far'} fa-heart"></i>
                 </div>
-                <img src="${message.image_data}" class="chat-inline-gif chat-uploaded-image" alt="Image" loading="lazy" onclick="openImageZoom(this)">
+                <img src="${proxyUrl(message.image_data)}" class="chat-inline-gif chat-uploaded-image" alt="Image" loading="lazy" onclick="openImageZoom(this)">
             </div>
             ` : ''}
             ${message.song_data ? `
             <div class="song-embed">
-                <img class="song-embed-cover" src="${message.song_data.artwork}" alt="Album Cover">
+                <img class="song-embed-cover" src="${proxyUrl(message.song_data.artwork)}" alt="Album Cover">
                 <div class="song-embed-info">
                     <div class="song-embed-title">${escapeHtml(message.song_data.title)}</div>
                     <div class="song-embed-station">${escapeHtml(message.song_data.station)}</div>
@@ -4226,7 +4255,7 @@ async function fetchGiphyGifs(query = '') {
             ? `https://api.giphy.com/v1/gifs/search?api_key=${giphyApiKey}&q=${encodeURIComponent(normalizedQuery)}&limit=20&rating=g`
             : `https://api.giphy.com/v1/gifs/trending?api_key=${giphyApiKey}&limit=20&rating=g`;
 
-        const response = await fetch(endpoint);
+        const response = await fetch(proxyUrl(endpoint));
         const data = await response.json();
 
         if (data.data) {
@@ -4262,7 +4291,7 @@ function displayGifs(gifs) {
                 <div class="chat-media-fav-btn ${isFaved ? 'active' : ''}" data-media-url="${escapeHtml(url)}" onclick="toggleFavoriteGif(this, event)">
                     <i class="${isFaved ? 'fas' : 'far'} fa-heart"></i>
                 </div>
-                <img src="${url}" alt="${gif.title || 'GIF'}" onclick="selectGif('${url}')">
+                <img src="${proxyUrl(url)}" alt="${gif.title || 'GIF'}" onclick="selectGif('${url}')">
             `;
             resultsContainer.appendChild(wrapper);
         });
