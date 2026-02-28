@@ -2678,8 +2678,8 @@ async function pollNewMessages() {
     const isFirstPoll = !lastMessageTimestamp;
 
     // If chat is not visible, only poll every ~9s (3 ticks * 3s) for background pings
-    if (!isChatVisible) {
-        if (isFirstPoll) return; // Don't poll background if we don't have a baseline yet
+    // UNLESS the user is logged in, then we keep at 3s to get mentions promptly
+    if (!isChatVisible && !discordAuthToken) {
         if (pollCount % 3 !== 0) {
             pollCount++;
             return;
@@ -2735,6 +2735,17 @@ async function pollNewMessages() {
 
             // Update last timestamp
             lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
+        }
+
+        // Process mentions from other stations
+        if (data.other_mentions && data.other_mentions.length > 0) {
+            // Ensure emojis for other mentions too
+            await ensureEmojisForMessages(data.other_mentions);
+
+            data.other_mentions.forEach(mention => {
+                // Background notification check with station name
+                checkMessageForMention(mention, mention.station_name);
+            });
         }
 
         if (data.server_time) {
@@ -2856,7 +2867,7 @@ function renderOnlineUsers() {
         container.appendChild(item);
     });
 }
-function checkMessageForMention(message) {
+function checkMessageForMention(message, stationName = null) {
     if (!discordUser || message.user.id === discordUser.id || !message.content) return false;
 
     const currentUsername = discordUser.username;
@@ -2881,7 +2892,11 @@ function checkMessageForMention(message) {
             const c = customEmojis.find(e => e.id === id);
             return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : match;
         });
-        showNotification(contentWithEmojis, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
+        const notificationTitle = stationName
+            ? `Mention in ${stationName}`
+            : (message.user.global_name || message.user.username);
+
+        showNotification(contentWithEmojis, 'fas fa-at', notificationTitle, message.user.avatar_url, message.id);
         return true;
     }
     return false;

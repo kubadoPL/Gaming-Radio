@@ -61,6 +61,13 @@ online_users_cache = (
 )  # station_key -> {"count": int, "users": list, "timestamp": datetime}
 CACHE_TTL_SECONDS = 10
 
+# Station display names mapping
+STATION_NAMES = {
+    "RADIOGAMING": "Radio GAMING",
+    "RADIOGAMINGDARK": "Radio GAMING DARK",
+    "RADIOGAMINGMARONFM": "Radio GAMING MARON FM",
+}
+
 # --- CUSTOM EMOJIS ENDPOINTS ---
 
 
@@ -135,13 +142,6 @@ def get_online_data(station_key):
         if (now - cache_entry["timestamp"]).total_seconds() < CACHE_TTL_SECONDS:
             return cache_entry["count"], cache_entry["users"]
 
-    # Station display names
-    station_names = {
-        "RADIOGAMING": "Radio GAMING",
-        "RADIOGAMINGDARK": "Radio GAMING DARK",
-        "RADIOGAMINGMARONFM": "Radio GAMING MARON FM",
-    }
-
     # Get all users who ever listened to this station (within 24h)
     uids_for_station = []
     if station_key in online_users:
@@ -176,7 +176,7 @@ def get_online_data(station_key):
 
             p = user_profiles[uid].copy()
             station_val = user_last_station.get(uid, "Radio GAMING")
-            p["current_station"] = station_names.get(station_val, station_val)
+            p["current_station"] = STATION_NAMES.get(station_val, station_val)
             p["last_seen"] = last_ts.isoformat() + "Z"
             p["is_online"] = is_online
             results.append(p)
@@ -459,12 +459,49 @@ def poll_messages(station):
 
     online_count, online_users_list = get_online_data(station_key)
 
+    # Global Mention Detection: Check other stations for mentions since 'since'
+    other_mentions = []
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        if token in user_sessions and since:
+            try:
+                current_user = user_sessions[token]
+                user_id = current_user["id"]
+                username = current_user["username"].lower()
+                global_name = (current_user.get("global_name") or "").lower()
+
+                for s_key, msgs in chat_messages.items():
+                    if s_key == station_key:
+                        continue
+
+                    # Check for mentions in this station's new messages
+                    for m in msgs:
+                        if datetime.fromisoformat(m["timestamp"]) > since_time:
+                            content = m.get("content", "").lower()
+                            is_met = False
+                            if "@everyone" in content or "@here" in content:
+                                is_met = True
+                            elif f"@{username}" in content:
+                                is_met = True
+                            elif global_name and f"@{global_name}" in content:
+                                is_met = True
+
+                            # If mentioned and not the author, add to other_mentions
+                            if is_met and m["user"]["id"] != user_id:
+                                m_copy = m.copy()
+                                m_copy["station_id"] = s_key
+                                m_copy["station_name"] = STATION_NAMES.get(s_key, s_key)
+                                other_mentions.append(m_copy)
+            except Exception as e:
+                print(f"[POLL] Error checking mentions: {e}")
+
     # Only return user list if specifically requested via ?full_users=1
     include_full_users = request.args.get("full_users") == "1"
 
     return jsonify(
         {
             "messages": messages[-50:],
+            "other_mentions": other_mentions,
             "online_count": online_count,
             "online_users": online_users_list if include_full_users else None,
             "server_time": datetime.utcnow().isoformat() + "Z",
