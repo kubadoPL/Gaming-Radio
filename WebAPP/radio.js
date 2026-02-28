@@ -2574,10 +2574,12 @@ async function preloadAllChatMentions() {
             if (!response.ok) continue;
 
             const data = await response.json();
-            data.messages.forEach(message => {
-                // Only check for mentions in history, don't append to DOM
-                checkMessageForMention(message, station);
-            });
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(message => {
+                    // Only check for mentions in history, don't append to DOM
+                    checkMessageForMention(message);
+                });
+            }
         } catch (e) {
             console.error(`[CHAT] Preload error for ${station}:`, e);
         }
@@ -2703,7 +2705,6 @@ async function pollNewMessages() {
 
         const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}${since ? userParam : '?' + userParam.substring(1)}`, { headers });
         const data = await response.json();
-        const stationKey = data.station || currentChatStation;
 
         // Always update online count and users list
         if (data.online_count !== undefined) {
@@ -2719,10 +2720,10 @@ async function pollNewMessages() {
                 // Only append if we don't already have this message
                 if (!document.getElementById(`msg-${message.id}`)) {
                     if (isChatVisible) {
-                        appendChatMessage(message, true, true, stationKey);
+                        appendChatMessage(message, true, true);
                     } else {
                         // Background notification check
-                        checkMessageForMention(message, stationKey);
+                        checkMessageForMention(message);
                     }
                 } else {
                     // Update reactions on existing messages
@@ -2855,16 +2856,7 @@ function renderOnlineUsers() {
         container.appendChild(item);
     });
 }
-function getFriendlyStationName(key) {
-    const names = {
-        'RADIOGAMING': 'Radio GAMING',
-        'RADIOGAMINGDARK': 'Radio GAMING DARK',
-        'RADIOGAMINGMARONFM': 'Radio GAMING MARON FM'
-    };
-    return names[key] || key;
-}
-
-function checkMessageForMention(message, stationKey = null) {
+function checkMessageForMention(message) {
     if (!discordUser || message.user.id === discordUser.id || !message.content) return false;
 
     const currentUsername = discordUser.username;
@@ -2889,17 +2881,13 @@ function checkMessageForMention(message, stationKey = null) {
             const c = customEmojis.find(e => e.id === id);
             return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : match;
         });
-
-        const stationSuffix = stationKey ? ` (${getFriendlyStationName(stationKey)})` : '';
-        const title = (message.user.global_name || message.user.username) + stationSuffix;
-
-        showNotification(contentWithEmojis, 'fas fa-at', title, message.user.avatar_url, message.id);
+        showNotification(contentWithEmojis, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
         return true;
     }
     return false;
 }
 
-function appendChatMessage(message, scrollToBottom = true, showNotify = true, stationKey = null) {
+function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     const messagesContainer = document.getElementById('chat-messages');
     if (!messagesContainer) return;
 
@@ -3022,9 +3010,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true, st
     // Notify if mentioned but not by myself
     // Deduping is handled inside showNotification via notifiedMessages set
     if (hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
-        const stationSuffix = stationKey ? ` (${getFriendlyStationName(stationKey)})` : '';
-        const title = (message.user.global_name || message.user.username) + stationSuffix;
-        showNotification(formattedContent, 'fas fa-at', title, message.user.avatar_url, message.id);
+        showNotification(formattedContent, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
     }
 
     // Auto-scroll logic for new messages
