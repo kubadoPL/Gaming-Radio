@@ -2888,9 +2888,10 @@ function checkMessageForMention(message, stationName = null) {
             const c = customEmojis.find(e => e.id === id);
             return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : match;
         });
+        const senderName = message.user.global_name || message.user.username;
         const notificationTitle = stationName
-            ? `Mention in ${stationName}`
-            : (message.user.global_name || message.user.username);
+            ? `${senderName} in ${stationName}`
+            : senderName;
 
         showNotification(contentWithEmojis, 'fas fa-at', notificationTitle, message.user.avatar_url, message.id);
         return true;
