@@ -2500,6 +2500,7 @@ function renderSavedWebhooks() {
 // Chat Polling System (no WebSockets needed)
 let chatPollingInterval = null;
 let lastMessageTimestamp = null;
+let lastUserFetchTime = 0; // Track when we last fetched the full user list
 let isChatVisible = false;
 let isChatAtBottom = true; // Global flag to track if we should auto-scroll
 
@@ -2559,7 +2560,10 @@ async function preloadAllChatMentions() {
 
     console.log('[CHAT] Preloading all channels for mentions...');
     const stations = ['RADIOGAMING', 'RADIOGAMINGDARK', 'RADIOGAMINGMARONFM'];
-    const headers = {};
+    const playingStation = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
+    const headers = {
+        'X-Playing-Station': playingStation
+    };
     if (discordAuthToken) {
         headers['Authorization'] = `Bearer ${discordAuthToken}`;
     }
@@ -2570,12 +2574,10 @@ async function preloadAllChatMentions() {
             if (!response.ok) continue;
 
             const data = await response.json();
-            if (data.messages && data.messages.length > 0) {
-                data.messages.forEach(message => {
-                    // Only check for mentions in history, don't append to DOM
-                    checkMessageForMention(message);
-                });
-            }
+            data.messages.forEach(message => {
+                // Only check for mentions in history, don't append to DOM
+                checkMessageForMention(message, station);
+            });
         } catch (e) {
             console.error(`[CHAT] Preload error for ${station}:`, e);
         }
@@ -2621,7 +2623,8 @@ async function loadChatHistory() {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, { headers });
+        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}?full_users=1`, { headers });
+        lastUserFetchTime = Date.now();
         const data = await response.json();
 
         if (data.online_count !== undefined) {
@@ -2693,8 +2696,14 @@ async function pollNewMessages() {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}`, { headers });
+        // Only fetch full user list every 60 seconds to save server resources
+        const shouldFetchUsers = (Date.now() - lastUserFetchTime > 60000) && isChatVisible;
+        const userParam = shouldFetchUsers ? '&full_users=1' : '';
+        if (shouldFetchUsers) lastUserFetchTime = Date.now();
+
+        const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}${since ? userParam : '?' + userParam.substring(1)}`, { headers });
         const data = await response.json();
+        const stationKey = data.station || currentChatStation;
 
         // Always update online count and users list
         if (data.online_count !== undefined) {
@@ -2710,10 +2719,10 @@ async function pollNewMessages() {
                 // Only append if we don't already have this message
                 if (!document.getElementById(`msg-${message.id}`)) {
                     if (isChatVisible) {
-                        appendChatMessage(message, true, true);
+                        appendChatMessage(message, true, true, stationKey);
                     } else {
                         // Background notification check
-                        checkMessageForMention(message);
+                        checkMessageForMention(message, stationKey);
                     }
                 } else {
                     // Update reactions on existing messages
@@ -2771,7 +2780,8 @@ window.openOnlineUsersModal = async function () {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}`, { headers });
+        const response = await fetch(`${CHAT_API_BASE}/chat/history/${currentChatStation}?full_users=1`, { headers });
+        lastUserFetchTime = Date.now();
         const data = await response.json();
         console.log('[CHAT] Online users data:', data);
 
@@ -2845,7 +2855,16 @@ function renderOnlineUsers() {
         container.appendChild(item);
     });
 }
-function checkMessageForMention(message) {
+function getFriendlyStationName(key) {
+    const names = {
+        'RADIOGAMING': 'Radio GAMING',
+        'RADIOGAMINGDARK': 'Radio GAMING DARK',
+        'RADIOGAMINGMARONFM': 'Radio GAMING MARON FM'
+    };
+    return names[key] || key;
+}
+
+function checkMessageForMention(message, stationKey = null) {
     if (!discordUser || message.user.id === discordUser.id || !message.content) return false;
 
     const currentUsername = discordUser.username;
@@ -2870,13 +2889,17 @@ function checkMessageForMention(message) {
             const c = customEmojis.find(e => e.id === id);
             return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : match;
         });
-        showNotification(contentWithEmojis, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
+
+        const stationSuffix = stationKey ? ` (${getFriendlyStationName(stationKey)})` : '';
+        const title = (message.user.global_name || message.user.username) + stationSuffix;
+
+        showNotification(contentWithEmojis, 'fas fa-at', title, message.user.avatar_url, message.id);
         return true;
     }
     return false;
 }
 
-function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
+function appendChatMessage(message, scrollToBottom = true, showNotify = true, stationKey = null) {
     const messagesContainer = document.getElementById('chat-messages');
     if (!messagesContainer) return;
 
@@ -2999,7 +3022,9 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     // Notify if mentioned but not by myself
     // Deduping is handled inside showNotification via notifiedMessages set
     if (hasMeMention && message.user.id !== (discordUser ? discordUser.id : null)) {
-        showNotification(formattedContent, 'fas fa-at', message.user.global_name || message.user.username, message.user.avatar_url, message.id);
+        const stationSuffix = stationKey ? ` (${getFriendlyStationName(stationKey)})` : '';
+        const title = (message.user.global_name || message.user.username) + stationSuffix;
+        showNotification(formattedContent, 'fas fa-at', title, message.user.avatar_url, message.id);
     }
 
     // Auto-scroll logic for new messages
@@ -3952,7 +3977,7 @@ document.addEventListener('input', (e) => {
 // Giphy token is now fetched dynamically from K5ApiManager
 let isGifPickerOpen = false;
 let gifResultsCache = {}; // Cache object: { query: { data, timestamp } }
-const GIF_CACHE_STALE_TIME = 5 * 60 * 1000; // 5 minutes
+const GIF_CACHE_STALE_TIME = 10 * 60 * 1000; // 10 minutes
 
 window.toggleGifPicker = function () {
     const picker = document.getElementById('chat-gif-picker');
