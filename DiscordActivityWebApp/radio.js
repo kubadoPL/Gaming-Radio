@@ -425,7 +425,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         eventSource = setupMetadataConnection('https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv');
 
-        // Event listener setup for station photos
         // Station Tooltips logic (Establishing metadata connection on hover)
         document.querySelectorAll('.station-photo').forEach(station => {
             station.addEventListener('mouseenter', function () {
@@ -451,9 +450,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // Initial listener update setup + background metadata for tooltips
+        // Initial listener update setup
         setTimeout(function () {
-            initBackgroundMetadataListeners(); // Start persistent SSE for all station tooltips
             updateAllOnlineUsers();
             setInterval(updateAllOnlineUsers, 10000);
         }, 6000);
