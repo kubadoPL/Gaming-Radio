@@ -2,7 +2,7 @@
 
 **Ostatnia aktualizacja:** 28 lutego 2026 r.
 
-**Operator:** K5 Studio (Jakub Drużbiński)  
+**Operator:** K5 Studio
 **Kontakt:** DruzbinskiJakub@gmail.com  
 **Strona aplikacji:** [https://radio-gaming.stream](https://radio-gaming.stream)
 

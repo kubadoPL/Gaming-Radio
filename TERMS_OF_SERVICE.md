@@ -2,7 +2,7 @@
 
 **Ostatnia aktualizacja:** 28 lutego 2026 r.
 
-**Operator:** K5 Studio (Jakub Drużbiński)  
+**Operator:** K5 Studio
 **Kontakt:** DruzbinskiJakub@gmail.com  
 **Strona aplikacji:** [https://radio-gaming.stream](https://radio-gaming.stream)
 
@@ -15,7 +15,7 @@
    - Aplikacja desktopowa na system Windows
    - Aktywność Discord (Discord Activity)
 
-1.2. Operatorem Usługi jest **K5 Studio** (Jakub Drużbiński), dalej zwany „Operatorem".
+1.2. Operatorem Usługi jest **K5 Studio**, dalej zwany „Operatorem".
 
 1.3. Korzystając z Aplikacji, użytkownik akceptuje niniejszy Regulamin w całości. Jeżeli nie zgadzasz się z którymkolwiek z postanowień, prosimy o zaprzestanie korzystania z Usługi.
 
