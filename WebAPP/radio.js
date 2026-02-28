@@ -2648,9 +2648,6 @@ async function loadChatHistory() {
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                     isChatAtBottom = true;
                 }, 300);
-
-                // Track last message timestamp
-                lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
             } else if (messagesContainer.querySelector('.chat-loading')) {
                 // No messages and we were loading - show welcome message
                 messagesContainer.innerHTML = `
@@ -2663,7 +2660,7 @@ async function loadChatHistory() {
         }
 
         if (data.server_time) {
-            lastMessageTimestamp = lastMessageTimestamp || data.server_time;
+            lastMessageTimestamp = data.server_time;
         }
     } catch (error) {
         console.error('[CHAT] Error loading history:', error);
@@ -2733,10 +2730,8 @@ async function pollNewMessages() {
                 }
             });
 
-            // Update last timestamp
-            if (data.messages && data.messages.length > 0) {
-                lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
-            } else if (data.server_time) {
+            // Always use server_time to advance the polling window
+            if (data.server_time) {
                 lastMessageTimestamp = data.server_time;
             }
         }

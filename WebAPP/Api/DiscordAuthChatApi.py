@@ -462,8 +462,12 @@ def poll_messages(station):
     if since:
         since_time = safe_parse_datetime(since)
         if since_time != datetime.min:
+            # Include messages that are either new (timestamp) or updated (last_update)
             messages = [
-                m for m in messages if safe_parse_datetime(m["timestamp"]) > since_time
+                m
+                for m in messages
+                if safe_parse_datetime(m.get("last_update", m["timestamp"]))
+                > since_time
             ]
 
     online_count, online_users_list = get_online_data(station_key)
@@ -484,7 +488,9 @@ def poll_messages(station):
                         continue
 
                     for m in msgs:
-                        m_time = safe_parse_datetime(m["timestamp"])
+                        m_time = safe_parse_datetime(
+                            m.get("last_update", m["timestamp"])
+                        )
                         if m_time > since_time:
                             content = m.get("content", "").lower()
                             is_met = False
@@ -576,6 +582,7 @@ def send_message():
         "user": user,
         "content": content,
         "timestamp": now.isoformat() + "Z",
+        "last_update": now.isoformat() + "Z",
         "station": station,
         "song_data": data.get("song_data"),  # optional song embed
         "image_data": image_data,  # optional base64 image
@@ -656,6 +663,9 @@ def react_to_message():
         "username": user.get("global_name") or user.get("username"),
         "avatar_url": user.get("avatar_url"),
     }
+
+    # Mark message as updated so polling picks it up
+    target_msg["last_update"] = datetime.utcnow().isoformat() + "Z"
 
     return jsonify(
         {
