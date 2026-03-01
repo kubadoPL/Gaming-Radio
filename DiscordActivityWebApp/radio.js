@@ -2935,8 +2935,8 @@ async function loadChatHistory() {
 
         if (messagesContainer) {
             if (data.messages && data.messages.length > 0) {
-                // Ensure we have custom emoji definitions for these messages
-                await ensureEmojisForMessages(data.messages);
+                // Ensure we have custom emoji definitions for these messages (don't block if possible)
+                ensureEmojisForMessages(data.messages).catch(e => console.warn('[CHAT] Emoji sync issue:', e));
 
                 // Clear welcome message or loading indicator
                 messagesContainer.innerHTML = '';
@@ -2959,13 +2959,18 @@ async function loadChatHistory() {
             }
         }
 
+        // Always update timestamp if server returned it, to avoid infinite history reloads
         if (data.server_time) {
             lastMessageTimestamp = data.server_time;
+            console.log('[CHAT] History loaded, last timestamp:', lastMessageTimestamp);
+        } else if (data.messages && data.messages.length > 0) {
+            // Fallback: use last message as timestamp if server_time missing
+            lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
         }
     } catch (error) {
         console.error('[CHAT] Error loading history:', error);
         if (messagesContainer && messagesContainer.querySelector('.chat-loading')) {
-            messagesContainer.innerHTML = '<div class="chat-error"><i class="fas fa-exclamation-circle"></i> Failed to load chat history.</div>';
+            messagesContainer.innerHTML = '<div class="chat-error"><i class="fas fa-exclamation-circle"></i> Failed to load chat history. ' + error.message + '</div>';
         }
     }
 }
@@ -3002,23 +3007,24 @@ async function pollNewMessages() {
         if (shouldFetchUsers) lastUserFetchTime = Date.now();
 
         const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}${since ? userParam : '?' + userParam.substring(1)}`, { headers });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
         const data = await response.json();
 
-        // Always update online count and users list
         if (data.online_count !== undefined) {
             updateOnlineCountUI(data.online_count, data.online_users);
         }
 
-        // Process messages
         if (data.messages && data.messages.length > 0) {
-            // Ensure we have custom emoji definitions for these messages
-            await ensureEmojisForMessages(data.messages);
+            console.log(`[CHAT] Polled ${data.messages.length} new messages`);
+            // Pre-sync emojis but don't strictly block rendering
+            ensureEmojisForMessages(data.messages).catch(e => console.warn('[CHAT] Poll emoji sync issue:', e));
 
             data.messages.forEach(message => {
                 // Only append if we don't already have this message
                 if (!document.getElementById(`msg-${message.id}`)) {
                     if (isChatVisible) {
-                        appendChatMessage(message, true, true);
+                        appendChatMessage(message, isChatAtBottom, true);
                     } else {
                         // Background notification check
                         checkMessageForMention(message);
@@ -3030,24 +3036,26 @@ async function pollNewMessages() {
                     }
                 }
             });
+        }
 
-            // Always use server_time to advance the polling window
-            if (data.server_time) {
-                lastMessageTimestamp = data.server_time;
-            }
+        if (data.server_time) {
+            lastMessageTimestamp = data.server_time;
+        } else if (data.messages && data.messages.length > 0) {
+            lastMessageTimestamp = data.messages[data.messages.length - 1].timestamp;
         }
 
         // Process mentions from other stations
         if (data.other_mentions && data.other_mentions.length > 0) {
             console.log(`[CHAT] Received ${data.other_mentions.length} other mentions`);
-            // Ensure emojis for other mentions too
-            await ensureEmojisForMessages(data.other_mentions);
+            // Ensure emojis for other mentions
+            ensureEmojisForMessages(data.other_mentions).catch(e => console.warn('[CHAT] Other mention emoji issue:', e));
 
             data.other_mentions.forEach(mention => {
                 // Background notification check with station name
                 checkMessageForMention(mention, mention.station_name);
             });
         }
+
     } catch (error) {
         if (isChatVisible) console.error('[CHAT] Polling error:', error);
     }
@@ -4159,8 +4167,11 @@ window.sendChatMessage = async function (overrideMessage = null) {
     const message = overrideMessage || input.value.trim();
     const hasImage = !!pendingImageData;
 
-    // Need either text or image
-    if (!message && !hasImage) return;
+    // Need either text, image, or shared song attached
+    if (!message && !hasImage && !isSongShared) {
+        console.log('[CHAT] Empty message prevented');
+        return;
+    }
 
     if (!overrideMessage && message.length > 200) {
         showNotification(`Message is too long! ${message.length}/200 letters`, 'fas fa-exclamation-triangle');

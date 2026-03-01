@@ -5586,3 +5586,109 @@ body::-webkit-scrollbar-thumb {
 .history-drawer:not(.immersive-mode) .station-group-header h3 {
     font-size: 14px;
 }
+
+/* ========================
+   DISCORD ACTIVITY SCALING FIXES
+   ======================== */
+
+@media (max-width: 480px) {
+    .audio-player {
+        width: 92% !important;
+        max-width: 380px;
+        height: auto !important;
+        min-height: 220px !important;
+        padding: 20px 15px !important;
+        margin: 0 auto;
+    }
+
+    .album-cover {
+        width: 140px !important;
+        height: 140px !important;
+    }
+
+    #streamTitle {
+        margin-top: 80px !important;
+        font-size: 13px !important;
+        height: 36px !important;
+    }
+
+    .player-controls {
+        padding: 8px 12px !important;
+    }
+
+    .controls-center {
+        gap: 8px !important;
+    }
+
+    .volume-slider {
+        width: 50px !important;
+    }
+
+    .header-content {
+        padding: 0 10px !important;
+    }
+
+    .logo span {
+        display: none !important;
+    }
+
+    nav ul {
+        gap: 12px !important;
+    }
+
+    nav ul li a span {
+        display: none !important;
+    }
+
+    .header-right span {
+        display: none !important;
+    }
+    
+    .status-badge {
+        padding: 6px 10px !important;
+    }
+
+    .chat-container {
+        width: 100% !important;
+        margin: 0 !important;
+        height: calc(100vh - 120px) !important;
+        min-height: 300px !important;
+        border-radius: 0 !important;
+    }
+    
+    .chat-input-container {
+        padding: 10px 12px !important;
+    }
+    
+    .chat-messages {
+        padding: 10px !important;
+    }
+
+    .chat-header {
+        padding: 12px 15px !important;
+    }
+
+    .chat-station-indicator {
+        padding: 4px 10px !important;
+    }
+}
+
+@media (max-height: 650px) {
+    header {
+        position: absolute !important;
+    }
+    
+    footer {
+        display: none !important;
+    }
+
+    .audio-player {
+        margin-top: 60px !important;
+        transform: scale(0.9) !important;
+    }
+
+    .chat-container {
+        height: calc(100vh - 70px) !important;
+        min-height: 200px !important;
+    }
+}
