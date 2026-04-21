@@ -2380,16 +2380,16 @@ const GUILD_DISPLAY_NAMES = {
 // Guild list — each entry has a guild ID, webhook URL, and membership gating flag
 // Server name and icon are fetched live from Discord's API
 const SHARE_GUILDS = [
-    {
-        id: '637696690853511184',
-        webhookUrl: 'https://discord.com/api/webhooks/1470563794424955069/Z5r9gtLBDyrzSYFUBQ_04bQwE5MaW7pzlTUfbcplEXpKEwo9lbGo2XPh8qpWkJJWaWMz',
-        requireGuildMembership: true
-    },
-    {
-        id: '706179463288979519',
-        webhookUrl: 'https://discord.com/api/webhooks/1470802278515605647/uEqVAqq3IxU5L20IQKeLnckAj1WyHWQOU36wsq4a94rzOwmr5cfZozUaOpoL6jcgGPws',
-        requireGuildMembership: true
-    }
+   // {
+      //  id: '637696690853511184',
+      //  webhookUrl: '',
+      //  requireGuildMembership: true
+  //  },
+   // {
+       // id: '706179463288979519',
+       // webhookUrl: '',
+       // requireGuildMembership: true
+    //}
 ];
 
 async function checkUserInGuild(guildId, force = false) {
