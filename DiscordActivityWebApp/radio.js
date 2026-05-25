@@ -537,6 +537,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// --- Bot Uptime Display ---
+(async function initUptime() {
+    try {
+        const response = await fetch(K5_API_BASE + '/api/uptime');
+        if (!response.ok) throw new Error('Uptime API error');
+        const data = await response.json();
+        const startedAt = data.started_at * 1000; // convert to ms
+
+        function updateUptimeDisplay() {
+            const diff = Date.now() - startedAt;
+            const totalSec = Math.floor(diff / 1000);
+            const d = Math.floor(totalSec / 86400);
+            const h = Math.floor((totalSec % 86400) / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            let text = 'Uptime ';
+            if (d > 0) text += d + 'd ';
+            if (d > 0 || h > 0) text += h + 'h ';
+            text += m + 'min ' + s + 's';
+            const el = document.getElementById('footer-uptime');
+            if (el) el.textContent = text;
+        }
+        updateUptimeDisplay();
+        setInterval(updateUptimeDisplay, 1000);
+    } catch (e) {
+        console.error('[Uptime] Failed to fetch uptime:', e);
+        const el = document.getElementById('footer-uptime');
+        if (el) el.textContent = 'Uptime: N/A';
+    }
+})();
+
 async function getSpotifyAccessToken() {
     const now = Date.now();
     let cachedToken = localStorage.getItem('RadioGaming-spotifyAccessToken');
