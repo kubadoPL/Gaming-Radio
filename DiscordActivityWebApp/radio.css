@@ -1097,6 +1097,10 @@ body.is-fullscreen main {
         gap: 15px;
     }
 
+    #footer-uptime {
+        display: none;
+    }
+
     /* Redesigned player mobile adjustments */
     .audio-player {
         width: 100%;
