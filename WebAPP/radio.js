@@ -96,6 +96,13 @@ let deezerCoverCache = JSON.parse(localStorage.getItem('RadioGaming-deezerCoverC
 let listeningTimer = null;
 let notifiedMessages = new Set(JSON.parse(localStorage.getItem('RadioGaming-notifiedMessages') || '[]'));
 
+// Anonymous listener ID (for users not logged in via Discord)
+let anonListenerId = localStorage.getItem('RadioGaming-anonUserId');
+if (!anonListenerId) {
+    anonListenerId = 'anon-' + Date.now() + '-' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('RadioGaming-anonUserId', anonListenerId);
+}
+
 window.toggleVisualizations = function () {
     isVisualizerEnabled = !isVisualizerEnabled;
     localStorage.setItem('RadioGaming-visualizerEnabled', isVisualizerEnabled);
@@ -371,6 +378,22 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAllOnlineUsers();
         setInterval(updateAllOnlineUsers, 10000); // Poll every 10 seconds for faster Chat API updates
     }, 6000);
+
+    // Anonymous listener heartbeat (only when NOT logged in via Discord)
+    function sendAnonHeartbeat() {
+        if (discordAuthToken) return; // logged-in users are tracked by auth system
+        const station = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING')
+            .trim().replace(/\s+/g, '').toUpperCase();
+        fetch(CHAT_API_BASE + '/chat/heartbeat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ anon_id: anonListenerId, station: station })
+        }).catch(() => { });
+    }
+    setTimeout(() => {
+        sendAnonHeartbeat();
+        setInterval(sendAnonHeartbeat, 30000); // every 30s
+    }, 3000);
 
     // Audio time update listener
     const currentTimeElement = document.getElementById('currentTime');
