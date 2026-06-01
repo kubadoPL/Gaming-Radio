@@ -645,20 +645,20 @@ setTimeout(() => {
 
 function fetchFooterUsers() {
     // Build merged list from cache (fed by existing chat poll/history responses)
-    const allUsers = [];
-    const seenIds = new Set();
+    const userMap = new Map(); // id -> user object (prefer online version)
     for (const stationKey of ['RADIOGAMING', 'RADIOGAMINGDARK', 'RADIOGAMINGMARONFM']) {
         const cached = _footerUsersCache[stationKey];
         if (cached && cached.users) {
             cached.users.forEach(u => {
-                if (!seenIds.has(u.id)) {
-                    seenIds.add(u.id);
-                    allUsers.push(u);
+                const existing = userMap.get(u.id);
+                // Prefer online version over offline
+                if (!existing || (u.is_online && !existing.is_online)) {
+                    userMap.set(u.id, u);
                 }
             });
         }
     }
-    updateFooterUsersList(allUsers);
+    updateFooterUsersList(Array.from(userMap.values()));
 }
 async function getSpotifyAccessToken() {
     const now = Date.now();
