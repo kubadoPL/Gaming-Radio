@@ -728,8 +728,13 @@ function updateFooterUsersList(onlineUsers) {
     const online = onlineUsers.filter(u => u.is_online);
     const offline = onlineUsers.filter(u => !u.is_online && !u.is_anonymous);
 
+    const allSorted = [...online, ...offline];
+    const MAX_FOOTER_USERS = 10;
+    const visible = allSorted.slice(0, MAX_FOOTER_USERS);
+    const remaining = allSorted.length - visible.length;
+
     let html = '';
-    [...online, ...offline].forEach(u => {
+    visible.forEach(u => {
         const isAnon = u.is_anonymous;
         const isOn = u.is_online;
         const avatar = isAnon
@@ -746,6 +751,9 @@ function updateFooterUsersList(onlineUsers) {
             <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};flex-shrink:0;"></span>
         </div>`;
     });
+    if (remaining > 0) {
+        html += `<div style="text-align:center;padding:4px 0;font-size:9px;opacity:0.4;">+${remaining} more</div>`;
+    }
     container.innerHTML = html;
 }
 
