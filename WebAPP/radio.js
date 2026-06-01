@@ -108,13 +108,22 @@ let _syncDebounceTimer = null;
 
 async function syncUserDataFromCloud() {
     if (!discordAuthToken) return;
+    console.log('[CloudSync] ☁️ Loading user data from cloud...');
     try {
         const resp = await fetch(`${CHAT_API_BASE}/user/data`, {
             headers: { 'Authorization': `Bearer ${discordAuthToken}` }
         });
-        if (!resp.ok) return;
+        if (!resp.ok) {
+            console.warn('[CloudSync] ❌ Server returned', resp.status);
+            return;
+        }
         const result = await resp.json();
-        if (!result.success || !result.data) return;
+        if (!result.success || !result.data) {
+            console.log('[CloudSync] 📦 No cloud data found for this user');
+            return;
+        }
+        const cloudKeys = Object.keys(result.data);
+        console.log(`[CloudSync] 📥 Received ${cloudKeys.length} keys from cloud:`, cloudKeys);
 
         let updated = false;
 
@@ -124,9 +133,11 @@ async function syncUserDataFromCloud() {
             if (cloudHistory.length > 0) {
                 // Merge: add cloud entries that don't exist locally
                 const localTitles = new Set(songHistory.map(s => s.title));
+                let addedCount = 0;
                 for (const entry of cloudHistory) {
                     if (!localTitles.has(entry.title)) {
                         songHistory.push(entry);
+                        addedCount++;
                         updated = true;
                     }
                 }
@@ -134,6 +145,7 @@ async function syncUserDataFromCloud() {
                 songHistory.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 songHistory = songHistory.slice(0, 20);
                 localStorage.setItem('RadioGaming-songHistory', JSON.stringify(songHistory));
+                console.log(`[CloudSync] 🎵 History: ${cloudHistory.length} cloud, merged ${addedCount} new songs`);
             }
         }
 
@@ -142,13 +154,16 @@ async function syncUserDataFromCloud() {
             const cloudFavs = JSON.parse(result.data.songFavorites.value || '[]');
             if (cloudFavs.length > 0) {
                 const localTitles = new Set(songFavorites.map(s => s.title));
+                let addedCount = 0;
                 for (const entry of cloudFavs) {
                     if (!localTitles.has(entry.title)) {
                         songFavorites.push(entry);
+                        addedCount++;
                         updated = true;
                     }
                 }
                 localStorage.setItem('RadioGaming-songFavorites', JSON.stringify(songFavorites));
+                console.log(`[CloudSync] ❤️ Favorites: ${cloudFavs.length} cloud, merged ${addedCount} new favorites`);
             }
         }
 
@@ -180,12 +195,14 @@ async function syncUserDataFromCloud() {
                 }
             }
             localStorage.setItem('RadioGaming-listeningStats', JSON.stringify(listeningStats));
+            const songCount = Object.keys(cloudStats.songs || {}).length;
+            console.log(`[CloudSync] 📊 Stats: cloud totalTime=${cloudStats.totalTime || 0}s, ${songCount} songs tracked`);
         }
 
         if (updated) {
-            console.log('[CloudSync] Merged data from cloud');
+            console.log('[CloudSync] ✅ Merged new data from cloud into local storage');
         } else {
-            console.log('[CloudSync] Cloud data loaded, no new entries');
+            console.log('[CloudSync] ✅ Cloud data loaded, local is already up to date');
         }
 
         // Push local data back to cloud (in case local has newer data)
@@ -201,21 +218,25 @@ function syncUserDataToCloud() {
     // Debounce: wait 5s after last call to avoid spamming
     clearTimeout(_syncDebounceTimer);
     _syncDebounceTimer = setTimeout(() => {
+        const payload = {
+            songHistory: songHistory,
+            songFavorites: songFavorites,
+            listeningStats: listeningStats
+        };
+        const size = JSON.stringify(payload).length;
+        console.log(`[CloudSync] ☁️ Pushing data to cloud (${(size / 1024).toFixed(1)} KB)...`);
         fetch(`${CHAT_API_BASE}/user/data`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${discordAuthToken}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                songHistory: songHistory,
-                songFavorites: songFavorites,
-                listeningStats: listeningStats
-            })
+            body: JSON.stringify(payload)
         }).then(r => {
-            if (r.ok) console.log('[CloudSync] Data synced to cloud');
+            if (r.ok) console.log('[CloudSync] ✅ Data synced to cloud successfully');
+            else console.warn('[CloudSync] ❌ Cloud sync failed:', r.status);
         }).catch(err => {
-            console.error('[CloudSync] Sync error:', err);
+            console.error('[CloudSync] ❌ Sync error:', err);
         });
     }, 5000);
 }
