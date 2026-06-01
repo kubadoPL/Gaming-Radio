@@ -5700,7 +5700,7 @@ body::-webkit-scrollbar-thumb {
 
 .podium-me {
     border-color: var(--active-station-color) !important;
-    background: rgba(var(--active-station-glow-rgb), 0.1) !important;
+    background-color: rgba(var(--active-station-glow-rgb), 0.1) !important;
     box-shadow: 0 0 20px rgba(var(--active-station-glow-rgb), 0.15);
 }
 
