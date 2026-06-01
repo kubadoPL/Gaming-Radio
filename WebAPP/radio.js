@@ -5054,7 +5054,7 @@ async function renderRankingView() {
     }
 
     // Show loading
-    container.innerHTML = `<div class="history-empty"><i class="fas fa-spinner fa-spin"></i><p>Ładowanie globalnego rankingu...</p></div>`;
+    container.innerHTML = `<div class="history-empty"><i class="fas fa-spinner fa-spin"></i><p>Loading global ranking...</p></div>`;
 
     try {
         const response = await fetch(`${CHAT_API_BASE}/chat/ranking`);
@@ -5069,7 +5069,7 @@ async function renderRankingView() {
         buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAvatar);
     } catch (error) {
         console.error('[RANKING] Error:', error);
-        container.innerHTML = `<div class="history-empty"><i class="fas fa-exclamation-triangle"></i><p>Nie udało się załadować rankingu.</p></div>`;
+        container.innerHTML = `<div class="history-empty"><i class="fas fa-exclamation-triangle"></i><p>Failed to load ranking data.</p></div>`;
     }
 }
 
@@ -5086,7 +5086,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
     let html = `<div class="stats-container ranking-container">`;
 
     // ── Top Listeners ──
-    html += `<h4 class="stats-subtitle"><i class="fas fa-trophy" style="color: #ffd700;"></i> Top Słuchacze</h4>`;
+    html += `<h4 class="stats-subtitle"><i class="fas fa-trophy" style="color: #ffd700;"></i> Top Listeners</h4>`;
 
     if (data.top_listeners && data.top_listeners.length > 0) {
         // Podium (always 3 spots)
@@ -5108,7 +5108,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                         <img class="podium-avatar" src="${u.avatar_url || defaultAvatar}" alt="${u.username}" onerror="this.src='${defaultAvatar}'">
                         <div class="podium-name">${u.global_name || u.username}</div>
                         <div class="podium-time">${formatListeningTime(entry.totalTime)}</div>
-                        <div class="podium-songs">${entry.songCount} utworów</div>
+                        <div class="podium-songs">${entry.songCount} songs</div>
                     </div>
                 `;
             } else {
@@ -5117,7 +5117,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                     <div class="podium-item podium-${podiumClasses[idx]} podium-empty" style="animation-delay: ${idx * 0.15}s">
                         <div class="podium-medal">${medals[idx]}</div>
                         <div class="podium-avatar-empty"><i class="fas fa-question"></i></div>
-                        <div class="podium-name" style="opacity: 0.3;">Wolne miejsce</div>
+                        <div class="podium-name" style="opacity: 0.3;">Vacant</div>
                         <div class="podium-time" style="opacity: 0.2;">---</div>
                     </div>
                 `;
@@ -5146,7 +5146,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                         </div>
                         <div class="ranking-user-stats">
                             <span class="ranking-time">${formatListeningTime(entry.totalTime)}</span>
-                            <span class="ranking-songs">${entry.songCount} utworów</span>
+                            <span class="ranking-songs">${entry.songCount} songs</span>
                         </div>
                     </div>
                 `;
@@ -5154,12 +5154,12 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
             html += `</div>`;
         }
     } else {
-        html += `<div class="history-empty" style="padding: 20px;"><p>Brak danych – nikt jeszcze nie zsynchronizował statystyk.</p></div>`;
+        html += `<div class="history-empty" style="padding: 20px;"><p>No data yet — nobody has synced their stats.</p></div>`;
     }
 
     // ── Station Rankings ──
     if (data.station_rankings && Object.keys(data.station_rankings).length > 0) {
-        html += `<h4 class="stats-subtitle"><i class="fas fa-broadcast-tower" style="color: var(--active-station-color);"></i> Ranking per Stacja</h4>`;
+        html += `<h4 class="stats-subtitle"><i class="fas fa-broadcast-tower" style="color: var(--active-station-color);"></i> Station Leaderboard</h4>`;
 
         // Sort stations by keys to have consistent order
         const orderedStations = ['Radio GAMING', 'Radio GAMING DARK', 'Radio GAMING MARON FM'];
@@ -5206,7 +5206,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
 
     // ── Top Songs (by listening time) ──
     if (data.top_songs && data.top_songs.length > 0) {
-        html += `<h4 class="stats-subtitle"><i class="fas fa-headphones" style="color: #a855f7;"></i> Najdłużej Słuchane</h4>`;
+        html += `<h4 class="stats-subtitle"><i class="fas fa-headphones" style="color: #a855f7;"></i> Most Listened</h4>`;
         html += `<div class="stats-songs-list">`;
 
         data.top_songs.slice(0, 10).forEach((song, i) => {
@@ -5216,7 +5216,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                     <img class="stats-cover" src="${song.cover || fallbackLogo}" alt="Cover" onerror="this.src='${fallbackLogo}'">
                     <div class="stats-info">
                         <div class="stats-title">${escapeHtml(song.title)}</div>
-                        <div class="stats-meta">${song.listeners} słuchaczy • ${formatListeningTime(song.totalTime)}</div>
+                        <div class="stats-meta">${song.listeners} listeners • ${formatListeningTime(song.totalTime)}</div>
                     </div>
                 </div>
             `;
@@ -5227,7 +5227,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
 
     // ── Most Played (by play count) ──
     if (data.most_played && data.most_played.length > 0) {
-        html += `<h4 class="stats-subtitle"><i class="fas fa-play-circle" style="color: #00ff8c;"></i> Najczęściej Grane</h4>`;
+        html += `<h4 class="stats-subtitle"><i class="fas fa-play-circle" style="color: #00ff8c;"></i> Most Played</h4>`;
         html += `<div class="stats-songs-list">`;
 
         data.most_played.slice(0, 10).forEach((song, i) => {
@@ -5237,7 +5237,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                     <img class="stats-cover" src="${song.cover || fallbackLogo}" alt="Cover" onerror="this.src='${fallbackLogo}'">
                     <div class="stats-info">
                         <div class="stats-title">${escapeHtml(song.title)}</div>
-                        <div class="stats-meta">${song.totalPlays} odtworzeń • ${song.listeners} słuchaczy</div>
+                        <div class="stats-meta">${song.totalPlays} plays • ${song.listeners} listeners</div>
                     </div>
                 </div>
             `;
@@ -5248,7 +5248,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
 
     // ── Top Favorited (by favorite count) ──
     if (data.top_favorited && data.top_favorited.length > 0) {
-        html += `<h4 class="stats-subtitle"><i class="fas fa-heart" style="color: #ff4d6a;"></i> Najczęściej Ulubione</h4>`;
+        html += `<h4 class="stats-subtitle"><i class="fas fa-heart" style="color: #ff4d6a;"></i> Most Favorited</h4>`;
         html += `<div class="stats-songs-list">`;
 
         data.top_favorited.slice(0, 10).forEach((song, i) => {
@@ -5258,7 +5258,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                     <img class="stats-cover" src="${song.cover || fallbackLogo}" alt="Cover" onerror="this.src='${fallbackLogo}'">
                     <div class="stats-info">
                         <div class="stats-title">${escapeHtml(song.title)}</div>
-                        <div class="stats-meta"><i class="fas fa-heart" style="color: #ff4d6a; font-size: 11px;"></i> ${song.count} użytkowników</div>
+                        <div class="stats-meta"><i class="fas fa-heart" style="color: #ff4d6a; font-size: 11px;"></i> ${song.count} users</div>
                     </div>
                 </div>
             `;
@@ -5270,8 +5270,8 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
     // Footer
     html += `
         <div class="ranking-footer">
-            <span><i class="fas fa-users"></i> ${data.total_users || 0} użytkowników w rankingu</span>
-            <span class="ranking-refresh" onclick="_rankingCache=null; renderRankingView();" title="Odśwież ranking"><i class="fas fa-sync-alt"></i></span>
+            <span><i class="fas fa-users"></i> ${data.total_users || 0} users in ranking</span>
+            <span class="ranking-refresh" onclick="_rankingCache=null; renderRankingView();" title="Refresh ranking"><i class="fas fa-sync-alt"></i></span>
         </div>
     `;
 
@@ -5420,18 +5420,44 @@ function renderFavoritesList() {
     };
     const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
 
+    // Get current search query
+    const searchQuery = (window._favSearchQuery || '').toLowerCase().trim();
+
+    // Filter favorites by search
+    const filteredFavorites = searchQuery
+        ? songFavorites.filter(s => s.title.toLowerCase().includes(searchQuery))
+        : songFavorites;
+
+    // Search bar
+    let html = `
+        <div class="favorites-search-bar">
+            <div class="favorites-search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="favorites-search-input" class="favorites-search-input"
+                    placeholder="Search favorites..." value="${escapeHtml(window._favSearchQuery || '')}" autocomplete="off">
+                ${searchQuery ? `<button class="favorites-search-clear" onclick="window._favSearchQuery=''; renderFavoritesList();"><i class="fas fa-times"></i></button>` : ''}
+            </div>
+            <span class="favorites-search-count">${filteredFavorites.length}/${songFavorites.length}</span>
+        </div>
+    `;
+
+    if (filteredFavorites.length === 0) {
+        html += `<div class="history-empty"><i class="fas fa-search"></i><p>No favorites matching "${escapeHtml(searchQuery)}"</p></div>`;
+        list.innerHTML = html;
+        _attachFavSearchListener();
+        return;
+    }
+
     // Group songs by station
-    const groups = songFavorites.reduce((acc, song) => {
+    const groups = filteredFavorites.reduce((acc, song) => {
         if (!acc[song.station]) acc[song.station] = [];
         acc[song.station].push(song);
         return acc;
     }, {});
 
-    let html = '';
     Object.keys(groups).forEach(stationName => {
         const stationSongs = groups[stationName];
 
-        // Add station header
         const sLogo2 = stationLogos[stationName] || fallbackLogo;
         html += `
             <div class="station-group-header">
@@ -5459,10 +5485,10 @@ function renderFavoritesList() {
                             <div class="grid-stats">${stats.playCount} plays${globalFavCount > 0 ? ` • <i class="fas fa-heart" style="color: #ff4d6a; font-size: 10px;"></i> ${globalFavCount}` : ''}</div>
                         </div>
                         <div class="grid-actions">
-                            <button class="grid-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')" title="Favorite">
+                            <button class="grid-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\\\'")}')" title="Favorite">
                                 <i class="fas fa-heart"></i>
                             </button>
-                            <button class="grid-action-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')" title="Share">
+                            <button class="grid-action-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\\\'")}', '${song.cover}', '${song.station}')" title="Share">
                                 <i class="fas fa-comment-alt"></i>
                             </button>
                             <a class="grid-action-btn spotify-btn" href="https://open.spotify.com/search/${encodedTitle}" target="_blank" onclick="event.stopPropagation();" title="Spotify">
@@ -5488,11 +5514,11 @@ function renderFavoritesList() {
                         </div>
                     </div>
                     <div class="history-item-actions">
-                        <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\'")}', '${song.cover}', '${song.station}')"
+                        <button class="history-action-btn chat-share-btn" onclick="shareSongToChat('${song.title.replace(/'/g, "\\\\'")}', '${song.cover}', '${song.station}')"
                             title="Share to Chat">
                             <i class="fas fa-comment-alt"></i>
                         </button>
-                        <button class="history-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\'")}')"
+                        <button class="history-action-btn favorited" onclick="toggleFavorite('${song.title.replace(/'/g, "\\\\'")}')"
                             title="Remove from favorites">
                             <i class="fas fa-heart"></i>
                         </button>
@@ -5508,6 +5534,24 @@ function renderFavoritesList() {
     });
 
     list.innerHTML = html;
+    _attachFavSearchListener();
+}
+
+function _attachFavSearchListener() {
+    setTimeout(() => {
+        const input = document.getElementById('favorites-search-input');
+        if (input) {
+            input.addEventListener('input', (e) => {
+                window._favSearchQuery = e.target.value;
+                renderFavoritesList();
+            });
+            // Restore focus if searching
+            if (window._favSearchQuery) {
+                input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
+            }
+        }
+    }, 0);
 }
 
 // ========================
