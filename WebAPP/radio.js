@@ -418,10 +418,8 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({ anon_id: anonListenerId, station: station })
         }).catch(() => { });
     }
-    setTimeout(() => {
-        sendAnonHeartbeat();
-        setInterval(sendAnonHeartbeat, 30000); // every 30s
-    }, 3000);
+    sendAnonHeartbeat(); // send immediately
+    setInterval(sendAnonHeartbeat, 30000); // then every 30s
 
     // Audio time update listener
     const currentTimeElement = document.getElementById('currentTime');
@@ -546,6 +544,7 @@ const _footerUsersCache = {}; // station_key -> { users: [], timestamp: number }
 function cacheFooterUsers(stationKey, onlineUsers) {
     if (onlineUsers && Array.isArray(onlineUsers)) {
         _footerUsersCache[stationKey] = { users: onlineUsers, timestamp: Date.now() };
+        fetchFooterUsers(); // auto-refresh widget when new data arrives
     }
 }
 
@@ -652,7 +651,7 @@ function fetchFooterUsers() {
         const cached = _footerUsersCache[stationKey];
         if (cached && cached.users) {
             cached.users.forEach(u => {
-                if (u.is_online && !seenIds.has(u.id)) {
+                if (!seenIds.has(u.id)) {
                     seenIds.add(u.id);
                     allUsers.push(u);
                 }
@@ -1702,7 +1701,7 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
 
         // Fetch Logic
         const fetchPromises = [
-            fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?since=${Date.now()}`, { headers }).then(r => r.json())
+            fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?since=${Date.now()}&full_users=1`, { headers }).then(r => r.json())
         ];
 
         if (shouldFetchZeno) {
