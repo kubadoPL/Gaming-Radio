@@ -103,6 +103,123 @@ if (!anonListenerId) {
     localStorage.setItem('RadioGaming-anonUserId', anonListenerId);
 }
 
+// ─── Cloud Sync (for logged-in Discord users) ─────────────────────────────────
+let _syncDebounceTimer = null;
+
+async function syncUserDataFromCloud() {
+    if (!discordAuthToken) return;
+    try {
+        const resp = await fetch(`${CHAT_API_BASE}/user/data`, {
+            headers: { 'Authorization': `Bearer ${discordAuthToken}` }
+        });
+        if (!resp.ok) return;
+        const result = await resp.json();
+        if (!result.success || !result.data) return;
+
+        let updated = false;
+
+        // Merge songHistory (cloud wins if it has more entries)
+        if (result.data.songHistory) {
+            const cloudHistory = JSON.parse(result.data.songHistory.value || '[]');
+            if (cloudHistory.length > 0) {
+                // Merge: add cloud entries that don't exist locally
+                const localTitles = new Set(songHistory.map(s => s.title));
+                for (const entry of cloudHistory) {
+                    if (!localTitles.has(entry.title)) {
+                        songHistory.push(entry);
+                        updated = true;
+                    }
+                }
+                // Sort by timestamp desc and keep last 20
+                songHistory.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                songHistory = songHistory.slice(0, 20);
+                localStorage.setItem('RadioGaming-songHistory', JSON.stringify(songHistory));
+            }
+        }
+
+        // Merge songFavorites (cloud wins if it has entries not in local)
+        if (result.data.songFavorites) {
+            const cloudFavs = JSON.parse(result.data.songFavorites.value || '[]');
+            if (cloudFavs.length > 0) {
+                const localTitles = new Set(songFavorites.map(s => s.title));
+                for (const entry of cloudFavs) {
+                    if (!localTitles.has(entry.title)) {
+                        songFavorites.push(entry);
+                        updated = true;
+                    }
+                }
+                localStorage.setItem('RadioGaming-songFavorites', JSON.stringify(songFavorites));
+            }
+        }
+
+        // Merge listeningStats (take the higher values)
+        if (result.data.listeningStats) {
+            const cloudStats = JSON.parse(result.data.listeningStats.value || '{}');
+            if (cloudStats.totalTime && cloudStats.totalTime > listeningStats.totalTime) {
+                listeningStats.totalTime = cloudStats.totalTime;
+                updated = true;
+            }
+            if (cloudStats.songs) {
+                for (const [title, cloudSong] of Object.entries(cloudStats.songs)) {
+                    const local = listeningStats.songs[title];
+                    if (!local) {
+                        listeningStats.songs[title] = cloudSong;
+                        updated = true;
+                    } else {
+                        // Take higher play count and listening time
+                        if (cloudSong.playCount > local.playCount) {
+                            local.playCount = cloudSong.playCount;
+                            updated = true;
+                        }
+                        if (cloudSong.listeningTime > local.listeningTime) {
+                            local.listeningTime = cloudSong.listeningTime;
+                            updated = true;
+                        }
+                        if (cloudSong.cover && !local.cover) local.cover = cloudSong.cover;
+                    }
+                }
+            }
+            localStorage.setItem('RadioGaming-listeningStats', JSON.stringify(listeningStats));
+        }
+
+        if (updated) {
+            console.log('[CloudSync] Merged data from cloud');
+        } else {
+            console.log('[CloudSync] Cloud data loaded, no new entries');
+        }
+
+        // Push local data back to cloud (in case local has newer data)
+        syncUserDataToCloud();
+
+    } catch (err) {
+        console.error('[CloudSync] Error loading from cloud:', err);
+    }
+}
+
+function syncUserDataToCloud() {
+    if (!discordAuthToken) return;
+    // Debounce: wait 5s after last call to avoid spamming
+    clearTimeout(_syncDebounceTimer);
+    _syncDebounceTimer = setTimeout(() => {
+        fetch(`${CHAT_API_BASE}/user/data`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${discordAuthToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                songHistory: songHistory,
+                songFavorites: songFavorites,
+                listeningStats: listeningStats
+            })
+        }).then(r => {
+            if (r.ok) console.log('[CloudSync] Data synced to cloud');
+        }).catch(err => {
+            console.error('[CloudSync] Sync error:', err);
+        });
+    }, 5000);
+}
+
 window.toggleVisualizations = function () {
     isVisualizerEnabled = !isVisualizerEnabled;
     localStorage.setItem('RadioGaming-visualizerEnabled', isVisualizerEnabled);
@@ -2097,6 +2214,9 @@ async function checkExistingSession() {
             discordUser = data.user;
             updateAuthUI(true);
             initializeChatPolling();
+
+            // Sync user data from cloud (listening history, favorites, stats)
+            syncUserDataFromCloud();
 
             // Claim anonymous listener entry to prevent double-counting
             if (anonListenerId) {
@@ -4499,6 +4619,7 @@ function addToSongHistory(title, coverUrl) {
     if (songHistory.length > 20) songHistory = songHistory.slice(0, 20);
 
     localStorage.setItem('RadioGaming-songHistory', JSON.stringify(songHistory));
+    syncUserDataToCloud();
     renderHistoryList();
 }
 
@@ -4528,6 +4649,7 @@ function startListeningTimer() {
                 // Save every 30 seconds to avoid too many writes
                 if (listeningStats.totalTime % 30 === 0) {
                     localStorage.setItem('RadioGaming-listeningStats', JSON.stringify(listeningStats));
+                    syncUserDataToCloud();
                 }
             }
         }
@@ -4578,6 +4700,7 @@ function toggleFavorite(title) {
         }
     }
     localStorage.setItem('RadioGaming-songFavorites', JSON.stringify(songFavorites));
+    syncUserDataToCloud();
     renderHistoryList();
     renderFavoritesList();
 
