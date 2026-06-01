@@ -2295,20 +2295,15 @@ const GUILD_DISPLAY_NAMES = {
     '706179463288979519': 'Supported Server 2'
 };
 
-// Guild list — each entry has a guild ID, webhook URL, and membership gating flag
-// Server name and icon are fetched live from Discord's API
-const SHARE_GUILDS = [
-    {
-        id: '637696690853511184',
-        webhookUrl: 'https://discord.com/api/webhooks/1470563794424955069/Z5r9gtLBDyrzSYFUBQ_04bQwE5MaW7pzlTUfbcplEXpKEwo9lbGo2XPh8qpWkJJWaWMz',
-        requireGuildMembership: true
-    },
-    {
-        id: '706179463288979519',
-        webhookUrl: 'https://discord.com/api/webhooks/1470802278515605647/uEqVAqq3IxU5L20IQKeLnckAj1WyHWQOU36wsq4a94rzOwmr5cfZozUaOpoL6jcgGPws',
-        requireGuildMembership: true
-    }
-];
+// Guild list — fetched from server (webhook URLs stay server-side)
+let SHARE_GUILDS = [];
+(async function loadShareGuilds() {
+    try {
+        const res = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/api/webhooks');
+        const data = await res.json();
+        if (data.guilds) SHARE_GUILDS = data.guilds;
+    } catch (e) { console.error('[Webhooks] Failed to load guild list:', e); }
+})();
 
 async function checkUserInGuild(guildId, force = false) {
     if (!discordAuthToken) return { inGuild: false, guildName: null, guildIcon: null };
@@ -2367,6 +2362,47 @@ function getShareEmbedData() {
     }
 
     return { stationNameText, songTitle, albumCover, radioUrl, embedColor, webhookUser, webhookAvatar };
+}
+
+async function shareToGuildProxy(guildId) {
+    const { stationNameText, songTitle, albumCover, radioUrl, embedColor, webhookUser, webhookAvatar } = getShareEmbedData();
+    const payload = {
+        username: webhookUser,
+        avatar_url: webhookAvatar,
+        embeds: [{
+            author: {
+                name: `${discordUser.global_name || discordUser.username} is sharing...`,
+                icon_url: discordUser.avatar_url
+            },
+            title: `Listening to ${stationNameText}`,
+            description: `🎵 Currently playing: **${songTitle}**\n\n[▶️ **Listen to Radio Gaming Also**](${radioUrl})`,
+            url: radioUrl,
+            color: embedColor,
+            thumbnail: { url: albumCover },
+            footer: { text: "Shared via Radio GAMING", icon_url: "https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp" },
+            timestamp: new Date().toISOString()
+        }]
+    };
+
+    try {
+        const response = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/api/share', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ guild_id: guildId, payload })
+        });
+
+        if (response.ok) {
+            lastDiscordShareTime = Date.now();
+            localStorage.setItem('RadioGaming-lastDiscordShareTime', lastDiscordShareTime.toString());
+            closeShareModal();
+            showNotification('Successfully shared to Discord!', 'fab fa-discord');
+        } else {
+            showNotification('Failed to share to Discord', 'fas fa-exclamation-triangle');
+        }
+    } catch (error) {
+        console.error('Share proxy error:', error);
+        showNotification('Error connecting to server', 'fas fa-exclamation-triangle');
+    }
 }
 
 async function shareToWebhook(webhookUrl) {
@@ -2540,7 +2576,7 @@ async function shareToGuild(guild) {
         }
     });
 
-    await shareToWebhook(guild.webhookUrl);
+    await shareToGuildProxy(guild.id);
 
     // Clean up sharing state
     guildItems.forEach(el => el.removeAttribute('data-sharing'));
