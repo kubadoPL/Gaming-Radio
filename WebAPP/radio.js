@@ -3667,8 +3667,8 @@ function renderEmojiGrid(messageId, filter = '') {
 }
 
 async function uploadCustomEmoji(file, messageId) {
-    if (file.size > 6 * 1024 * 1024) {
-        showNotification('Emoji za duże! Max 6MB', 'fas fa-exclamation-triangle');
+    if (file.size > 2 * 1024 * 1024) {
+        showNotification('Emoji za duże! Max 2MB', 'fas fa-exclamation-triangle');
         return;
     }
 
@@ -3807,9 +3807,9 @@ window.handleImageUpload = function (event) {
     }
 
     // Validate file size (2MB)
-    const maxSize = 6 * 1024 * 1024;
+    const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
-        showNotification(`Plik za duży! ${(file.size / 1024 / 1024).toFixed(1)}MB / max 6MB`, 'fas fa-exclamation-triangle');
+        showNotification(`Plik za duży! ${(file.size / 1024 / 1024).toFixed(1)}MB / max 2MB`, 'fas fa-exclamation-triangle');
         event.target.value = '';
         return;
     }
