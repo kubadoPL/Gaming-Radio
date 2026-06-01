@@ -386,6 +386,8 @@
                             class="fas fa-heart"></i> Favorites</button>
                     <button class="history-tab" data-tab="stats" onclick="switchHistoryTab('stats')"><i
                             class="fas fa-chart-bar"></i> Stats</button>
+                    <button class="history-tab" data-tab="ranking" onclick="switchHistoryTab('ranking')"><i
+                            class="fas fa-trophy"></i> Ranking</button>
                 </div>
                 <button class="view-mode-toggle" id="view-mode-toggle" onclick="toggleHistoryMode()"
                     title="Toggle View Mode">
@@ -410,6 +412,12 @@
             <div class="history-empty">
                 <i class="fas fa-chart-line"></i>
                 <p>Statistics are being gathered. Keep listening!</p>
+            </div>
+        </div>
+        <div id="ranking-view" class="history-list stats-view" style="display: none;">
+            <div class="history-empty">
+                <i class="fas fa-trophy"></i>
+                <p>Loading global rankings...</p>
             </div>
         </div>
     </div>
