@@ -2931,6 +2931,44 @@ body::-webkit-scrollbar-thumb {
     transform: scale(1.1) rotate(5deg) !important;
 }
 
+/* Delete own message button (appears on hover) */
+.chat-message-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 50px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(30, 25, 45, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.9) translateX(5px);
+    transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    z-index: 5;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+.chat-message:hover .chat-message-delete-btn {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+    pointer-events: all;
+}
+
+.chat-message-delete-btn:hover {
+    background: #ff4d4d;
+    color: white;
+    border-color: #ff6b6b;
+    transform: scale(1.1) rotate(-5deg) !important;
+    box-shadow: 0 4px 20px rgba(255, 77, 77, 0.4);
+}
+
 /* Reactions container */
 .chat-reactions-bar {
     display: flex;

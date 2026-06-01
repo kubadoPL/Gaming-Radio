@@ -3390,6 +3390,9 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     // Build reactions HTML
     const reactionsHtml = buildReactionsHtml(message);
 
+    // Check if this message belongs to the current user
+    const isOwnMessage = discordUser && message.user.id === discordUser.id;
+
     messageEl.innerHTML = `
         <img class="chat-message-avatar" src="${message.user.avatar_url}" alt="${message.user.username}">
         <div class="chat-message-content">
@@ -3424,6 +3427,9 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
         <button class="chat-reaction-add-btn" onclick="openEmojiPicker('${message.id}', this)" title="Dodaj reakcję">
             <i class="far fa-smile"></i>
         </button>
+        ${isOwnMessage ? `<button class="chat-message-delete-btn" onclick="deleteChatMessage('${message.id}')" title="Usuń wiadomość">
+            <i class="fas fa-trash-alt"></i>
+        </button>` : ''}
     `;
 
     messagesContainer.appendChild(messageEl);
@@ -3450,6 +3456,53 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
         });
     });
 }
+
+// ========================
+// DELETE OWN MESSAGE
+// ========================
+
+window.deleteChatMessage = async function (messageId) {
+    if (!discordAuthToken) return;
+
+    const messageEl = document.getElementById(`msg-${messageId}`);
+    if (!messageEl) return;
+
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/chat/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${discordAuthToken}`
+            },
+            body: JSON.stringify({ message_id: messageId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            // Animate out
+            messageEl.style.transition = 'all 0.3s ease';
+            messageEl.style.opacity = '0';
+            messageEl.style.transform = 'translateX(-20px) scale(0.95)';
+            messageEl.style.maxHeight = messageEl.offsetHeight + 'px';
+            setTimeout(() => {
+                messageEl.style.maxHeight = '0';
+                messageEl.style.padding = '0';
+                messageEl.style.margin = '0';
+                messageEl.style.borderWidth = '0';
+            }, 150);
+            setTimeout(() => {
+                messageEl.remove();
+            }, 400);
+            showNotification('Wiadomość usunięta', 'fas fa-trash-alt');
+        } else {
+            showNotification(data.error || 'Nie udało się usunąć wiadomości', 'fas fa-exclamation-triangle');
+        }
+    } catch (error) {
+        console.error('[CHAT] Delete error:', error);
+        showNotification('Błąd połączenia z serwerem', 'fas fa-exclamation-triangle');
+    }
+};
 
 // ========================
 // EMOJI REACTIONS SYSTEM
