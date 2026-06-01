@@ -436,9 +436,28 @@
             </div>
         </div>
     </footer>
-    <div id="footer-uptime"
-        style="position: fixed; bottom: 120px; right: 16px; font-size: 11px; color: rgba(255,255,255,0.5); z-index: 101; background: rgba(10,10,20,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); letter-spacing: 0.3px;">
-        Server Uptime: ...</div>
+    <div id="footer-status-widget"
+        style="position: fixed; bottom: 120px; right: 16px; z-index: 101; font-size: 11px; color: rgba(255,255,255,0.6); background: rgba(10,10,20,0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); letter-spacing: 0.3px; overflow: hidden; min-width: 180px; max-width: 220px; transition: all 0.3s ease;">
+        
+        <!-- Online users list (collapsible) -->
+        <div id="footer-users-list"
+            style="max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; padding: 0 10px;">
+            <div id="footer-users-content"
+                style="max-height: 96px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- Bottom bar: uptime + toggle -->
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; cursor: pointer; user-select: none;"
+            onclick="toggleFooterUsers()">
+            <span id="footer-uptime" style="flex: 1;">Server Uptime: ...</span>
+            <span id="footer-users-toggle" style="margin-left: 8px; font-size: 10px; opacity: 0.5; transition: transform 0.3s ease;">
+                <i class="fas fa-users" style="margin-right: 3px;"></i>
+                <i class="fas fa-chevron-up" id="footer-users-chevron" style="font-size: 8px; transition: transform 0.3s ease;"></i>
+            </span>
+        </div>
+    </div>
 
     <!-- Discord Share Modal -->
     <div id="share-modal-overlay" class="share-modal-overlay hidden" onclick="closeShareModal(event)">

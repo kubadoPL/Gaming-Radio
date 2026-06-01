@@ -1097,8 +1097,8 @@ body.is-fullscreen main {
         gap: 15px;
     }
 
-    #footer-uptime {
-        display: none;
+    #footer-status-widget {
+        display: none !important;
     }
 
     /* Redesigned player mobile adjustments */

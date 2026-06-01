@@ -258,11 +258,16 @@ function updateLoadingProgress(percentage, status) {
     processStatusQueue();
 }
 
+let lastSongUpdateTime = Date.now();
+let metadataWatchdogTimer = null;
+
 function handleMainStreamMessage(event) {
     try {
         var jsonData = JSON.parse(event.data);
         if (jsonData.streamTitle) {
             var cleanedTitle = cleanTitle(jsonData.streamTitle);
+
+            lastSongUpdateTime = Date.now(); // Reset watchdog timer
 
             // Skip if the song hasn't changed to avoid redundant API calls and UI updates
             if (streamTitleElement && streamTitleElement.textContent === cleanedTitle) {
@@ -306,12 +311,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // Improved Metadata Connection with retry logic
     function setupMetadataConnection(url) {
         if (currentEventSource) currentEventSource.close();
+        if (metadataWatchdogTimer) clearInterval(metadataWatchdogTimer);
 
         console.log("Initializing metadata connection to:", url);
         const es = new EventSource(url);
         currentEventSource = es;
+        lastSongUpdateTime = Date.now();
 
         es.onmessage = handleMainStreamMessage;
+
+        // Listen for ping events to detect stale connections
+        es.addEventListener('ping', () => {
+            // Connection is alive but if no song update in 60s, force reconnect
+            if (Date.now() - lastSongUpdateTime > 60000) {
+                console.warn('[Watchdog] Receiving pings but no song updates for 60s. Forcing reconnect...');
+                es.close();
+                lastSongUpdateTime = Date.now();
+                setTimeout(() => setupMetadataConnection(url), 2000);
+            }
+        });
+
+        // Periodic watchdog: force reconnect if no song data for 90s
+        metadataWatchdogTimer = setInterval(() => {
+            if (Date.now() - lastSongUpdateTime > 90000 && currentEventSource === es) {
+                console.warn('[Watchdog] No song update for 90s. Forcing reconnect...');
+                es.close();
+                lastSongUpdateTime = Date.now();
+                setupMetadataConnection(url);
+            }
+        }, 30000);
 
         es.onerror = function (error) {
             console.error('Metadata connection error. Retrying in 5s...', error);
@@ -509,6 +537,130 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el) el.textContent = 'Uptime: N/A';
     }
 })();
+
+// --- Footer Online Users List ---
+let footerUsersOpen = localStorage.getItem('RadioGaming-footerUsersOpen') === 'true';
+const _footerUsersCache = {}; // station_key -> { users: [], timestamp: number }
+
+// Call this from any place that gets online_users data to feed the cache
+function cacheFooterUsers(stationKey, onlineUsers) {
+    if (onlineUsers && Array.isArray(onlineUsers)) {
+        _footerUsersCache[stationKey] = { users: onlineUsers, timestamp: Date.now() };
+    }
+}
+
+window.toggleFooterUsers = function () {
+    footerUsersOpen = !footerUsersOpen;
+    localStorage.setItem('RadioGaming-footerUsersOpen', footerUsersOpen);
+    applyFooterUsersState();
+};
+
+function applyFooterUsersState() {
+    const list = document.getElementById('footer-users-list');
+    const chevron = document.getElementById('footer-users-chevron');
+    if (!list) return;
+    if (footerUsersOpen) {
+        list.style.maxHeight = '120px';
+        list.style.padding = '8px 10px 4px';
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+    } else {
+        list.style.maxHeight = '0';
+        list.style.padding = '0 10px';
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+}
+
+function updateFooterUsersList(onlineUsers) {
+    const container = document.getElementById('footer-users-content');
+    if (!container) return;
+    if (!onlineUsers || onlineUsers.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 6px 0; opacity: 0.4; font-size: 10px;">No listeners</div>';
+        return;
+    }
+
+    function timeAgo(isoStr) {
+        if (!isoStr) return '';
+        const diff = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        return Math.floor(diff / 86400) + 'd ago';
+    }
+
+    // Online first, then offline
+    const online = onlineUsers.filter(u => u.is_online);
+    const offline = onlineUsers.filter(u => !u.is_online && !u.is_anonymous);
+
+    let html = '';
+    [...online, ...offline].forEach(u => {
+        const isAnon = u.is_anonymous;
+        const isOn = u.is_online;
+        const avatar = isAnon
+            ? '<i class="fas fa-user-secret" style="width:18px;height:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;font-size:9px;color:rgba(255,255,255,0.4);flex-shrink:0;"></i>'
+            : `<img src="${u.avatar_url || ''}" alt="" style="width:18px;height:18px;border-radius:50%;object-fit:cover;flex-shrink:0;${isOn ? '' : 'filter:grayscale(1);opacity:0.5;'}">`;
+        const name = isAnon ? 'Anonymous' : (u.global_name || u.username);
+        const dotColor = isOn ? '#10b981' : '#555';
+        const nameOpacity = isOn ? (isAnon ? '0.4' : '0.7') : '0.35';
+        const ago = !isOn ? `<span style="font-size:8px;opacity:0.35;white-space:nowrap;flex-shrink:0;">${timeAgo(u.last_seen)}</span>` : '';
+        html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;">
+            ${avatar}
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:${nameOpacity};">${name}</span>
+            ${ago}
+            <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};flex-shrink:0;"></span>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+// Apply initial state and show self immediately
+setTimeout(() => {
+    applyFooterUsersState();
+
+    // Instantly add self to the list before server responds
+    let selfEntry;
+    if (discordUser) {
+        selfEntry = {
+            id: discordUser.id,
+            username: discordUser.username,
+            global_name: discordUser.global_name || discordUser.username,
+            avatar_url: discordUser.avatar_url,
+            is_online: true,
+            is_anonymous: false
+        };
+    } else {
+        selfEntry = {
+            id: anonListenerId,
+            username: 'Anonymous Listener',
+            global_name: 'Anonymous Listener',
+            avatar_url: 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png',
+            is_online: true,
+            is_anonymous: true
+        };
+    }
+    updateFooterUsersList([selfEntry]);
+
+    // Then fetch real data from server (replaces local entry)
+    fetchFooterUsers();
+    setInterval(fetchFooterUsers, 15000);
+}, 500);
+
+function fetchFooterUsers() {
+    // Build merged list from cache (fed by existing chat poll/history responses)
+    const allUsers = [];
+    const seenIds = new Set();
+    for (const stationKey of ['RADIOGAMING', 'RADIOGAMINGDARK', 'RADIOGAMINGMARONFM']) {
+        const cached = _footerUsersCache[stationKey];
+        if (cached && cached.users) {
+            cached.users.forEach(u => {
+                if (u.is_online && !seenIds.has(u.id)) {
+                    seenIds.add(u.id);
+                    allUsers.push(u);
+                }
+            });
+        }
+    }
+    updateFooterUsersList(allUsers);
+}
 async function getSpotifyAccessToken() {
     const now = Date.now();
     let cachedToken = localStorage.getItem('RadioGaming-spotifyAccessToken');
@@ -1568,6 +1720,7 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
             chatRoomCount = chatData.online_count !== undefined ? chatData.online_count : 0;
 
             if (chatData.online_users && Array.isArray(chatData.online_users)) {
+                cacheFooterUsers(stationId, chatData.online_users);
                 usersListeningToStation = chatData.online_users.filter(u =>
                     u.is_online && getStationId(u.current_station || 'Radio GAMING') === stationId
                 ).length;
@@ -1945,6 +2098,23 @@ async function checkExistingSession() {
             discordUser = data.user;
             updateAuthUI(true);
             initializeChatPolling();
+
+            // Claim anonymous listener entry to prevent double-counting
+            if (anonListenerId) {
+                fetch(CHAT_API_BASE + '/chat/claim-anon', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ anon_id: anonListenerId })
+                }).then(() => {
+                    // Locally remove anon from cache and refresh widget
+                    for (const key of Object.keys(_footerUsersCache)) {
+                        if (_footerUsersCache[key] && _footerUsersCache[key].users) {
+                            _footerUsersCache[key].users = _footerUsersCache[key].users.filter(u => u.id !== anonListenerId);
+                        }
+                    }
+                    fetchFooterUsers();
+                }).catch(() => { });
+            }
             // Preload mentions only if loading screen is already gone
             if (hasInitialLoadFinished) {
                 preloadAllChatMentions();
@@ -2684,6 +2854,7 @@ async function loadChatHistory() {
 
         if (data.online_count !== undefined) {
             updateOnlineCountUI(data.online_count, data.online_users);
+            if (data.online_users) cacheFooterUsers(currentChatStation, data.online_users);
         }
 
         if (messagesContainer) {
@@ -2759,6 +2930,7 @@ async function pollNewMessages() {
         // Always update online count and users list
         if (data.online_count !== undefined) {
             updateOnlineCountUI(data.online_count, data.online_users);
+            if (data.online_users) cacheFooterUsers(currentChatStation, data.online_users);
         }
 
         // Process messages
