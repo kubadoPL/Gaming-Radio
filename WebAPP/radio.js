@@ -4783,17 +4783,6 @@ function toggleFavorite(title) {
     }
     localStorage.setItem('RadioGaming-songFavorites', JSON.stringify(songFavorites));
     syncUserDataToCloud();
-
-    // Invalidate ranking cache and refresh global favorites count in background
-    _rankingCache = null;
-    fetch(`${CHAT_API_BASE}/chat/ranking?force=1`).then(r => r.json()).then(d => {
-        if (d.success && d.favorites_count) {
-            window._globalFavoritesCount = d.favorites_count;
-            renderHistoryList();
-            renderFavoritesList();
-        }
-    }).catch(() => {});
-
     renderHistoryList();
     renderFavoritesList();
 
@@ -5046,7 +5035,7 @@ let _rankingCache = null;
 let _rankingCacheTime = 0;
 const RANKING_CACHE_TTL = 300000; // 5 minutes
 
-async function renderRankingView(force = false) {
+async function renderRankingView() {
     const container = document.getElementById('ranking-view');
     if (!container) return;
 
@@ -5058,8 +5047,8 @@ async function renderRankingView(force = false) {
     const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
     const defaultAvatar = 'https://cdn.discordapp.com/embed/avatars/0.png';
 
-    // Check cache (skip if force refresh)
-    if (!force && _rankingCache && (Date.now() - _rankingCacheTime < RANKING_CACHE_TTL)) {
+    // Check cache
+    if (_rankingCache && (Date.now() - _rankingCacheTime < RANKING_CACHE_TTL)) {
         buildRankingHTML(container, _rankingCache, stationLogos, fallbackLogo, defaultAvatar);
         return;
     }
@@ -5068,7 +5057,7 @@ async function renderRankingView(force = false) {
     container.innerHTML = `<div class="history-empty"><i class="fas fa-spinner fa-spin"></i><p>Loading global ranking...</p></div>`;
 
     try {
-        const response = await fetch(`${CHAT_API_BASE}/chat/ranking${force ? '?force=1' : ''}`);
+        const response = await fetch(`${CHAT_API_BASE}/chat/ranking`);
         if (!response.ok) throw new Error('Failed to fetch ranking');
         const data = await response.json();
 
@@ -5282,7 +5271,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
     html += `
         <div class="ranking-footer">
             <span><i class="fas fa-users"></i> ${data.total_users || 0} users in ranking</span>
-            <span class="ranking-refresh" onclick="_rankingCache=null; renderRankingView(true);" title="Refresh ranking"><i class="fas fa-sync-alt"></i></span>
+            <span class="ranking-refresh" onclick="_rankingCache=null; renderRankingView();" title="Refresh ranking"><i class="fas fa-sync-alt"></i></span>
         </div>
     `;
 
