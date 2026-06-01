@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Anonymous listener heartbeat (only when NOT logged in via Discord)
     function sendAnonHeartbeat() {
-        if (discordAuthToken) return; // logged-in users are tracked by auth system
+        if (discordUser) return; // logged-in users are tracked by auth system
         const station = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING')
             .trim().replace(/\s+/g, '').toUpperCase();
         fetch(CHAT_API_BASE + '/chat/heartbeat', {
