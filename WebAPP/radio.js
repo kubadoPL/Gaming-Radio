@@ -649,7 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/api/uptime');
         if (!response.ok) throw new Error('Uptime API error');
         const data = await response.json();
-        const startedAt = data.started_at * 1000; // convert to ms
+        let startedAt = data.started_at * 1000; // convert to ms
 
         function updateUptimeDisplay() {
             const diff = Date.now() - startedAt;
@@ -667,6 +667,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateUptimeDisplay();
         setInterval(updateUptimeDisplay, 1000);
+
+        // Re-fetch startedAt every 60s to stay in sync (handles server restarts)
+        setInterval(async () => {
+            try {
+                const r = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/api/uptime', { cache: 'no-store' });
+                if (r.ok) {
+                    const d = await r.json();
+                    startedAt = d.started_at * 1000;
+                }
+            } catch (e) { /* silently fail */ }
+        }, 60000);
     } catch (e) {
         console.error('[Uptime] Failed to fetch uptime:', e);
         const el = document.getElementById('footer-uptime');
