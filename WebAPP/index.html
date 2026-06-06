@@ -451,7 +451,7 @@
         <div id="footer-users-list"
             style="max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; padding: 0 10px;">
             <div id="footer-users-content"
-                style="max-height: 96px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;">
+                style="max-height: 96px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;">
                 <!-- Populated by JS -->
             </div>
         </div>
@@ -558,6 +558,41 @@
             <div class="share-modal-body">
                 <div id="online-users-list" class="share-guild-list">
                     <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile Modal (for viewing other users) -->
+    <div id="user-profile-modal-overlay" class="share-modal-overlay hidden"
+        onclick="closeUserProfileModal(event)">
+        <div class="share-modal profile-modal user-profile-modal" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <i class="fas fa-user"></i>
+                <h3>User Profile</h3>
+                <button class="share-modal-close" onclick="closeUserProfileModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="share-modal-body">
+                <div class="profile-card">
+                    <div class="profile-banner" id="user-profile-banner"></div>
+                    <div class="profile-avatar-container">
+                        <img id="user-profile-avatar" class="profile-modal-avatar" src="" alt="Avatar">
+                    </div>
+                    <div class="profile-content">
+                        <div id="user-profile-name" class="profile-modal-name"></div>
+                        <div id="user-profile-username" class="profile-modal-username"></div>
+
+                        <div class="profile-divider"></div>
+
+                        <!-- Listening Stats Section -->
+                        <div id="user-profile-stats" class="user-profile-stats">
+                            <div class="user-profile-stats-loading">
+                                <i class="fas fa-spinner fa-spin"></i> Loading stats...
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

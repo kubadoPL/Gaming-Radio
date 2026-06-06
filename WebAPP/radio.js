@@ -755,7 +755,9 @@ function updateFooterUsersList(onlineUsers) {
         const dotColor = isOn ? '#10b981' : '#555';
         const nameOpacity = isOn ? (isAnon ? '0.4' : '0.7') : '0.35';
         const ago = !isOn ? `<span style="font-size:8px;opacity:0.35;white-space:nowrap;flex-shrink:0;">${timeAgo(u.last_seen)}</span>` : '';
-        html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;">
+        const clickAttr = isAnon ? '' : `class="footer-user-item clickable" onclick="openUserProfileModal('${u.id}', '${(u.username || '').replace(/'/g, "\\'")  }', '${(u.global_name || u.username || '').replace(/'/g, "\\'")}', '${u.avatar_url || ''}')" style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;cursor:pointer;"`;
+        const noClickAttr = `style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;"`;
+        html += `<div ${isAnon ? noClickAttr : clickAttr}>
             ${avatar}
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:${nameOpacity};">${name}</span>
             ${ago}
@@ -2400,6 +2402,320 @@ window.closeDiscordProfileModal = function (event) {
     overlay.classList.add('hidden');
 };
 
+// ========================
+// USER PROFILE MODAL (for viewing other users)
+// ========================
+
+let _userProfileCache = {}; // userId -> {data, timestamp}
+const USER_PROFILE_CACHE_TTL = 120000; // 2 minutes
+
+function _applyProfileBanner(bannerEl, bannerUrl, accentColor) {
+    if (!bannerEl) return;
+    if (bannerUrl) {
+        bannerEl.style.backgroundImage = `url(${bannerUrl})`;
+        bannerEl.style.backgroundSize = 'cover';
+        bannerEl.style.backgroundPosition = 'center';
+        bannerEl.style.backgroundColor = 'transparent';
+    } else if (accentColor) {
+        const hexColor = typeof accentColor === 'number' ? '#' + accentColor.toString(16).padStart(6, '0') : accentColor;
+        bannerEl.style.backgroundImage = 'none';
+        bannerEl.style.backgroundColor = hexColor;
+    } else {
+        bannerEl.style.backgroundImage = 'none';
+        bannerEl.style.backgroundColor = 'var(--active-station-color)';
+    }
+}
+
+function _applyProfileUserData(data) {
+    const banner = document.getElementById('user-profile-banner');
+    const avatar = document.getElementById('user-profile-avatar');
+    const nameEl = document.getElementById('user-profile-name');
+    const usernameEl = document.getElementById('user-profile-username');
+
+    if (data.user) {
+        _applyProfileBanner(banner, data.user.banner_url, data.user.accent_color);
+        if (data.user.avatar_url && avatar) avatar.src = data.user.avatar_url;
+        if (data.user.global_name && nameEl) nameEl.textContent = data.user.global_name;
+        if (data.user.username && usernameEl) usernameEl.textContent = `@${data.user.username}`;
+    }
+}
+
+window.openUserProfileModal = async function (userId, userName, globalName, avatarUrl, bannerUrl, accentColor) {
+    if (!userId || userId.startsWith('anon-')) return; // Don't open for anonymous users
+
+    // If clicking on own profile, open the Discord profile modal instead
+    if (discordUser && userId === discordUser.id) {
+        openDiscordProfileModal();
+        return;
+    }
+
+    const overlay = document.getElementById('user-profile-modal-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('hidden');
+
+    // Set basic info immediately from available data
+    const banner = document.getElementById('user-profile-banner');
+    const avatar = document.getElementById('user-profile-avatar');
+    const nameEl = document.getElementById('user-profile-name');
+    const usernameEl = document.getElementById('user-profile-username');
+    const statsContainer = document.getElementById('user-profile-stats');
+
+    if (avatar) avatar.src = avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png';
+    if (nameEl) nameEl.textContent = globalName || userName || 'Unknown';
+    if (usernameEl) usernameEl.textContent = `@${userName || 'unknown'}`;
+    _applyProfileBanner(banner, bannerUrl, accentColor);
+
+    // Show loading state
+    if (statsContainer) {
+        statsContainer.innerHTML = '<div class="user-profile-stats-loading"><i class="fas fa-spinner fa-spin"></i> Loading stats...</div>';
+    }
+
+    // Check cache — still update banner/avatar from cached server data
+    const cached = _userProfileCache[userId];
+    if (cached && (Date.now() - cached.timestamp < USER_PROFILE_CACHE_TTL)) {
+        _applyProfileUserData(cached.data);
+        renderUserProfileStats(cached.data);
+        return;
+    }
+
+    // Fetch full profile from API
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/user/profile/${userId}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+
+        if (!data.success) throw new Error(data.error || 'Unknown error');
+
+        // Update banner/avatar/name from server data
+        _applyProfileUserData(data);
+
+        // Cache the data
+        _userProfileCache[userId] = { data, timestamp: Date.now() };
+
+        renderUserProfileStats(data);
+    } catch (error) {
+        console.error('[UserProfile] Error fetching profile:', error);
+        if (statsContainer) {
+            statsContainer.innerHTML = '<div class="user-profile-no-stats"><i class="fas fa-exclamation-triangle"></i><span>Failed to load profile data.</span></div>';
+        }
+    }
+};
+
+function renderUserProfileStats(data) {
+    const statsContainer = document.getElementById('user-profile-stats');
+    if (!statsContainer) return;
+
+    const stationLogos = {
+        'Radio GAMING': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp',
+        'Radio GAMING DARK': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp',
+        'Radio GAMING MARON FM': 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp',
+    };
+    const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+
+    let html = '';
+
+    // Online status badge
+    if (data.online && data.online.is_online) {
+        html += `<div class="user-ranking-badge" style="background: linear-gradient(135deg, rgba(0,255,140,0.12), rgba(0,255,140,0.04)); border-color: rgba(0,255,140,0.25); color: #00ff8c;">
+            <i class="fas fa-circle" style="font-size: 8px;"></i> Online${data.online.current_station ? ` • ${data.online.current_station}` : ''}
+        </div>`;
+    } else if (data.online && data.online.last_seen) {
+        html += `<div class="user-ranking-badge" style="background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.4);">
+            <i class="fas fa-clock" style="font-size: 10px;"></i> Last seen ${formatRelativeTime(data.online.last_seen)}
+        </div>`;
+    }
+
+    // Ranking badge
+    if (data.stats && data.stats.ranking_position) {
+        const pos = data.stats.ranking_position;
+        const medals = ['🥇', '🥈', '🥉'];
+        const medal = pos <= 3 ? medals[pos - 1] : '';
+        html += `<div class="user-ranking-badge">
+            <i class="fas fa-trophy"></i> ${medal} Ranking #${pos}
+        </div>`;
+    }
+
+    // Stats overview
+    if (data.stats && data.stats.total_time > 0) {
+        const totalH = Math.floor(data.stats.total_time / 3600);
+        const totalM = Math.floor((data.stats.total_time % 3600) / 60);
+        const topStation = data.stats.station_breakdown && data.stats.station_breakdown.length > 0
+            ? data.stats.station_breakdown[0].station : 'N/A';
+
+        html += `
+            <div class="user-profile-section-label"><i class="fas fa-chart-bar"></i> Listening Stats</div>
+            <div class="user-stats-overview">
+                <div class="user-stat-card featured">
+                    <span class="stat-label">Listening Time</span>
+                    <span class="stat-value">${totalH}h ${totalM}m</span>
+                </div>
+                <div class="user-stat-card">
+                    <span class="stat-label">Songs Heard</span>
+                    <span class="stat-value">${data.stats.song_count}</span>
+                </div>
+                <div class="user-stat-card">
+                    <span class="stat-label">Top Station</span>
+                    <span class="stat-value" style="font-size: 11px;">${topStation}</span>
+                </div>
+                <div class="user-stat-card">
+                    <span class="stat-label">Favorites</span>
+                    <span class="stat-value">${data.favorites ? data.favorites.length : 0}</span>
+                </div>
+            </div>
+        `;
+
+        // Station breakdown
+        if (data.stats.station_breakdown && data.stats.station_breakdown.length > 0) {
+            const maxStTime = data.stats.station_breakdown[0].time;
+            html += `<div class="user-profile-section-label"><i class="fas fa-broadcast-tower"></i> Stations</div>`;
+            html += `<div style="display: flex; flex-direction: column; gap: 6px;">`;
+            data.stats.station_breakdown.forEach((s, i) => {
+                const logo = stationLogos[s.station] || fallbackLogo;
+                const barW = Math.round((s.time / Math.max(maxStTime, 1)) * 100);
+                html += `
+                    <div class="user-station-item" style="animation-delay: ${i * 0.08}s">
+                        <img src="${logo}" alt="${s.station}" onerror="this.src='${fallbackLogo}'">
+                        <div class="user-station-info">
+                            <div class="user-station-name">${s.station}</div>
+                            <div class="user-station-bar-bg"><div class="user-station-bar" style="width: ${barW}%"></div></div>
+                        </div>
+                        <div class="user-station-time">${formatListeningTime(s.time)}</div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+
+        // Top tracks
+        if (data.stats.top_tracks && data.stats.top_tracks.length > 0) {
+            html += `<div class="user-profile-section-label"><i class="fas fa-headphones"></i> Top Tracks</div>`;
+            html += `<div style="display: flex; flex-direction: column; gap: 2px;">`;
+            data.stats.top_tracks.slice(0, 5).forEach((track, i) => {
+                const cover = track.cover || fallbackLogo;
+                html += `
+                    <div class="user-track-item" style="animation-delay: ${i * 0.05}s">
+                        <div class="user-track-rank">${i + 1}</div>
+                        <img class="user-track-cover" src="${cover}" alt="" onerror="this.src='${fallbackLogo}'">
+                        <div class="user-track-info">
+                            <div class="user-track-title">${escapeHtml(track.title)}</div>
+                            <div class="user-track-meta">${track.playCount} plays • ${formatListeningTime(track.listeningTime)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+    } else {
+        html += `<div class="user-profile-no-stats"><i class="fas fa-chart-line"></i><span>No listening stats synced yet.</span></div>`;
+    }
+
+    // Favorites
+    if (data.favorites && data.favorites.length > 0) {
+        html += `<div class="user-profile-section-label"><i class="fas fa-heart" style="color: #ff4d6a;"></i> Favorites</div>`;
+        html += `<div style="display: flex; flex-direction: column; gap: 2px;">`;
+        data.favorites.slice(0, 5).forEach((fav, i) => {
+            const cover = fav.cover || fallbackLogo;
+            html += `
+                <div class="user-track-item" style="animation-delay: ${i * 0.05}s">
+                    <div class="user-track-rank" style="color: #ff4d6a;"><i class="fas fa-heart" style="font-size: 10px;"></i></div>
+                    <img class="user-track-cover" src="${cover}" alt="" onerror="this.src='${fallbackLogo}'">
+                    <div class="user-track-info">
+                        <div class="user-track-title">${escapeHtml(fav.title)}</div>
+                        <div class="user-track-meta">${fav.station || ''}</div>
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div>`;
+    }
+
+    // Recent history
+    if (data.history && data.history.length > 0) {
+        html += `<div class="user-profile-section-label"><i class="fas fa-history"></i> Recent Listens</div>`;
+        html += `<div style="display: flex; flex-direction: column; gap: 2px;">`;
+        data.history.slice(0, 5).forEach((song, i) => {
+            const cover = song.cover || fallbackLogo;
+            html += `
+                <div class="user-track-item" style="animation-delay: ${i * 0.05}s">
+                    <div class="user-track-rank" style="color: rgba(255,255,255,0.2);"><i class="fas fa-play" style="font-size: 9px;"></i></div>
+                    <img class="user-track-cover" src="${cover}" alt="" onerror="this.src='${fallbackLogo}'">
+                    <div class="user-track-info">
+                        <div class="user-track-title">${escapeHtml(song.title)}</div>
+                        <div class="user-track-meta">${song.station || ''}</div>
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div>`;
+    }
+
+    // Guild memberships (loaded async from frontend)
+    if (typeof SHARE_GUILDS !== 'undefined' && SHARE_GUILDS.length > 0 && data.user && data.user.id) {
+        html += `<div class="user-profile-section-label"><i class="fab fa-discord"></i> Server Memberships</div>`;
+        html += `<div class="profile-guild-list" id="user-profile-guilds">`;
+        SHARE_GUILDS.forEach(() => {
+            html += `<div class="membership-badge loading"><i class="fas fa-spinner fa-spin"></i><span>Checking...</span></div>`;
+        });
+        html += `</div>`;
+    }
+
+    statsContainer.innerHTML = html;
+
+    // Async guild checks (non-blocking, per-guild)
+    if (typeof SHARE_GUILDS !== 'undefined' && SHARE_GUILDS.length > 0 && data.user && data.user.id) {
+        const guildContainer = document.getElementById('user-profile-guilds');
+        if (guildContainer) {
+            const userId = data.user.id;
+            SHARE_GUILDS.forEach(async (guild, idx) => {
+                try {
+                    const resp = await fetch(`${CHAT_API_BASE}/user/guild-check/${userId}/${guild.id}`);
+                    const guildData = await resp.json();
+                    const badge = guildContainer.children[idx];
+                    if (!badge) return;
+
+                    if (guildData.is_member) {
+                        badge.className = 'membership-badge member';
+                        badge.innerHTML = `
+                            ${guildData.guild_icon ? `<img src="${guildData.guild_icon}" class="membership-guild-icon" alt="Icon">` : '<i class="fab fa-discord"></i>'}
+                            <div class="membership-info">
+                                <div class="membership-guild-name">${guildData.guild_name || GUILD_DISPLAY_NAMES[guild.id] || 'Server'}</div>
+                                <div class="membership-status-text">Official Server Member</div>
+                            </div>
+                        `;
+                    } else {
+                        badge.className = 'membership-badge not-member';
+                        badge.innerHTML = `
+                            ${guildData.guild_icon ? `<img src="${guildData.guild_icon}" class="membership-guild-icon grayscale" alt="Icon">` : '<i class="fas fa-times-circle"></i>'}
+                            <div class="membership-info">
+                                <div class="membership-guild-name">${guildData.guild_name || GUILD_DISPLAY_NAMES[guild.id] || 'Server'}</div>
+                                <div class="membership-status-text">Not a member</div>
+                            </div>
+                        `;
+                    }
+                } catch (err) {
+                    const badge = guildContainer.children[idx];
+                    if (badge) {
+                        badge.className = 'membership-badge not-member';
+                        badge.innerHTML = `
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div class="membership-info">
+                                <div class="membership-guild-name">${GUILD_DISPLAY_NAMES[guild.id] || 'Server'}</div>
+                                <div class="membership-status-text">Check failed</div>
+                            </div>
+                        `;
+                    }
+                }
+            });
+        }
+    }
+}
+
+window.closeUserProfileModal = function (event) {
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = document.getElementById('user-profile-modal-overlay');
+    if (overlay) overlay.classList.add('hidden');
+};
+
 window.initiateDiscordLogin = async function () {
     try {
         const response = await fetch(`${CHAT_API_BASE}/discord/login`);
@@ -3261,9 +3577,12 @@ function renderOnlineUsers() {
     container.innerHTML = '';
     users.forEach(user => {
         const item = document.createElement('div');
-        item.className = 'share-guild-item'; // Reuse existing styles
-        item.style.cursor = 'default';
+        item.className = 'share-guild-item online-user-item' + (user.is_anonymous ? '' : ' clickable');
+        item.style.cursor = user.is_anonymous ? 'default' : 'pointer';
         if (!user.is_online) item.style.opacity = '0.7';
+        if (!user.is_anonymous) {
+            item.onclick = () => openUserProfileModal(user.id, user.username, user.global_name || user.username, user.avatar_url);
+        }
 
         const statusLabel = user.is_online ? 'Online' : formatRelativeTime(user.last_seen);
         const badgeStyle = user.is_online
@@ -3405,10 +3724,10 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     const isOwnMessage = discordUser && message.user.id === discordUser.id;
 
     messageEl.innerHTML = `
-        <img class="chat-message-avatar" src="${message.user.avatar_url}" alt="${message.user.username}">
+        <img class="chat-message-avatar clickable" src="${message.user.avatar_url}" alt="${message.user.username}" onclick="openUserProfileModal('${message.user.id}', '${escapeHtml(message.user.username)}', '${escapeHtml(message.user.global_name || message.user.username)}', '${message.user.avatar_url}')">
         <div class="chat-message-content">
             <div class="chat-message-header">
-                <span class="chat-message-username">${message.user.global_name || message.user.username}</span>
+                <span class="chat-message-username clickable" onclick="openUserProfileModal('${message.user.id}', '${escapeHtml(message.user.username)}', '${escapeHtml(message.user.global_name || message.user.username)}', '${message.user.avatar_url}')">${message.user.global_name || message.user.username}</span>
                 <span class="chat-message-time">${timeStr}</span>
             </div>
             ${formattedContent ? `<div class="chat-message-text">
@@ -5114,7 +5433,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                 const isMe = u.id === myId;
                 const bannerStyle = u.banner_url ? `background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(10,8,20,0.92) 55%), url('${u.banner_url}'); background-size: cover; background-position: center;` : '';
                 html += `
-                    <div class="podium-item podium-${podiumClasses[idx]} ${isMe ? 'podium-me' : ''}" style="animation-delay: ${idx * 0.15}s; ${bannerStyle}">
+                    <div class="podium-item podium-${podiumClasses[idx]} ${isMe ? 'podium-me' : ''} clickable" style="animation-delay: ${idx * 0.15}s; ${bannerStyle} cursor: pointer;" onclick="openUserProfileModal('${u.id}', '${escapeHtml(u.username)}', '${escapeHtml(u.global_name || u.username)}', '${u.avatar_url || defaultAvatar}', '${u.banner_url || ''}')">
                         <div class="podium-medal">${medals[idx]}</div>
                         <img class="podium-avatar" src="${u.avatar_url || defaultAvatar}" alt="${u.username}" onerror="this.src='${defaultAvatar}'">
                         <div class="podium-name">${u.global_name || u.username}</div>
@@ -5146,7 +5465,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                 const isMe = u.id === myId;
                 const barWidth = Math.round((entry.totalTime / maxTime) * 100);
                 html += `
-                    <div class="ranking-list-item ${isMe ? 'ranking-me' : ''}" style="animation-delay: ${(i + 3) * 0.05}s">
+                    <div class="ranking-list-item ${isMe ? 'ranking-me' : ''} clickable" style="animation-delay: ${(i + 3) * 0.05}s; cursor: pointer;" onclick="openUserProfileModal('${u.id}', '${escapeHtml(u.username)}', '${escapeHtml(u.global_name || u.username)}', '${u.avatar_url || defaultAvatar}')">
                         <div class="ranking-pos">#${rank}</div>
                         <img class="ranking-avatar" src="${u.avatar_url || defaultAvatar}" alt="${u.username}" onerror="this.src='${defaultAvatar}'">
                         <div class="ranking-user-info">
@@ -5197,7 +5516,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                 const isMe = u.id === myId;
                 const barWidth = Math.round((entry.time / maxStTime) * 100);
                 html += `
-                    <div class="ranking-list-item ${isMe ? 'ranking-me' : ''}">
+                    <div class="ranking-list-item ${isMe ? 'ranking-me' : ''} clickable" style="cursor: pointer;" onclick="openUserProfileModal('${u.id}', '${escapeHtml(u.username)}', '${escapeHtml(u.global_name || u.username)}', '${u.avatar_url || defaultAvatar}')">
                         <div class="ranking-pos">#${i + 1}</div>
                         <img class="ranking-avatar small" src="${u.avatar_url || defaultAvatar}" alt="${u.username}" onerror="this.src='${defaultAvatar}'">
                         <div class="ranking-user-info">
