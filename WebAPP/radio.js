@@ -5475,6 +5475,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
     // ── User counts summary ──
     const regUsers = data.total_users || 0;
     const anonUsers = data.total_unique_anonymous_users || 0;
+    const topCount = data.top_listeners ? data.top_listeners.length : 0;
     html += `<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
         <div class="user-ranking-badge" style="background: linear-gradient(135deg, rgba(88,101,242,0.15), rgba(88,101,242,0.05)); border-color: rgba(88,101,242,0.3); color: #7c8aff;">
             <i class="fas fa-users" style="font-size: 10px;"></i> ${regUsers} Registered Users
@@ -5482,10 +5483,19 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
         <div class="user-ranking-badge" style="background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.6);">
             <i class="fas fa-user-secret" style="font-size: 10px;"></i> ${anonUsers} Anonymous Users
         </div>
+        <div class="user-ranking-badge" style="background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.04)); border-color: rgba(255,215,0,0.25); color: #ffd700;">
+            <i class="fas fa-trophy" style="font-size: 10px;"></i> ${topCount}/15 in Ranking
+        </div>
         <div class="user-ranking-badge" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); cursor: pointer; margin-left: auto;" onclick="_rankingCache=null; this.querySelector('i').classList.add('fa-spin'); renderRankingView();" title="Refresh ranking">
             <i class="fas fa-sync-alt" style="font-size: 10px;"></i>
         </div>
     </div>`;
+
+    // Sync footer widget stats
+    const regEl = document.getElementById('footer-stat-registered');
+    const anonEl = document.getElementById('footer-stat-anon');
+    if (regEl) regEl.textContent = regUsers;
+    if (anonEl) anonEl.textContent = anonUsers;
 
     // ── Top Listeners ──
     html += `<h4 class="stats-subtitle"><i class="fas fa-trophy" style="color: #ffd700;"></i> Top Listeners</h4>`;
