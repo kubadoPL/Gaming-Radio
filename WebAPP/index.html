@@ -445,7 +445,7 @@
         </div>
     </footer>
     <div id="footer-status-widget"
-        style="position: fixed; bottom: 120px; right: 16px; z-index: 101; font-size: 11px; color: rgba(255,255,255,0.6); background: rgba(10,10,20,0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); letter-spacing: 0.3px; overflow: hidden; min-width: 180px; max-width: 220px; transition: all 0.3s ease;">
+        style="position: fixed; bottom: 120px; right: 16px; z-index: 101; font-size: 11px; color: rgba(255,255,255,0.6); background: rgba(10,10,20,0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); letter-spacing: 0.3px; overflow: hidden; min-width: 180px; max-width: 260px; transition: all 0.3s ease;">
         
         <!-- Online users list (collapsible) -->
         <div id="footer-users-list"
@@ -454,6 +454,12 @@
                 style="max-height: 96px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;">
                 <!-- Populated by JS -->
             </div>
+        </div>
+
+        <!-- User stats row -->
+        <div id="footer-user-stats" style="display: flex; gap: 10px; padding: 3px 10px; font-size: 9px; opacity: 0.5; border-top: 1px solid rgba(255,255,255,0.06);">
+            <span><i class="fas fa-users" style="margin-right: 3px;"></i><span id="footer-stat-registered">...</span> registered</span>
+            <span><i class="fas fa-user-secret" style="margin-right: 3px;"></i><span id="footer-stat-anon">...</span> anonymous</span>
         </div>
 
         <!-- Bottom bar: uptime + toggle -->

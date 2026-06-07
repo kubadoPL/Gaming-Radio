@@ -685,6 +685,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 })();
 
+// --- Footer User Stats (registered + anonymous counts) ---
+async function fetchFooterUserStats() {
+    try {
+        const response = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi/chat/ranking');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data.success) return;
+        const regEl = document.getElementById('footer-stat-registered');
+        const anonEl = document.getElementById('footer-stat-anon');
+        if (regEl) regEl.textContent = data.total_users || 0;
+        if (anonEl) anonEl.textContent = data.total_unique_anonymous_users || 0;
+    } catch (e) {
+        console.error('[FooterStats] Failed:', e);
+    }
+}
+fetchFooterUserStats();
+setInterval(fetchFooterUserStats, 300000); // refresh every 5 min
+
 // --- Footer Online Users List ---
 let footerUsersOpen = localStorage.getItem('RadioGaming-footerUsersOpen') === 'true';
 const _footerUsersCache = {}; // station_key -> { users: [], timestamp: number }
@@ -5454,6 +5472,21 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
     const myId = discordUser ? discordUser.id : null;
     let html = `<div class="stats-container ranking-container">`;
 
+    // ── User counts summary ──
+    const regUsers = data.total_users || 0;
+    const anonUsers = data.total_unique_anonymous_users || 0;
+    html += `<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+        <div class="user-ranking-badge" style="background: linear-gradient(135deg, rgba(88,101,242,0.15), rgba(88,101,242,0.05)); border-color: rgba(88,101,242,0.3); color: #7c8aff;">
+            <i class="fas fa-users" style="font-size: 10px;"></i> ${regUsers} Registered Users
+        </div>
+        <div class="user-ranking-badge" style="background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.6);">
+            <i class="fas fa-user-secret" style="font-size: 10px;"></i> ${anonUsers} Anonymous Users
+        </div>
+        <div class="user-ranking-badge" style="background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); cursor: pointer; margin-left: auto;" onclick="_rankingCache=null; this.querySelector('i').classList.add('fa-spin'); renderRankingView();" title="Refresh ranking">
+            <i class="fas fa-sync-alt" style="font-size: 10px;"></i>
+        </div>
+    </div>`;
+
     // ── Top Listeners ──
     html += `<h4 class="stats-subtitle"><i class="fas fa-trophy" style="color: #ffd700;"></i> Top Listeners</h4>`;
 
@@ -5636,15 +5669,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
         html += `</div>`;
     }
 
-    // Footer
-    const anonCount = data.total_unique_anonymous_users || 0;
-    html += `
-        <div class="ranking-footer">
-            <span><i class="fas fa-users"></i> ${data.total_users || 0} users in ranking</span>
-            <span><i class="fas fa-ghost"></i> ${anonCount} anonymous users total</span>
-            <span class="ranking-refresh" onclick="_rankingCache=null; renderRankingView();" title="Refresh ranking"><i class="fas fa-sync-alt"></i></span>
-        </div>
-    `;
+
 
     html += `</div>`;
     container.innerHTML = html;
