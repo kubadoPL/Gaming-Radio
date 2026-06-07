@@ -686,7 +686,13 @@ document.addEventListener('DOMContentLoaded', () => {
 })();
 
 // --- Footer User Stats (registered + anonymous counts) ---
+let _footerStatsLastFetch = 0;
+const FOOTER_STATS_COOLDOWN = 2000; // 2s cooldown between fetches
+
 async function fetchFooterUserStats() {
+    const now = Date.now();
+    if (now - _footerStatsLastFetch < FOOTER_STATS_COOLDOWN) return;
+    _footerStatsLastFetch = now;
     try {
         const response = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi/chat/ranking');
         if (!response.ok) return;
@@ -712,23 +718,12 @@ let footerUsersOpen = localStorage.getItem('RadioGaming-footerUsersOpen') === 't
 const _footerUsersCache = {}; // station_key -> { users: [], timestamp: number }
 
 // Call this from any place that gets online_users data to feed the cache
-let _footerStatsDebounce = null;
-let _prevFooterUserCount = -1;
+let _prevOnlineCount = -1;
 
 function cacheFooterUsers(stationKey, onlineUsers) {
     if (onlineUsers && Array.isArray(onlineUsers)) {
-        const prevCount = _footerUsersCache[stationKey] ? _footerUsersCache[stationKey].users.length : 0;
         _footerUsersCache[stationKey] = { users: onlineUsers, timestamp: Date.now() };
         fetchFooterUsers(); // auto-refresh widget when new data arrives
-
-        // Debounced stats refresh when user count changes
-        if (onlineUsers.length !== prevCount) {
-            if (_footerStatsDebounce) clearTimeout(_footerStatsDebounce);
-            _footerStatsDebounce = setTimeout(() => {
-                fetchFooterUserStats();
-                _footerStatsDebounce = null;
-            }, 2000);
-        }
     }
 }
 
@@ -852,7 +847,18 @@ function fetchFooterUsers() {
             });
         }
     }
-    updateFooterUsersList(Array.from(userMap.values()));
+    const allUsers = Array.from(userMap.values());
+    const onlineCount = allUsers.filter(u => u.is_online).length;
+    const onlineEl = document.getElementById('footer-stat-online');
+    if (onlineEl) onlineEl.textContent = onlineCount;
+
+    // Refresh registered/anonymous stats when online count changes
+    if (_prevOnlineCount !== -1 && onlineCount !== _prevOnlineCount) {
+        fetchFooterUserStats(); // has built-in 2s cooldown
+    }
+    _prevOnlineCount = onlineCount;
+
+    updateFooterUsersList(allUsers);
 }
 async function getSpotifyAccessToken() {
     const now = Date.now();
@@ -5250,6 +5256,7 @@ window.toggleHistoryDrawer = function () {
     } else {
         renderHistoryList();
         renderFavoritesList();
+        fetchFooterUserStats(); // refresh stats (has 2s cooldown)
         drawer.classList.add('open');
         overlay.classList.add('open');
     }
