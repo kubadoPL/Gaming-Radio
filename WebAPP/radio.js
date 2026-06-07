@@ -5598,9 +5598,11 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
     }
 
     // Footer
+    const anonCount = data.total_unique_anonymous_users || 0;
     html += `
         <div class="ranking-footer">
             <span><i class="fas fa-users"></i> ${data.total_users || 0} users in ranking</span>
+            <span><i class="fas fa-ghost"></i> ${anonCount} anonymous users total</span>
             <span class="ranking-refresh" onclick="_rankingCache=null; renderRankingView();" title="Refresh ranking"><i class="fas fa-sync-alt"></i></span>
         </div>
     `;
