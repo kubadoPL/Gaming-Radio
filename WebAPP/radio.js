@@ -3606,11 +3606,11 @@ async function pollNewMessages() {
                     }
                 }
             });
+        }
 
-            // Always use server_time to advance the polling window
-            if (data.server_time) {
-                lastMessageTimestamp = data.server_time;
-            }
+        // Always advance the polling window regardless of whether messages were received
+        if (data.server_time) {
+            lastMessageTimestamp = data.server_time;
         }
 
         // Process mentions from other stations
