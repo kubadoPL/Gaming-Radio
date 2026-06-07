@@ -2038,6 +2038,15 @@ let currentChatStation = 'RADIOGAMING';
 let isSongShared = false;
 let sharedSongData = null; // Stores specific song data (from history) if sharing specific song
 
+// ─── Admin Role System ─────────────────────────────────────────────────────────
+const ADMIN_USER_IDS = new Set([
+    '264079253757231104', // Admin
+]);
+
+function isUserAdmin(userId) {
+    return ADMIN_USER_IDS.has(String(userId));
+}
+
 // ========================
 // UNLIMITED FAVORITES (IndexedDB)
 // ========================
@@ -3816,17 +3825,37 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
 
     // Check if this message belongs to the current user
     const isOwnMessage = discordUser && message.user.id === discordUser.id;
+    const isMessageAuthorAdmin = isUserAdmin(message.user.id);
+    const isCurrentUserAdmin = discordUser && isUserAdmin(discordUser.id);
 
     const safeUsername = escapeHtml(message.user.username);
     const safeGlobalName = escapeHtml(message.user.global_name || message.user.username);
     const safeAvatarUrl = encodeURI(message.user.avatar_url || '');
     const safeUserId = escapeHtml(message.user.id);
 
+    // Build admin badge HTML
+    const adminBadgeHtml = isMessageAuthorAdmin
+        ? `<span class="chat-admin-badge" title="Administrator"><i class="fas fa-shield-alt"></i> Admin</span>`
+        : '';
+
+    // Build delete button HTML
+    let deleteButtonHtml = '';
+    if (isOwnMessage) {
+        deleteButtonHtml = `<button class="chat-message-delete-btn" onclick="deleteChatMessage('${message.id}')" title="Usuń wiadomość">
+            <i class="fas fa-trash-alt"></i>
+        </button>`;
+    } else if (isCurrentUserAdmin) {
+        deleteButtonHtml = `<button class="chat-message-delete-btn admin-delete" onclick="deleteChatMessage('${message.id}')" title="Usuń jako Admin">
+            <i class="fas fa-gavel"></i>
+        </button>`;
+    }
+
     messageEl.innerHTML = `
         <img class="chat-message-avatar clickable" src="${safeAvatarUrl}" alt="${safeUsername}" data-user-id="${safeUserId}" data-username="${safeUsername}" data-globalname="${safeGlobalName}" data-avatar="${safeAvatarUrl}" onclick="openUserProfileModal(this.dataset.userId, this.dataset.username, this.dataset.globalname, this.dataset.avatar)">
         <div class="chat-message-content">
             <div class="chat-message-header">
                 <span class="chat-message-username clickable" data-user-id="${safeUserId}" data-username="${safeUsername}" data-globalname="${safeGlobalName}" data-avatar="${safeAvatarUrl}" onclick="openUserProfileModal(this.dataset.userId, this.dataset.username, this.dataset.globalname, this.dataset.avatar)">${safeGlobalName}</span>
+                ${adminBadgeHtml}
                 <span class="chat-message-time">${timeStr}</span>
             </div>
             ${formattedContent ? `<div class="chat-message-text">
@@ -3856,9 +3885,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
         <button class="chat-reaction-add-btn" onclick="openEmojiPicker('${message.id}', this)" title="Dodaj reakcję">
             <i class="far fa-smile"></i>
         </button>
-        ${isOwnMessage ? `<button class="chat-message-delete-btn" onclick="deleteChatMessage('${message.id}')" title="Usuń wiadomość">
-            <i class="fas fa-trash-alt"></i>
-        </button>` : ''}
+        ${deleteButtonHtml}
     `;
 
     messagesContainer.appendChild(messageEl);
@@ -4267,6 +4294,9 @@ function renderEmojiGrid(messageId, filter = '') {
         }
 
         filteredEmojis.forEach(emojiId => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'emoji-picker-item-wrapper';
+
             const btn = document.createElement('button');
             btn.className = 'emoji-picker-item';
 
@@ -4275,6 +4305,19 @@ function renderEmojiGrid(messageId, filter = '') {
                 if (c) {
                     btn.innerHTML = `<img src="${c.url}" alt="${c.name}">`;
                     btn.title = c.name;
+                }
+
+                // Admin delete button for custom emojis
+                if (discordUser && isUserAdmin(discordUser.id) && c) {
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'emoji-delete-btn';
+                    delBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    delBtn.title = `Usuń emoji "${c.name}" (Admin)`;
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteCustomEmoji(emojiId, c.name, messageId);
+                    };
+                    wrapper.appendChild(delBtn);
                 }
             } else {
                 btn.textContent = emojiId;
@@ -4288,7 +4331,8 @@ function renderEmojiGrid(messageId, filter = '') {
                 }
                 closeEmojiPicker();
             };
-            grid.appendChild(btn);
+            wrapper.appendChild(btn);
+            grid.appendChild(wrapper);
         });
     }
 
@@ -4351,6 +4395,37 @@ async function sendEmoji(imageData, fileName, messageId) {
         }
     } catch (err) {
         console.error('[CHAT] Emoji upload error:', err);
+    }
+}
+
+async function deleteCustomEmoji(emojiId, emojiName, messageId) {
+    if (!discordAuthToken) return;
+
+    if (!confirm(`Czy na pewno chcesz usunąć emoji "${emojiName}"?`)) return;
+
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/chat/emojis/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${discordAuthToken}`
+            },
+            body: JSON.stringify({ emoji_id: emojiId })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showNotification(`Emoji "${emojiName}" usunięte!`, 'fas fa-trash-alt');
+            // Remove from local list
+            const idx = customEmojis.findIndex(e => e.id === emojiId);
+            if (idx !== -1) customEmojis.splice(idx, 1);
+            renderEmojiGrid(messageId);
+        } else {
+            showNotification(data.error || 'Błąd usuwania emoji', 'fas fa-exclamation-triangle');
+        }
+    } catch (err) {
+        console.error('[CHAT] Emoji delete error:', err);
+        showNotification('Błąd połączenia z serwerem', 'fas fa-exclamation-triangle');
     }
 }
 

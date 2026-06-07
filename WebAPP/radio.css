@@ -2969,6 +2969,95 @@ body::-webkit-scrollbar-thumb {
     box-shadow: 0 4px 20px rgba(255, 77, 77, 0.4);
 }
 
+/* ─── Admin Badge ─────────────────────────────────────────────────────────── */
+.chat-admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #f59e0b;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.08));
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 6px;
+    padding: 2px 7px;
+    line-height: 1;
+    white-space: nowrap;
+    animation: adminBadgeGlow 3s ease-in-out infinite alternate;
+    flex-shrink: 0;
+}
+
+.chat-admin-badge i {
+    font-size: 9px;
+    filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.5));
+}
+
+@keyframes adminBadgeGlow {
+    0% {
+        box-shadow: 0 0 4px rgba(245, 158, 11, 0.15);
+    }
+    100% {
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+    }
+}
+
+/* Admin delete button (amber/orange, distinct from user's red) */
+.chat-message-delete-btn.admin-delete {
+    background: rgba(30, 25, 45, 0.95);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: rgba(245, 158, 11, 0.7);
+}
+
+.chat-message-delete-btn.admin-delete:hover {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    border-color: #fbbf24;
+    transform: scale(1.1) rotate(-5deg) !important;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+}
+
+/* ─── Emoji Picker: Admin delete overlay ──────────────────────────────────── */
+.emoji-picker-item-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.emoji-delete-btn {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(245, 158, 11, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.15s ease;
+    z-index: 10;
+    padding: 0;
+    line-height: 1;
+}
+
+.emoji-picker-item-wrapper:hover .emoji-delete-btn {
+    opacity: 1;
+}
+
+.emoji-delete-btn:hover {
+    background: #ef4444;
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+}
+
 /* Reactions container */
 .chat-reactions-bar {
     display: flex;
