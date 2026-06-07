@@ -15,8 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="radio.js?v=7.3" defer></script>
-    <link rel="stylesheet" href="radio.css?v=7.3">
+    <script src="radio.js?v=7.4" defer></script>
+    <link rel="stylesheet" href="radio.css?v=7.4">
 
 </head>
 
@@ -388,6 +388,8 @@
                             class="fas fa-chart-bar"></i> Stats</button>
                     <button class="history-tab" data-tab="ranking" onclick="switchHistoryTab('ranking')"><i
                             class="fas fa-trophy"></i> Ranking</button>
+                    <button class="history-tab" data-tab="anonymous" onclick="switchHistoryTab('anonymous')" id="anon-stats-tab" style="display: none;"><i
+                            class="fas fa-user-secret"></i> Anonymous Stats <span class="tab-admin-badge">ADMIN</span></button>
                 </div>
                 <button class="view-mode-toggle" id="view-mode-toggle" onclick="toggleHistoryMode()"
                     title="Toggle View Mode">
@@ -418,6 +420,12 @@
             <div class="history-empty">
                 <i class="fas fa-trophy"></i>
                 <p>Loading global rankings...</p>
+            </div>
+        </div>
+        <div id="anon-stats-view" class="history-list stats-view" style="display: none;">
+            <div class="history-empty">
+                <i class="fas fa-user-secret"></i>
+                <p>Loading anonymous listener stats...</p>
             </div>
         </div>
     </div>

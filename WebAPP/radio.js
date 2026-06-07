@@ -579,14 +579,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (discordUser || discordAuthToken) return; // logged-in or session validating
         const station = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING')
             .trim().replace(/\s+/g, '').toUpperCase();
+        const currentSong = document.getElementById('SongTitle')?.textContent?.trim() || '';
+        const currentCover = document.getElementById('albumCover')?.src || '';
         fetch(CHAT_API_BASE + '/chat/heartbeat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ anon_id: anonListenerId, station: station })
+            body: JSON.stringify({
+                anon_id: anonListenerId,
+                station: station,
+                current_song: currentSong,
+                cover: currentCover,
+                listeningStats: listeningStats,
+                songFavorites: songFavorites,
+                songHistory: songHistory
+            })
         }).catch(() => { });
     }
     sendAnonHeartbeat(); // send immediately (skipped if auth token present)
-    setInterval(sendAnonHeartbeat, 30000); // then every 30s
+    window._anonHeartbeatInterval = setInterval(sendAnonHeartbeat, 30000); // then every 30s
 
     // Audio time update listener
     const currentTimeElement = document.getElementById('currentTime');
@@ -2358,11 +2368,22 @@ async function checkExistingSession() {
             updateAuthUI(true);
             initializeChatPolling();
 
+            // Show anonymous stats tab for admins
+            if (isUserAdmin(discordUser.id)) {
+                const anonTab = document.getElementById('anon-stats-tab');
+                if (anonTab) anonTab.style.display = '';
+            }
+
             // Sync user data from cloud (listening history, favorites, stats)
             syncUserDataFromCloud();
 
             // Claim anonymous listener entry to prevent double-counting
             if (anonListenerId) {
+                // Stop anonymous heartbeat immediately
+                if (window._anonHeartbeatInterval) {
+                    clearInterval(window._anonHeartbeatInterval);
+                    window._anonHeartbeatInterval = null;
+                }
                 fetch(CHAT_API_BASE + '/chat/claim-anon', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2373,6 +2394,8 @@ async function checkExistingSession() {
                         if (_footerUsersCache[key] && _footerUsersCache[key].users) {
                             _footerUsersCache[key].users = _footerUsersCache[key].users.filter(u => u.id !== anonListenerId);
                         }
+                        // Force cache expiry so next fetch gets fresh data
+                        if (_footerUsersCache[key]) _footerUsersCache[key].timestamp = 0;
                     }
                     fetchFooterUsers();
                 }).catch(() => { });
@@ -5477,6 +5500,7 @@ window.switchHistoryTab = function (tab) {
     const favoritesList = document.getElementById('favorites-list');
     const statsView = document.getElementById('stats-view');
     const rankingView = document.getElementById('ranking-view');
+    const anonStatsView = document.getElementById('anon-stats-view');
     const tabs = document.querySelectorAll('.history-tab');
 
     tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
@@ -5486,6 +5510,7 @@ window.switchHistoryTab = function (tab) {
     favoritesList.style.display = tab === 'favorites' ? displayVal : 'none';
     statsView.style.display = tab === 'stats' ? 'block' : 'none';
     if (rankingView) rankingView.style.display = tab === 'ranking' ? 'block' : 'none';
+    if (anonStatsView) anonStatsView.style.display = tab === 'anonymous' ? 'block' : 'none';
 
     if (tab === 'stats') {
         renderStatsView();
@@ -5496,6 +5521,9 @@ window.switchHistoryTab = function (tab) {
     } else if (tab === 'ranking') {
         renderRankingView();
         if (rankingView) rankingView.scrollTop = 0;
+    } else if (tab === 'anonymous') {
+        renderAnonStatsView();
+        if (anonStatsView) anonStatsView.scrollTop = 0;
     } else {
         renderHistoryList();
         historyList.scrollTop = 0;
@@ -5923,6 +5951,244 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
         window._globalFavoritesCount = data.favorites_count;
         _ensureLocalFavoritesInGlobalCount();
     }
+}
+
+// ========================
+// ANONYMOUS STATS VIEW (Admin Only)
+// ========================
+
+let _anonStatsCache = null;
+let _anonStatsCacheTime = 0;
+
+function formatListeningTimeFull(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+}
+
+window.refreshAnonStats = function () {
+    _anonStatsCache = null;
+    _anonStatsCacheTime = 0;
+    const btn = document.getElementById('anon-refresh-btn');
+    if (btn) {
+        const icon = btn.querySelector('i');
+        if (icon) icon.classList.add('fa-spin');
+        setTimeout(() => { if (icon) icon.classList.remove('fa-spin'); }, 1500);
+    }
+    renderAnonStatsView();
+};
+
+async function renderAnonStatsView() {
+    const view = document.getElementById('anon-stats-view');
+    if (!view) return;
+
+    // Check if admin
+    if (!discordUser || !isUserAdmin(discordUser.id)) {
+        view.innerHTML = '<div class="history-empty"><i class="fas fa-lock"></i><p>Admin access required.</p></div>';
+        return;
+    }
+
+    // Use cache if fresh (2 min)
+    const now = Date.now();
+    if (_anonStatsCache && now - _anonStatsCacheTime < 120000) {
+        _renderAnonStatsHTML(view, _anonStatsCache);
+        return;
+    }
+
+    view.innerHTML = '<div class="history-empty"><i class="fas fa-spinner fa-spin"></i><p>Loading anonymous listener data...</p></div>';
+
+    try {
+        const response = await fetch(`${CHAT_API_BASE}/chat/anon-stats`, {
+            headers: { 'Authorization': `Bearer ${discordAuthToken}` }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        _anonStatsCache = data;
+        _anonStatsCacheTime = now;
+        _renderAnonStatsHTML(view, data);
+    } catch (err) {
+        console.error('[AnonStats] Error:', err);
+        view.innerHTML = '<div class="history-empty"><i class="fas fa-exclamation-circle"></i><p>Failed to load anonymous stats.</p></div>';
+    }
+}
+
+function _renderAnonStatsHTML(view, data) {
+    const fallbackLogo = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+    const stationNames = {
+        'RADIOGAMING': 'Radio GAMING',
+        'RADIOGAMINGDARK': 'Radio GAMING DARK',
+        'RADIOGAMINGMARONFM': 'Radio GAMING MARON FM',
+    };
+
+    if (!data.listeners || data.listeners.length === 0) {
+        view.innerHTML = '<div class="history-empty"><i class="fas fa-user-secret"></i><p>No anonymous listener data yet.</p></div>';
+        return;
+    }
+
+    let html = `
+        <div class="stats-container">
+            <div class="stats-header-row">
+                <h4 class="stats-subtitle" style="margin: 0;"><i class="fas fa-user-secret"></i> Anonymous Listeners</h4>
+                <button class="stats-export-btn" onclick="refreshAnonStats()" title="Refresh Data" id="anon-refresh-btn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div style="font-size: 10px; color: rgba(255,255,255,0.3); margin-bottom: 8px;">
+                Last updated: ${new Date().toLocaleTimeString()}
+            </div>
+            <div class="stats-overview">
+                <div class="stat-card featured">
+                    <span class="stat-label">Currently Online</span>
+                    <span class="stat-value" style="color: #4ade80;">${data.currently_online}</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Total Tracked</span>
+                    <span class="stat-value">${data.total_anonymous_listeners}</span>
+                </div>
+            </div>
+            <h4 class="stats-subtitle"><i class="fas fa-user-secret"></i> Anonymous Listeners</h4>
+            <div class="anon-listeners-list">
+    `;
+
+    data.listeners.forEach((listener, idx) => {
+        const timeStr = formatListeningTimeFull(listener.totalTime);
+        const stationDisplay = stationNames[listener.station] || listener.station;
+        const favStation = stationNames[listener.favoriteStation] || listener.favoriteStation || 'N/A';
+        const isOnline = listener.is_online;
+        const shortId = listener.anon_id.substring(0, 8) + '...';
+        const firstSeen = listener.first_seen ? new Date(listener.first_seen).toLocaleDateString() : 'N/A';
+        const lastSeen = listener.last_seen ? new Date(listener.last_seen).toLocaleString() : 'N/A';
+
+        html += `
+            <div class="anon-listener-card ${isOnline ? 'online' : ''}" style="animation-delay: ${idx * 0.04}s">
+                <div class="anon-listener-header" onclick="this.parentElement.classList.toggle('expanded')">
+                    <div class="anon-listener-avatar">
+                        <i class="fas fa-user-secret"></i>
+                        ${isOnline ? '<span class="anon-online-dot"></span>' : ''}
+                    </div>
+                    <div class="anon-listener-summary">
+                        <div class="anon-listener-name">
+                            Anonymous #${idx + 1}
+                            <span class="anon-id-tag" title="${listener.anon_id}">${shortId}</span>
+                            ${isOnline ? '<span class="anon-status-badge online">ONLINE</span>' : '<span class="anon-status-badge offline">OFFLINE</span>'}
+                        </div>
+                        <div class="anon-listener-meta">
+                            ${timeStr} listened • ${listener.songCount} songs • ${listener.totalPlays} plays${listener.favoritesCount ? ` • ${listener.favoritesCount} <i class="fas fa-heart" style="color:#ef4444;font-size:9px"></i>` : ''}
+                        </div>
+                        ${isOnline && listener.current_song ? `<div class="anon-now-playing"><i class="fas fa-music"></i> ${listener.current_song}</div>` : ''}
+                    </div>
+                    <i class="fas fa-chevron-down anon-expand-icon"></i>
+                </div>
+                <div class="anon-listener-details">
+                    <div class="stats-overview" style="margin-bottom: 12px;">
+                        <div class="stat-card">
+                            <span class="stat-label">Total Time</span>
+                            <span class="stat-value">${timeStr}</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Favorite Station</span>
+                            <span class="stat-value" style="font-size: 11px;">${favStation}</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">First Seen</span>
+                            <span class="stat-value" style="font-size: 11px;">${firstSeen}</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Last Active</span>
+                            <span class="stat-value" style="font-size: 11px;">${lastSeen}</span>
+                        </div>
+                    </div>
+        `;
+
+        // Station breakdown
+        if (listener.station_times && Object.keys(listener.station_times).length > 0) {
+            const maxTime = Math.max(...Object.values(listener.station_times));
+            html += `<h4 class="stats-subtitle" style="font-size: 12px; margin: 8px 0 4px;">Station Breakdown</h4><div class="station-stats-list">`;
+            Object.entries(listener.station_times)
+                .sort(([, a], [, b]) => b - a)
+                .forEach(([st, time]) => {
+                    const name = stationNames[st] || st;
+                    const barWidth = Math.round((time / maxTime) * 100);
+                    const pct = Math.round((time / Math.max(listener.totalTime, 1)) * 100);
+                    html += `
+                        <div class="station-stat-item" style="padding: 6px 0;">
+                            <div class="station-stat-info" style="margin-left: 0;">
+                                <div class="station-stat-header">
+                                    <span class="station-stat-name" style="font-size: 11px;">${name}</span>
+                                    <span class="station-stat-time" style="font-size: 11px;">${formatListeningTimeFull(time)} <span class="station-stat-pct">(${pct}%)</span></span>
+                                </div>
+                                <div class="station-stat-bar-bg"><div class="station-stat-bar" style="width: ${barWidth}%"></div></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            html += `</div>`;
+        }
+
+        // Top songs
+        if (listener.songs && listener.songs.length > 0) {
+            html += `<h4 class="stats-subtitle" style="font-size: 12px; margin: 8px 0 4px;">Top Tracks</h4><div class="stats-songs-list">`;
+            listener.songs.slice(0, 10).forEach((song, i) => {
+                html += `
+                    <div class="stats-song-item" style="animation-delay: ${i * 0.03}s">
+                        <div class="stats-rank">${i + 1}</div>
+                        <img class="stats-cover" src="${song.cover || fallbackLogo}" alt="Cover" onerror="this.src='${fallbackLogo}'">
+                        <div class="stats-info">
+                            <div class="stats-title">${song.title}</div>
+                            <div class="stats-meta">${song.playCount} plays • ${formatListeningTimeFull(song.listeningTime)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+
+        // Favorites
+        if (listener.favorites && listener.favorites.length > 0) {
+            html += `<h4 class="stats-subtitle" style="font-size: 12px; margin: 12px 0 4px;"><i class="fas fa-heart" style="color:#ef4444"></i> Favorites (${listener.favorites.length})</h4><div class="stats-songs-list">`;
+            listener.favorites.slice(0, 10).forEach((fav, i) => {
+                const favCover = fav.cover || fallbackLogo;
+                html += `
+                    <div class="stats-song-item" style="animation-delay: ${i * 0.03}s">
+                        <div class="stats-rank" style="color:#ef4444;"><i class="fas fa-heart" style="font-size:10px"></i></div>
+                        <img class="stats-cover" src="${favCover}" alt="Cover" onerror="this.src='${fallbackLogo}'">
+                        <div class="stats-info">
+                            <div class="stats-title">${fav.title || 'Unknown'}</div>
+                            <div class="stats-meta">${fav.station || ''} ${fav.timestamp ? '• ' + new Date(fav.timestamp).toLocaleDateString() : ''}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+
+        // Recent history
+        if (listener.history && listener.history.length > 0) {
+            html += `<h4 class="stats-subtitle" style="font-size: 12px; margin: 12px 0 4px;"><i class="fas fa-history"></i> Recent History (${listener.history.length})</h4><div class="stats-songs-list">`;
+            listener.history.slice(0, 10).forEach((entry, i) => {
+                const histCover = entry.cover || fallbackLogo;
+                html += `
+                    <div class="stats-song-item" style="animation-delay: ${i * 0.03}s">
+                        <div class="stats-rank" style="opacity:0.4;">${i + 1}</div>
+                        <img class="stats-cover" src="${histCover}" alt="Cover" onerror="this.src='${fallbackLogo}'">
+                        <div class="stats-info">
+                            <div class="stats-title">${entry.title || 'Unknown'}</div>
+                            <div class="stats-meta">${entry.timestamp ? new Date(entry.timestamp).toLocaleString() : ''}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+
+        html += `</div></div>`;
+    });
+
+    html += `</div></div>`;
+    view.innerHTML = html;
 }
 
 function renderHistoryList() {

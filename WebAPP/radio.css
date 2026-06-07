@@ -6555,3 +6555,213 @@ body::-webkit-scrollbar-thumb {
     white-space: nowrap;
     flex-shrink: 0;
 }
+
+/* Admin badge on tab */
+.tab-admin-badge {
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(249, 115, 22, 0.35));
+    color: #f87171;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 4px;
+    vertical-align: middle;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ANONYMOUS LISTENER STATS (Admin Only)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.anon-listeners-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anon-listener-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.3s ease forwards;
+    opacity: 0;
+}
+
+.anon-listener-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.anon-listener-card.online {
+    border-color: rgba(74, 222, 128, 0.2);
+    background: rgba(74, 222, 128, 0.03);
+}
+
+.anon-listener-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.anon-listener-header:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.anon-listener-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.7);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.anon-online-dot {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 10px;
+    height: 10px;
+    background: #4ade80;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.6);
+    animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.anon-listener-summary {
+    flex: 1;
+    min-width: 0;
+}
+
+.anon-listener-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.anon-id-tag {
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.anon-status-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+.anon-status-badge.online {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+
+.anon-status-badge.offline {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.anon-listener-meta {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 2px;
+}
+
+.anon-now-playing {
+    font-size: 11px;
+    color: rgba(74, 222, 128, 0.8);
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    animation: pulse 3s ease infinite;
+}
+
+.anon-now-playing i {
+    font-size: 9px;
+}
+
+.anon-expand-icon {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.anon-listener-card.expanded .anon-expand-icon {
+    transform: rotate(180deg);
+}
+
+.anon-listener-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.3s ease;
+    padding: 0 14px;
+}
+
+.anon-listener-card.expanded .anon-listener-details {
+    max-height: 2000px;
+    padding: 0 14px 14px;
+}
+
+/* Compact stat cards inside anonymous detail */
+.anon-listener-details .stats-overview {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.anon-listener-details .stat-card {
+    padding: 8px 10px;
+}
+
+.anon-listener-details .stat-card .stat-label {
+    font-size: 9px;
+}
+
+.anon-listener-details .stat-card .stat-value {
+    font-size: 13px;
+}
+
+.anon-listener-details .stats-songs-list {
+    gap: 4px;
+}
+
+.anon-listener-details .stats-song-item {
+    padding: 6px 8px;
+}
+
+.anon-listener-details .stats-cover {
+    width: 32px;
+    height: 32px;
+}
+
+.anon-listener-details .station-stats-list {
+    gap: 2px;
+}
