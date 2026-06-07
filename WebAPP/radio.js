@@ -164,6 +164,12 @@ async function syncUserDataFromCloud() {
                 }
                 localStorage.setItem('RadioGaming-songFavorites', JSON.stringify(songFavorites));
                 console.log(`[CloudSync] ❤️ Favorites: ${cloudFavs.length} cloud, merged ${addedCount} new favorites`);
+
+                // Fix: Immediately update global favorites count so UI stays consistent
+                if (!window._globalFavoritesCount) window._globalFavoritesCount = {};
+                songFavorites.forEach(fav => {
+                    window._globalFavoritesCount[fav.title] = (window._globalFavoritesCount[fav.title] || 0);
+                });
             }
         }
 
@@ -199,6 +205,28 @@ async function syncUserDataFromCloud() {
             console.log(`[CloudSync] 📊 Stats: cloud totalTime=${cloudStats.totalTime || 0}s, ${songCount} songs tracked`);
         }
 
+        // Merge savedWebhooks (cloud wins if it has entries not in local)
+        if (result.data.savedWebhooks) {
+            const cloudWebhooks = JSON.parse(result.data.savedWebhooks.value || '[]');
+            if (cloudWebhooks.length > 0) {
+                const localWebhooks = getSavedWebhooks();
+                const localUrls = new Set(localWebhooks.map(w => w.url));
+                let addedCount = 0;
+                for (const webhook of cloudWebhooks) {
+                    if (!localUrls.has(webhook.url)) {
+                        localWebhooks.push(webhook);
+                        addedCount++;
+                        updated = true;
+                    }
+                }
+                if (addedCount > 0) {
+                    localStorage.setItem('RadioGaming-savedWebhooks', JSON.stringify(localWebhooks));
+                    console.log(`[CloudSync] 🔗 Webhooks: ${cloudWebhooks.length} cloud, merged ${addedCount} new webhooks`);
+                    renderSavedWebhooks();
+                }
+            }
+        }
+
         if (updated) {
             console.log('[CloudSync] ✅ Merged new data from cloud into local storage');
         } else {
@@ -221,7 +249,8 @@ function syncUserDataToCloud() {
         const payload = {
             songHistory: songHistory,
             songFavorites: songFavorites,
-            listeningStats: listeningStats
+            listeningStats: listeningStats,
+            savedWebhooks: getSavedWebhooks()
         };
         const size = JSON.stringify(payload).length;
         console.log(`[CloudSync] ☁️ Pushing data to cloud (${(size / 1024).toFixed(1)} KB)...`);
@@ -705,6 +734,7 @@ async function fetchFooterUserStats() {
         // Also update global favorites count for history view
         if (data.favorites_count) {
             window._globalFavoritesCount = data.favorites_count;
+            _ensureLocalFavoritesInGlobalCount();
         }
     } catch (e) {
         console.error('[FooterStats] Failed:', e);
@@ -3594,6 +3624,37 @@ async function pollNewMessages() {
                 checkMessageForMention(mention, mention.station_name);
             });
         }
+
+        // Process deleted messages (real-time sync from other users/admins)
+        if (data.deleted_messages && data.deleted_messages.length > 0) {
+            data.deleted_messages.forEach(msgId => {
+                const el = document.getElementById(`msg-${msgId}`);
+                if (el) {
+                    el.style.transition = 'all 0.3s ease';
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateX(-20px) scale(0.95)';
+                    el.style.maxHeight = el.offsetHeight + 'px';
+                    setTimeout(() => {
+                        el.style.maxHeight = '0';
+                        el.style.padding = '0';
+                        el.style.margin = '0';
+                        el.style.borderWidth = '0';
+                    }, 150);
+                    setTimeout(() => el.remove(), 400);
+                }
+            });
+        }
+
+        // Process deleted emojis (real-time sync from other users/admins)
+        if (data.deleted_emojis && data.deleted_emojis.length > 0) {
+            data.deleted_emojis.forEach(emojiId => {
+                const idx = customEmojis.findIndex(e => e.id === emojiId);
+                if (idx !== -1) {
+                    console.log(`[CHAT] Emoji "${customEmojis[idx].name}" was deleted by another user`);
+                    customEmojis.splice(idx, 1);
+                }
+            });
+        }
     } catch (error) {
         if (isChatVisible) console.error('[CHAT] Polling error:', error);
     }
@@ -3763,7 +3824,26 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     messageEl.dataset.messageId = message.id;
 
     const timestamp = new Date(message.timestamp);
-    const timeStr = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    const timeOnly = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const isToday = timestamp.toDateString() === now.toDateString();
+    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+    const isYesterday = timestamp.toDateString() === yesterday.toDateString();
+
+    let timeStr;
+    if (isToday) {
+        timeStr = timeOnly;
+    } else if (isYesterday) {
+        timeStr = `Wczoraj ${timeOnly}`;
+    } else if (timestamp.getFullYear() === now.getFullYear()) {
+        const day = String(timestamp.getDate()).padStart(2, '0');
+        const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+        timeStr = `${day}.${month} ${timeOnly}`;
+    } else {
+        const day = String(timestamp.getDate()).padStart(2, '0');
+        const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+        timeStr = `${day}.${month}.${timestamp.getFullYear()} ${timeOnly}`;
+    }
 
     // Handle mentions
     let hasMention = false;
@@ -5220,6 +5300,18 @@ function addToSongHistory(title, coverUrl) {
     renderHistoryList();
 }
 
+// Ensure current user's local favorites are reflected in the global count.
+// This prevents the ❤️ count from disappearing when server data overwrites
+// the optimistic local update (since cloud sync is debounced 5s).
+function _ensureLocalFavoritesInGlobalCount() {
+    if (!window._globalFavoritesCount) return;
+    songFavorites.forEach(fav => {
+        if (!window._globalFavoritesCount[fav.title] || window._globalFavoritesCount[fav.title] < 1) {
+            window._globalFavoritesCount[fav.title] = Math.max(window._globalFavoritesCount[fav.title] || 0, 1);
+        }
+    });
+}
+
 function startListeningTimer() {
     if (listeningTimer) return;
     listeningTimer = setInterval(() => {
@@ -5829,6 +5921,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
     // Store favorites_count globally for use in history/stats views
     if (data.favorites_count) {
         window._globalFavoritesCount = data.favorites_count;
+        _ensureLocalFavoritesInGlobalCount();
     }
 }
 
@@ -5848,6 +5941,7 @@ function renderHistoryList() {
         fetch(`${CHAT_API_BASE}/chat/ranking`).then(r => r.json()).then(d => {
             if (d.success && d.favorites_count) {
                 window._globalFavoritesCount = d.favorites_count;
+                _ensureLocalFavoritesInGlobalCount();
                 // Re-render to show fav counts (only if history tab is active)
                 const activeTab = document.querySelector('.history-tab.active');
                 if (activeTab && activeTab.dataset.tab === 'history') renderHistoryList();
