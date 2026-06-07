@@ -4316,12 +4316,14 @@ function renderEmojiGrid(messageId, filter = '') {
                     btn.title = c.name;
                 }
 
-                // Admin delete button for custom emojis
-                if (discordUser && isUserAdmin(discordUser.id) && c) {
+                // Delete button for admins or emoji creator
+                const canDelete = discordUser && c && (isUserAdmin(discordUser.id) || c.creator_id === discordUser.id);
+                if (canDelete) {
+                    const isCreator = c.creator_id === discordUser.id;
                     const delBtn = document.createElement('button');
                     delBtn.className = 'emoji-delete-btn';
                     delBtn.innerHTML = '<i class="fas fa-times"></i>';
-                    delBtn.title = `Usuń emoji "${c.name}" (Admin)`;
+                    delBtn.title = isCreator ? `Usuń swoje emoji "${c.name}"` : `Usuń emoji "${c.name}" (Admin)`;
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
                         deleteCustomEmoji(emojiId, c.name, messageId);
