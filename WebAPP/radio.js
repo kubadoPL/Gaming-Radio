@@ -5212,6 +5212,19 @@ function toggleFavorite(title) {
     }
     localStorage.setItem('RadioGaming-songFavorites', JSON.stringify(songFavorites));
     syncUserDataToCloud();
+
+    // Immediately update global favorites counter so cards show updated ❤️ count
+    if (!window._globalFavoritesCount) window._globalFavoritesCount = {};
+    if (idx !== -1) {
+        // Was removed from favorites
+        if (window._globalFavoritesCount[title] > 0) {
+            window._globalFavoritesCount[title]--;
+        }
+    } else {
+        // Was added to favorites
+        window._globalFavoritesCount[title] = (window._globalFavoritesCount[title] || 0) + 1;
+    }
+
     renderHistoryList();
     renderFavoritesList();
 
