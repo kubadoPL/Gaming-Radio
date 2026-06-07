@@ -2501,7 +2501,7 @@ window.openUserProfileModal = async function (userId, userName, globalName, avat
     }
 };
 
-function renderUserProfileStats(data) {
+async function renderUserProfileStats(data) {
     const statsContainer = document.getElementById('user-profile-stats');
     if (!statsContainer) return;
 
@@ -2651,21 +2651,60 @@ function renderUserProfileStats(data) {
 
     // Guild memberships (loaded async from frontend)
     if (typeof SHARE_GUILDS !== 'undefined' && SHARE_GUILDS.length > 0 && data.user && data.user.id) {
-        html += `<div class="user-profile-section-label"><i class="fab fa-discord"></i> Server Memberships</div>`;
-        html += `<div class="profile-guild-list" id="user-profile-guilds">`;
-        SHARE_GUILDS.forEach(() => {
-            html += `<div class="membership-badge loading"><i class="fas fa-spinner fa-spin"></i><span>Checking...</span></div>`;
-        });
-        html += `</div>`;
+        // If viewer is not logged in, show a simple "not in official server" message
+        // to avoid leaking server names to strangers
+        if (!discordUser) {
+            html += `<div class="user-profile-section-label"><i class="fab fa-discord"></i> Server Memberships</div>`;
+            html += `<div class="profile-guild-list" id="user-profile-guilds">`;
+            html += `<div class="membership-badge not-member">
+                <i class="fas fa-times-circle"></i>
+                <div class="membership-info">
+                    <div class="membership-guild-name">Official Servers</div>
+                    <div class="membership-status-text">Log in to see membership details</div>
+                </div>
+            </div>`;
+            html += `</div>`;
+        } else {
+            html += `<div class="user-profile-section-label"><i class="fab fa-discord"></i> Server Memberships</div>`;
+            html += `<div class="profile-guild-list" id="user-profile-guilds">`;
+            SHARE_GUILDS.forEach(() => {
+                html += `<div class="membership-badge loading"><i class="fas fa-spinner fa-spin"></i><span>Checking...</span></div>`;
+            });
+            html += `</div>`;
+        }
     }
 
     statsContainer.innerHTML = html;
 
-    // Async guild checks (non-blocking, per-guild)
-    if (typeof SHARE_GUILDS !== 'undefined' && SHARE_GUILDS.length > 0 && data.user && data.user.id) {
+    // Async guild checks (non-blocking, per-guild) - only for logged-in viewers
+    if (discordUser && typeof SHARE_GUILDS !== 'undefined' && SHARE_GUILDS.length > 0 && data.user && data.user.id) {
         const guildContainer = document.getElementById('user-profile-guilds');
         if (guildContainer) {
             const userId = data.user.id;
+
+            // First check if the VIEWER is in any of the guilds
+            let viewerInAnyGuild = false;
+            for (const guild of SHARE_GUILDS) {
+                try {
+                    const viewerResp = await fetch(`${CHAT_API_BASE}/user/guild-check/${discordUser.id}/${guild.id}`);
+                    const viewerData = await viewerResp.json();
+                    if (viewerData.is_member) { viewerInAnyGuild = true; break; }
+                } catch (_) {}
+            }
+
+            // If viewer is not in any guild, hide server details
+            if (!viewerInAnyGuild) {
+                guildContainer.innerHTML = `<div class="membership-badge not-member">
+                    <i class="fas fa-lock"></i>
+                    <div class="membership-info">
+                        <div class="membership-guild-name">Official Servers</div>
+                        <div class="membership-status-text">Not in official server</div>
+                    </div>
+                </div>`;
+                return;
+            }
+
+            // Viewer is in at least one guild — show full details
             SHARE_GUILDS.forEach(async (guild, idx) => {
                 try {
                     const resp = await fetch(`${CHAT_API_BASE}/user/guild-check/${userId}/${guild.id}`);
