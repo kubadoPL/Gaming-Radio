@@ -2260,14 +2260,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function handleAuthCallback() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const authToken = urlParams.get('auth_token');
-    const authError = urlParams.get('auth_error');
+    // Parse auth params from URL fragment (#) for security (tokens never sent to server)
+    // Also check query string (?) for backward compatibility
+    let authToken = null;
+    let authError = null;
+
+    if (window.location.hash && window.location.hash.length > 1) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        authToken = hashParams.get('auth_token');
+        authError = hashParams.get('auth_error');
+    }
+
+    // Fallback: check query string for backward compatibility
+    if (!authToken && !authError) {
+        const urlParams = new URLSearchParams(window.location.search);
+        authToken = urlParams.get('auth_token');
+        authError = urlParams.get('auth_error');
+    }
 
     if (authToken) {
         localStorage.setItem('RadioGaming-discordAuthToken', authToken);
         discordAuthToken = authToken;
-        // Clean URL
+        // Clean URL (remove both hash and query params)
         window.history.replaceState({}, document.title, window.location.pathname);
         showNotification('Successfully logged in with Discord!', 'fab fa-discord');
         checkExistingSession();
@@ -3803,11 +3817,16 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     // Check if this message belongs to the current user
     const isOwnMessage = discordUser && message.user.id === discordUser.id;
 
+    const safeUsername = escapeHtml(message.user.username);
+    const safeGlobalName = escapeHtml(message.user.global_name || message.user.username);
+    const safeAvatarUrl = encodeURI(message.user.avatar_url || '');
+    const safeUserId = escapeHtml(message.user.id);
+
     messageEl.innerHTML = `
-        <img class="chat-message-avatar clickable" src="${message.user.avatar_url}" alt="${message.user.username}" onclick="openUserProfileModal('${message.user.id}', '${escapeHtml(message.user.username)}', '${escapeHtml(message.user.global_name || message.user.username)}', '${message.user.avatar_url}')">
+        <img class="chat-message-avatar clickable" src="${safeAvatarUrl}" alt="${safeUsername}" data-user-id="${safeUserId}" data-username="${safeUsername}" data-globalname="${safeGlobalName}" data-avatar="${safeAvatarUrl}" onclick="openUserProfileModal(this.dataset.userId, this.dataset.username, this.dataset.globalname, this.dataset.avatar)">
         <div class="chat-message-content">
             <div class="chat-message-header">
-                <span class="chat-message-username clickable" onclick="openUserProfileModal('${message.user.id}', '${escapeHtml(message.user.username)}', '${escapeHtml(message.user.global_name || message.user.username)}', '${message.user.avatar_url}')">${message.user.global_name || message.user.username}</span>
+                <span class="chat-message-username clickable" data-user-id="${safeUserId}" data-username="${safeUsername}" data-globalname="${safeGlobalName}" data-avatar="${safeAvatarUrl}" onclick="openUserProfileModal(this.dataset.userId, this.dataset.username, this.dataset.globalname, this.dataset.avatar)">${safeGlobalName}</span>
                 <span class="chat-message-time">${timeStr}</span>
             </div>
             ${formattedContent ? `<div class="chat-message-text">
