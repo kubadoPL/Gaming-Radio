@@ -3728,7 +3728,7 @@ function checkMessageForMention(message, stationName = null) {
         const escapedContent = escapeHtml(message.content);
         const contentWithEmojis = escapedContent.replace(/&lt;:([^:]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
             const c = customEmojis.find(e => e.id === id);
-            return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : match;
+            return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : `<span class="chat-deleted-emoji" title="Usunięte emoji: ${name}">:${name}:</span>`;
         });
         const senderName = message.user.global_name || message.user.username;
         const notificationTitle = stationName
@@ -3811,7 +3811,8 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
             if (c) {
                 return `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">`;
             }
-            return match;
+            // Emoji was deleted — show a nice placeholder
+            return `<span class="chat-deleted-emoji" title="Usunięte emoji: ${name}">:${name}:</span>`;
         });
 
         formattedContent = content;
