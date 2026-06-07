@@ -696,6 +696,10 @@ async function fetchFooterUserStats() {
         const anonEl = document.getElementById('footer-stat-anon');
         if (regEl) regEl.textContent = data.total_users || 0;
         if (anonEl) anonEl.textContent = data.total_unique_anonymous_users || 0;
+        // Also update global favorites count for history view
+        if (data.favorites_count) {
+            window._globalFavoritesCount = data.favorites_count;
+        }
     } catch (e) {
         console.error('[FooterStats] Failed:', e);
     }
@@ -708,10 +712,23 @@ let footerUsersOpen = localStorage.getItem('RadioGaming-footerUsersOpen') === 't
 const _footerUsersCache = {}; // station_key -> { users: [], timestamp: number }
 
 // Call this from any place that gets online_users data to feed the cache
+let _footerStatsDebounce = null;
+let _prevFooterUserCount = -1;
+
 function cacheFooterUsers(stationKey, onlineUsers) {
     if (onlineUsers && Array.isArray(onlineUsers)) {
+        const prevCount = _footerUsersCache[stationKey] ? _footerUsersCache[stationKey].users.length : 0;
         _footerUsersCache[stationKey] = { users: onlineUsers, timestamp: Date.now() };
         fetchFooterUsers(); // auto-refresh widget when new data arrives
+
+        // Debounced stats refresh when user count changes
+        if (onlineUsers.length !== prevCount) {
+            if (_footerStatsDebounce) clearTimeout(_footerStatsDebounce);
+            _footerStatsDebounce = setTimeout(() => {
+                fetchFooterUserStats();
+                _footerStatsDebounce = null;
+            }, 2000);
+        }
     }
 }
 
