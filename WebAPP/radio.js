@@ -782,6 +782,7 @@ function updateFooterUsersList(onlineUsers) {
             ? '<i class="fas fa-user-secret" style="width:18px;height:18px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;font-size:9px;color:rgba(255,255,255,0.4);flex-shrink:0;"></i>'
             : `<img src="${u.avatar_url || ''}" alt="" style="width:18px;height:18px;border-radius:50%;object-fit:cover;flex-shrink:0;${isOn ? '' : 'filter:grayscale(1);opacity:0.5;'}">`;
         const name = isAnon ? 'Anonymous' : (u.global_name || u.username);
+        const footerAdminBadge = !isAnon ? getAdminBadgeHtml(u.id, 'small') : '';
         const dotColor = isOn ? '#10b981' : '#555';
         const nameOpacity = isOn ? (isAnon ? '0.4' : '0.7') : '0.35';
         const ago = !isOn ? `<span style="font-size:8px;opacity:0.35;white-space:nowrap;flex-shrink:0;">${timeAgo(u.last_seen)}</span>` : '';
@@ -789,7 +790,7 @@ function updateFooterUsersList(onlineUsers) {
         const noClickAttr = `style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;"`;
         html += `<div ${isAnon ? noClickAttr : clickAttr}>
             ${avatar}
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:${nameOpacity};">${name}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:${nameOpacity};display:flex;align-items:center;gap:4px;">${name} ${footerAdminBadge}</span>
             ${ago}
             <span style="width:6px;height:6px;border-radius:50%;background:${dotColor};flex-shrink:0;"></span>
         </div>`;
@@ -2047,6 +2048,12 @@ function isUserAdmin(userId) {
     return ADMIN_USER_IDS.has(String(userId));
 }
 
+function getAdminBadgeHtml(userId, size = 'default') {
+    if (!isUserAdmin(userId)) return '';
+    if (size === 'small') return `<span class="chat-admin-badge small" title="Administrator"><i class="fas fa-shield-alt"></i></span>`;
+    return `<span class="chat-admin-badge" title="Administrator"><i class="fas fa-shield-alt"></i> Admin</span>`;
+}
+
 // ========================
 // UNLIMITED FAVORITES (IndexedDB)
 // ========================
@@ -2410,7 +2417,8 @@ window.openDiscordProfileModal = async function () {
     }
 
     document.getElementById('modal-discord-avatar').src = discordUser.avatar_url;
-    document.getElementById('modal-discord-name').textContent = discordUser.global_name || discordUser.username;
+    const modalNameEl = document.getElementById('modal-discord-name');
+    modalNameEl.innerHTML = `${escapeHtml(discordUser.global_name || discordUser.username)} ${getAdminBadgeHtml(discordUser.id)}`;
     document.getElementById('modal-discord-username').textContent = `@${discordUser.username}`;
 
     // Clear and reset guild list
@@ -2499,7 +2507,7 @@ function _applyProfileUserData(data) {
     if (data.user) {
         _applyProfileBanner(banner, data.user.banner_url, data.user.accent_color);
         if (data.user.avatar_url && avatar) avatar.src = data.user.avatar_url;
-        if (data.user.global_name && nameEl) nameEl.textContent = data.user.global_name;
+        if (data.user.global_name && nameEl) nameEl.innerHTML = `${escapeHtml(data.user.global_name)} ${getAdminBadgeHtml(data.user.id)}`;
         if (data.user.username && usernameEl) usernameEl.textContent = `@${data.user.username}`;
     }
 }
@@ -2525,7 +2533,7 @@ window.openUserProfileModal = async function (userId, userName, globalName, avat
     const statsContainer = document.getElementById('user-profile-stats');
 
     if (avatar) avatar.src = avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png';
-    if (nameEl) nameEl.textContent = globalName || userName || 'Unknown';
+    if (nameEl) nameEl.innerHTML = `${escapeHtml(globalName || userName || 'Unknown')} ${getAdminBadgeHtml(userId)}`;
     if (usernameEl) usernameEl.textContent = `@${userName || 'unknown'}`;
     _applyProfileBanner(banner, bannerUrl, accentColor);
 
@@ -3695,7 +3703,7 @@ function renderOnlineUsers() {
         item.innerHTML = `
             <img class="share-guild-icon" src="${user.avatar_url}" alt="${user.username}">
             <div class="share-guild-info">
-                <div class="share-guild-name">${user.global_name || user.username}</div>
+                <div class="share-guild-name">${user.global_name || user.username} ${getAdminBadgeHtml(user.id, 'small')}</div>
                 <div class="share-guild-desc">${user.is_online ? 'Listening to' : 'Listened to'} ${user.current_station || 'Radio GAMING'}</div>
             </div>
             <div class="chat-online-badge" style="margin-left: auto; ${badgeStyle} cursor: default; white-space: nowrap;">
@@ -4729,7 +4737,7 @@ function updateMentionSuggestions(query, atIndex) {
         item.innerHTML = `
             ${avatarHtml}
             <div class="mention-info">
-                <span class="mention-name">${mention.global_name || mention.username}</span>
+                <span class="mention-name">${mention.global_name || mention.username} ${!mention.isSpecial ? getAdminBadgeHtml(mention.id, 'small') : ''}</span>
                 <span class="mention-handle">@${mention.username}</span>
             </div>
         `;
@@ -5650,7 +5658,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                     <div class="podium-item podium-${podiumClasses[idx]} ${isMe ? 'podium-me' : ''} clickable" style="animation-delay: ${idx * 0.15}s; ${bannerStyle} cursor: pointer;" onclick="openUserProfileModal('${u.id}', '${escapeHtml(u.username)}', '${escapeHtml(u.global_name || u.username)}', '${u.avatar_url || defaultAvatar}', '${u.banner_url || ''}')">
                         <div class="podium-medal">${medals[idx]}</div>
                         <img class="podium-avatar" src="${u.avatar_url || defaultAvatar}" alt="${u.username}" onerror="this.src='${defaultAvatar}'">
-                        <div class="podium-name">${u.global_name || u.username}</div>
+                        <div class="podium-name">${u.global_name || u.username} ${getAdminBadgeHtml(u.id, 'small')}</div>
                         <div class="podium-time">${formatListeningTime(entry.totalTime)}</div>
                         <div class="podium-songs">${entry.songCount} songs</div>
                     </div>
@@ -5683,7 +5691,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                         <div class="ranking-pos">#${rank}</div>
                         <img class="ranking-avatar" src="${u.avatar_url || defaultAvatar}" alt="${u.username}" onerror="this.src='${defaultAvatar}'">
                         <div class="ranking-user-info">
-                            <div class="ranking-user-name">${u.global_name || u.username}</div>
+                            <div class="ranking-user-name">${u.global_name || u.username} ${getAdminBadgeHtml(u.id, 'small')}</div>
                             <div class="ranking-user-bar-bg">
                                 <div class="ranking-user-bar" style="width: ${barWidth}%"></div>
                             </div>
@@ -5734,7 +5742,7 @@ function buildRankingHTML(container, data, stationLogos, fallbackLogo, defaultAv
                         <div class="ranking-pos">#${i + 1}</div>
                         <img class="ranking-avatar small" src="${u.avatar_url || defaultAvatar}" alt="${u.username}" onerror="this.src='${defaultAvatar}'">
                         <div class="ranking-user-info">
-                            <div class="ranking-user-name">${u.global_name || u.username}</div>
+                            <div class="ranking-user-name">${u.global_name || u.username} ${getAdminBadgeHtml(u.id, 'small')}</div>
                             <div class="ranking-user-bar-bg">
                                 <div class="ranking-user-bar" style="width: ${barWidth}%"></div>
                             </div>

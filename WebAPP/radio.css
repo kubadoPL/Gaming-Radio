@@ -3003,6 +3003,18 @@ body::-webkit-scrollbar-thumb {
     }
 }
 
+.chat-admin-badge.small {
+    font-size: 0;
+    padding: 2px 4px;
+    border-radius: 4px;
+    gap: 0;
+    line-height: 1;
+}
+
+.chat-admin-badge.small i {
+    font-size: 8px;
+}
+
 /* Admin delete button (amber/orange, distinct from user's red) */
 .chat-message-delete-btn.admin-delete {
     background: rgba(30, 25, 45, 0.95);
