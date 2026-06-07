@@ -2207,7 +2207,7 @@ window.toggleFavoriteGif = async function (btn, event) {
 
     // Handle failure (unlikely with IndexedDB)
     if (!storageSuccess) {
-        showNotification('Błąd zapisu danych!', 'fas fa-exclamation-triangle');
+        showNotification('Error saving data!', 'fas fa-exclamation-triangle');
         return;
     }
 
@@ -2227,9 +2227,9 @@ window.toggleFavoriteGif = async function (btn, event) {
 
     // 4. Notifications
     if (isAdding) {
-        showNotification('Dodano do ulubionych!', 'fas fa-heart');
+        showNotification('Added to favorites!', 'fas fa-heart');
     } else {
-        showNotification('Usunięto z ulubionych!', 'far fa-heart');
+        showNotification('Removed from favorites!', 'far fa-heart');
     }
 
     // 5. Context-aware removal (ONLY if inside GIF picker in Favorites tab)
@@ -3422,7 +3422,7 @@ function initializeChatPolling() {
 
     console.log('[CHAT] Initializing polling...');
     updateCurrentStation();
-    fetchCustomEmojis(); // Wgrywamy własne emoji
+    fetchCustomEmojis(); // Load custom emojis
     loadChatHistory();
 
     // Poll for new messages every 3 seconds
@@ -3797,7 +3797,7 @@ function checkMessageForMention(message, stationName = null) {
         const escapedContent = escapeHtml(message.content);
         const contentWithEmojis = escapedContent.replace(/&lt;:([^:]+):([a-zA-Z0-9_-]+)&gt;/g, (match, name, id) => {
             const c = customEmojis.find(e => e.id === id);
-            return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : `<span class="chat-deleted-emoji" title="Usunięte emoji: ${name}">:${name}:</span>`;
+            return c ? `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">` : `<span class="chat-deleted-emoji" title="Deleted emoji: ${name}">:${name}:</span>`;
         });
         const senderName = message.user.global_name || message.user.username;
         const notificationTitle = stationName
@@ -3834,7 +3834,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     if (isToday) {
         timeStr = timeOnly;
     } else if (isYesterday) {
-        timeStr = `Wczoraj ${timeOnly}`;
+        timeStr = `Yesterday ${timeOnly}`;
     } else if (timestamp.getFullYear() === now.getFullYear()) {
         const day = String(timestamp.getDate()).padStart(2, '0');
         const month = String(timestamp.getMonth() + 1).padStart(2, '0');
@@ -3900,7 +3900,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
                 return `<img src="${c.url}" class="chat-custom-emoji" alt=":${name}:" title=":${name}:">`;
             }
             // Emoji was deleted — show a nice placeholder
-            return `<span class="chat-deleted-emoji" title="Usunięte emoji: ${name}">:${name}:</span>`;
+            return `<span class="chat-deleted-emoji" title="Deleted emoji: ${name}">:${name}:</span>`;
         });
 
         formattedContent = content;
@@ -3930,11 +3930,11 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     // Build delete button HTML
     let deleteButtonHtml = '';
     if (isOwnMessage) {
-        deleteButtonHtml = `<button class="chat-message-delete-btn" onclick="deleteChatMessage('${message.id}')" title="Usuń wiadomość">
+        deleteButtonHtml = `<button class="chat-message-delete-btn" onclick="deleteChatMessage('${message.id}')" title="Delete message">
             <i class="fas fa-trash-alt"></i>
         </button>`;
     } else if (isCurrentUserAdmin) {
-        deleteButtonHtml = `<button class="chat-message-delete-btn admin-delete" onclick="deleteChatMessage('${message.id}')" title="Usuń jako Admin">
+        deleteButtonHtml = `<button class="chat-message-delete-btn admin-delete" onclick="deleteChatMessage('${message.id}')" title="Delete as Admin">
             <i class="fas fa-gavel"></i>
         </button>`;
     }
@@ -3971,7 +3971,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
                 ${reactionsHtml}
             </div>
         </div>
-        <button class="chat-reaction-add-btn" onclick="openEmojiPicker('${message.id}', this)" title="Dodaj reakcję">
+        <button class="chat-reaction-add-btn" onclick="openEmojiPicker('${message.id}', this)" title="Add reaction">
             <i class="far fa-smile"></i>
         </button>
         ${deleteButtonHtml}
@@ -4039,13 +4039,13 @@ window.deleteChatMessage = async function (messageId) {
             setTimeout(() => {
                 messageEl.remove();
             }, 400);
-            showNotification('Wiadomość usunięta', 'fas fa-trash-alt');
+            showNotification('Message deleted', 'fas fa-trash-alt');
         } else {
-            showNotification(data.error || 'Nie udało się usunąć wiadomości', 'fas fa-exclamation-triangle');
+            showNotification(data.error || 'Failed to delete message', 'fas fa-exclamation-triangle');
         }
     } catch (error) {
         console.error('[CHAT] Delete error:', error);
-        showNotification('Błąd połączenia z serwerem', 'fas fa-exclamation-triangle');
+        showNotification('Connection error', 'fas fa-exclamation-triangle');
     }
 };
 
@@ -4120,16 +4120,16 @@ async function ensureEmojisForMessages(messages) {
 }
 
 const EMOJI_CATEGORIES = {
-    'Często używane': ['😂', '❤️', '🔥', '👍', '👀', '😭', '🥺', '✨', '💀', '🙏', '😍', '🤣', '😊', '🎉', '💯', '😎'],
-    'Własne': [], // Będzie dynamicznie zapełniane
-    'Buźki': ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖'],
-    'Gesty': ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🙏', '💪'],
-    'Serca': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟'],
-    'Zwierzęta': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦅', '🦉', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐙', '🦑', '🐠', '🐬', '🐳', '🦈'],
-    'Jedzenie': ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍒', '🍑', '🍍', '🥝', '🍅', '🥑', '🍔', '🍟', '🍕', '🌮', '🌯', '🍜', '🍣', '🍦', '🍩', '🍪', '🎂', '🍰', '🧁', '☕', '🍺', '🍷', '🥤'],
-    'Aktywności': ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥊', '🎮', '🕹️', '🎲', '🎯', '🎳', '🎸', '🎹', '🎤', '🎧', '🎬', '🎨', '🎭', '🏆', '🥇', '🥈', '🥉', '🎖️', '🏅'],
-    'Podróże': ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '✈️', '🚀', '🛸', '🚁', '⛵', '🚢', '🏠', '🏢', '🏰', '🗼', '🗽', '🌉', '🌍', '🌎', '🌏'],
-    'Symbole': ['⭐', '🌟', '✨', '💫', '🔥', '💥', '🎵', '🎶', '💯', '💢', '💬', '👁️‍🗨️', '🔔', '🎪', '🎫', '🏷️', '📌', '🔑', '🗡️', '⚡', '☀️', '🌙', '⛅', '🌈', '❄️', '💧', '🌊']
+    'Frequently Used': ['😂', '❤️', '🔥', '👍', '👀', '😭', '🥺', '✨', '💀', '🙏', '😍', '🤣', '😊', '🎉', '💯', '😎'],
+    'Custom': [], // Dynamically populated
+    'Smileys': ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', '😵', '🤯', '🤠', '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨', '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', '👹', '👺', '👻', '👽', '👾', '🤖'],
+    'Gestures': ['👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🙏', '💪'],
+    'Hearts': ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟'],
+    'Animals': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦅', '🦉', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐙', '🦑', '🐠', '🐬', '🐳', '🦈'],
+    'Food': ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍒', '🍑', '🍍', '🥝', '🍅', '🥑', '🍔', '🍟', '🍕', '🌮', '🌯', '🍜', '🍣', '🍦', '🍩', '🍪', '🎂', '🍰', '🧁', '☕', '🍺', '🍷', '🥤'],
+    'Activities': ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥊', '🎮', '🕹️', '🎲', '🎯', '🎳', '🎸', '🎹', '🎤', '🎧', '🎬', '🎨', '🎭', '🏆', '🥇', '🥈', '🥉', '🎖️', '🏅'],
+    'Travel': ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '✈️', '🚀', '🛸', '🚁', '⛵', '🚢', '🏠', '🏢', '🏰', '🗼', '🗽', '🌉', '🌍', '🌎', '🌏'],
+    'Symbols': ['⭐', '🌟', '✨', '💫', '🔥', '💥', '🎵', '🎶', '💯', '💢', '💬', '👁️‍🗨️', '🔔', '🎪', '🎫', '🏷️', '📌', '🔑', '🗡️', '⚡', '☀️', '🌙', '⛅', '🌈', '❄️', '💧', '🌊']
 };
 
 let activeEmojiPicker = null; // {messageId, element}
@@ -4170,7 +4170,7 @@ function buildReactionsHtml(message) {
     }
 
     // Add inline "+" button to add more reactions
-    html += `<button class="chat-reaction-add-inline" onclick="openEmojiPicker('${message.id}', this)" title="Dodaj reakcję">
+    html += `<button class="chat-reaction-add-inline" onclick="openEmojiPicker('${message.id}', this)" title="Add reaction">
                 <i class="fas fa-plus"></i>
              </button>`;
 
@@ -4216,7 +4216,7 @@ function updateReactionsUI(messageId, reactions, reactionUsers) {
                 </button>`;
     }
 
-    html += `<button class="chat-reaction-add-inline" onclick="openEmojiPicker('${messageId}', this)" title="Dodaj reakcję">
+    html += `<button class="chat-reaction-add-inline" onclick="openEmojiPicker('${messageId}', this)" title="Add reaction">
                 <i class="fas fa-plus"></i>
              </button>`;
 
@@ -4225,7 +4225,7 @@ function updateReactionsUI(messageId, reactions, reactionUsers) {
 
 async function toggleReaction(messageId, emoji) {
     if (!discordAuthToken) {
-        showNotification('Zaloguj się, aby reagować', 'fas fa-exclamation-triangle');
+        showNotification('Log in to react', 'fas fa-exclamation-triangle');
         return;
     }
 
@@ -4258,7 +4258,7 @@ async function openEmojiPicker(messageId, btnElement) {
     closeEmojiPicker();
 
     if (!discordAuthToken) {
-        showNotification('Zaloguj się, aby używać emoji', 'fas fa-exclamation-triangle');
+        showNotification('Log in to use emojis', 'fas fa-exclamation-triangle');
         return;
     }
 
@@ -4279,7 +4279,7 @@ async function openEmojiPicker(messageId, btnElement) {
 
     picker.innerHTML = `
         <div class="emoji-picker-header">
-            <input type="text" class="emoji-picker-search" placeholder="Szukaj emoji..." id="emoji-picker-search-input">
+            <input type="text" class="emoji-picker-search" placeholder="Search emoji..." id="emoji-picker-search-input">
         </div>
         <div class="emoji-picker-categories" id="emoji-categories-bar"></div>
         <div class="emoji-picker-grid" id="emoji-picker-grid"></div>
@@ -4348,7 +4348,7 @@ function renderEmojiGrid(messageId, filter = '') {
         let currentEmojis = emojis;
 
         // Dynamic population for custom category
-        if (catName === 'Własne') {
+        if (catName === 'Custom') {
             currentEmojis = customEmojis.map(e => e.id);
         }
 
@@ -4362,7 +4362,7 @@ function renderEmojiGrid(messageId, filter = '') {
             })
             : currentEmojis;
 
-        if (catName !== 'Własne' && filteredEmojis.length === 0) continue;
+        if (catName !== 'Custom' && filteredEmojis.length === 0) continue;
 
         if (!filter) {
             const label = document.createElement('div');
@@ -4373,11 +4373,11 @@ function renderEmojiGrid(messageId, filter = '') {
         }
 
         // Add upload button in custom category
-        if (catName === 'Własne' && !filter) {
+        if (catName === 'Custom' && !filter) {
             const uploadBtn = document.createElement('div');
             uploadBtn.className = 'emoji-upload-item';
             uploadBtn.innerHTML = '<i class="fas fa-plus"></i>';
-            uploadBtn.title = 'Dodaj własne emoji';
+            uploadBtn.title = 'Add custom emoji';
             uploadBtn.onclick = () => emojiInput.click();
             grid.appendChild(uploadBtn);
         }
@@ -4403,7 +4403,7 @@ function renderEmojiGrid(messageId, filter = '') {
                     const delBtn = document.createElement('button');
                     delBtn.className = 'emoji-delete-btn';
                     delBtn.innerHTML = '<i class="fas fa-times"></i>';
-                    delBtn.title = isCreator ? `Usuń swoje emoji "${c.name}"` : `Usuń emoji "${c.name}" (Admin)`;
+                    delBtn.title = isCreator ? `Delete your emoji "${c.name}"` : `Delete emoji "${c.name}" (Admin)`;
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
                         deleteCustomEmoji(emojiId, c.name, messageId);
@@ -4428,13 +4428,13 @@ function renderEmojiGrid(messageId, filter = '') {
     }
 
     if (grid.children.length <= 1) { // 1 because of hidden input
-        grid.innerHTML += '<div style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.3); padding: 20px; font-size: 13px;">Nie znaleziono emoji</div>';
+        grid.innerHTML += '<div style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.3); padding: 20px; font-size: 13px;">No emoji found</div>';
     }
 }
 
 async function uploadCustomEmoji(file, messageId) {
     if (file.size > 2 * 1024 * 1024) {
-        showNotification('Emoji za duże! Max 2MB', 'fas fa-exclamation-triangle');
+        showNotification('Emoji too large! Max 2MB', 'fas fa-exclamation-triangle');
         return;
     }
 
@@ -4478,11 +4478,11 @@ async function sendEmoji(imageData, fileName, messageId) {
 
         const data = await response.json();
         if (data.success) {
-            showNotification('Dodano własne emoji!', 'fas fa-check-circle');
+            showNotification('Custom emoji added!', 'fas fa-check-circle');
             await fetchCustomEmojis();
             renderEmojiGrid(messageId);
         } else {
-            showNotification(data.error || 'Błąd wgrywania emoji', 'fas fa-exclamation-triangle');
+            showNotification(data.error || 'Failed to upload emoji', 'fas fa-exclamation-triangle');
         }
     } catch (err) {
         console.error('[CHAT] Emoji upload error:', err);
@@ -4492,7 +4492,7 @@ async function sendEmoji(imageData, fileName, messageId) {
 async function deleteCustomEmoji(emojiId, emojiName, messageId) {
     if (!discordAuthToken) return;
 
-    if (!confirm(`Czy na pewno chcesz usunąć emoji "${emojiName}"?`)) return;
+    if (!confirm(`Are you sure you want to delete the emoji "${emojiName}"?`)) return;
 
     try {
         const response = await fetch(`${CHAT_API_BASE}/chat/emojis/delete`, {
@@ -4506,17 +4506,17 @@ async function deleteCustomEmoji(emojiId, emojiName, messageId) {
 
         const data = await response.json();
         if (data.success) {
-            showNotification(`Emoji "${emojiName}" usunięte!`, 'fas fa-trash-alt');
+            showNotification(`Emoji "${emojiName}" deleted!`, 'fas fa-trash-alt');
             // Remove from local list
             const idx = customEmojis.findIndex(e => e.id === emojiId);
             if (idx !== -1) customEmojis.splice(idx, 1);
             renderEmojiGrid(messageId);
         } else {
-            showNotification(data.error || 'Błąd usuwania emoji', 'fas fa-exclamation-triangle');
+            showNotification(data.error || 'Failed to delete emoji', 'fas fa-exclamation-triangle');
         }
     } catch (err) {
         console.error('[CHAT] Emoji delete error:', err);
-        showNotification('Błąd połączenia z serwerem', 'fas fa-exclamation-triangle');
+        showNotification('Connection error', 'fas fa-exclamation-triangle');
     }
 }
 
@@ -4598,7 +4598,7 @@ window.handleImageUpload = function (event) {
     // Validate file type
     const validTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-        showNotification('Nieobsługiwany format! Użyj PNG, JPG, GIF lub WebP', 'fas fa-exclamation-triangle');
+        showNotification('Unsupported format! Use PNG, JPG, GIF or WebP', 'fas fa-exclamation-triangle');
         event.target.value = '';
         return;
     }
@@ -4606,13 +4606,13 @@ window.handleImageUpload = function (event) {
     // Validate file size (2MB)
     const maxSize = 2 * 1024 * 1024;
     if (file.size > maxSize) {
-        showNotification(`Plik za duży! ${(file.size / 1024 / 1024).toFixed(1)}MB / max 2MB`, 'fas fa-exclamation-triangle');
+        showNotification(`File too large! ${(file.size / 1024 / 1024).toFixed(1)}MB / max 2MB`, 'fas fa-exclamation-triangle');
         event.target.value = '';
         return;
     }
 
     if (!discordAuthToken) {
-        showNotification('Zaloguj się aby wysyłać obrazki', 'fas fa-exclamation-triangle');
+        showNotification('Log in to send images', 'fas fa-exclamation-triangle');
         event.target.value = '';
         return;
     }
