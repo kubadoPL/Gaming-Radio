@@ -1922,16 +1922,14 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
     try {
         const stationId = getStationId(sName);
 
-        // ZenoFM Cache (40s)
-        const zenoCacheKey = `zenoCount_${stationId}`;
-        const zenoCached = JSON.parse(localStorage.getItem(zenoCacheKey) || 'null');
-
-        let zenoCount = 0;
-        let shouldFetchZeno = !zenoCached || (Date.now() - zenoCached.timestamp > 40 * 1000);
-
-        if (!shouldFetchZeno) {
-            zenoCount = zenoCached.count;
-        }
+        // // ── ZenoFM (DISABLED — using Chat API only for now) ──
+        // const zenoCacheKey = `zenoCount_${stationId}`;
+        // const zenoCached = JSON.parse(localStorage.getItem(zenoCacheKey) || 'null');
+        // let zenoCount = 0;
+        // let shouldFetchZeno = !zenoCached || (Date.now() - zenoCached.timestamp > 40 * 1000);
+        // if (!shouldFetchZeno) {
+        //     zenoCount = zenoCached.count;
+        // }
 
         const currentPlayingName = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
         const currentPlayingId = getStationId(currentPlayingName);
@@ -1947,7 +1945,7 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        // ── Step 1: Fetch Chat API FIRST and update UI immediately ──
+        // ── Fetch Chat API and update UI ──
         let chatRoomCount = 0;
         let usersListeningToStation = 0;
 
@@ -1968,35 +1966,31 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
             console.warn(`[OnlineCountDebug] ${sName} Chat API failed:`, chatErr);
         }
 
-        // Show tooltip immediately with Chat API data + cached ZenoFM count (no waiting for ZenoFM)
-        // Skip notification if ZenoFM is still loading — avoid burning lastActiveListenerCount with stale data
-        const immediateListenersCount = Math.max(zenoCount, usersListeningToStation);
-        updateTooltip(tooltipElement, immediateListenersCount, chatRoomCount, sName, false, shouldFetchZeno);
+        // Show tooltip with Chat API data only
+        updateTooltip(tooltipElement, usersListeningToStation, chatRoomCount, sName);
 
-        // ── Step 2: Fetch ZenoFM in the background (non-blocking) ──
-        if (shouldFetchZeno) {
-            fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationId)
-                .then(r => r.json())
-                .then(zenoData => {
-                    const freshZenoCount = zenoData.total_sum || 0;
-                    localStorage.setItem(zenoCacheKey, JSON.stringify({ count: freshZenoCount, timestamp: Date.now() }));
-                    console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Refreshed):`, freshZenoCount);
+        // // ── ZenoFM background fetch (DISABLED) ──
+        // if (shouldFetchZeno) {
+        //     fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationId)
+        //         .then(r => r.json())
+        //         .then(zenoData => {
+        //             const freshZenoCount = zenoData.total_sum || 0;
+        //             localStorage.setItem(zenoCacheKey, JSON.stringify({ count: freshZenoCount, timestamp: Date.now() }));
+        //             console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Refreshed):`, freshZenoCount);
+        //             if (freshZenoCount !== zenoCount) {
+        //                 const updatedListenersCount = Math.max(freshZenoCount, usersListeningToStation);
+        //                 console.log(`[OnlineCountDebug] ${sName} -> Tooltip updated with fresh Zeno: ${updatedListenersCount}`);
+        //                 updateTooltip(tooltipElement, updatedListenersCount, chatRoomCount, sName);
+        //             }
+        //         })
+        //         .catch(zenoErr => {
+        //             console.warn(`[OnlineCountDebug] ${sName} ZenoFM fetch failed (non-blocking):`, zenoErr);
+        //         });
+        // } else {
+        //     console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Cached):`, zenoCount);
+        // }
 
-                    // Re-update tooltip with fresh ZenoFM data if it changed
-                    if (freshZenoCount !== zenoCount) {
-                        const updatedListenersCount = Math.max(freshZenoCount, usersListeningToStation);
-                        console.log(`[OnlineCountDebug] ${sName} -> Tooltip updated with fresh Zeno: ${updatedListenersCount}`);
-                        updateTooltip(tooltipElement, updatedListenersCount, chatRoomCount, sName);
-                    }
-                })
-                .catch(zenoErr => {
-                    console.warn(`[OnlineCountDebug] ${sName} ZenoFM fetch failed (non-blocking):`, zenoErr);
-                });
-        } else {
-            console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Cached):`, zenoCount);
-        }
-
-        console.log(`[OnlineCountDebug] ${sName} -> Tooltip: ${immediateListenersCount}, Chat: ${chatRoomCount}`);
+        console.log(`[OnlineCountDebug] ${sName} -> Tooltip: ${usersListeningToStation}, Chat: ${chatRoomCount}`);
     } catch (e) {
         console.error(`[OnlineCountDebug] Error fetching count for ${sName}:`, e);
         updateTooltip(tooltipElement, 0, 0, sName, true);
