@@ -1962,8 +1962,9 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
         }
 
         // Show tooltip immediately with Chat API data + cached ZenoFM count (no waiting for ZenoFM)
+        // Skip notification if ZenoFM is still loading — avoid burning lastActiveListenerCount with stale data
         const immediateListenersCount = Math.max(zenoCount, usersListeningToStation);
-        updateTooltip(tooltipElement, immediateListenersCount, chatRoomCount, sName);
+        updateTooltip(tooltipElement, immediateListenersCount, chatRoomCount, sName, false, shouldFetchZeno);
 
         // ── Step 2: Fetch ZenoFM in the background (non-blocking) ──
         if (shouldFetchZeno) {
@@ -1995,7 +1996,7 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
     }
 }
 
-function updateTooltip(tooltipElement, zenoCount, finalCount, sName, isError = false) {
+function updateTooltip(tooltipElement, zenoCount, finalCount, sName, isError = false, skipNotification = false) {
     // Update tooltip UI (Main Page - ONLY ZenoFM Listeners)
     if (tooltipElement) {
         const userElem = tooltipElement.querySelector('.tooltip-Online-Users');
@@ -2027,7 +2028,8 @@ function updateTooltip(tooltipElement, zenoCount, finalCount, sName, isError = f
             if (chatOnlineCountElem) chatOnlineCountElem.textContent = finalCount;
         }
 
-        // Notify based on listeners specifically
+        // Notify based on listeners specifically (skip if ZenoFM data is still loading in background)
+        if (skipNotification) return;
         const stationNameElem = document.getElementById('StationNameInh1');
         const currentPlayingStation = stationNameElem ? stationNameElem.textContent.trim() : '';
         if (sName === currentPlayingStation && zenoCount !== null) {
