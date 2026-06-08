@@ -596,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(() => { });
     }
     sendAnonHeartbeat(); // send immediately (skipped if auth token present)
+    window.sendAnonHeartbeat = sendAnonHeartbeat; // expose globally for station change
     window._anonHeartbeatInterval = setInterval(sendAnonHeartbeat, 30000); // then every 30s
 
     // Audio time update listener
@@ -1717,6 +1718,11 @@ function changeStation(source, name, metadataURL) {
         cooldown = false;
         IsChangingStation = false;
     };
+
+    // Immediately notify backend of station change for anonymous listeners
+    if (typeof window.sendAnonHeartbeat === 'function') {
+        setTimeout(window.sendAnonHeartbeat, 500); // slight delay so StationNameInh1 is updated
+    }
 }
 
 function formatTime(time) {
