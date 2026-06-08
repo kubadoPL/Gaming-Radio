@@ -4767,10 +4767,28 @@ body::-webkit-scrollbar-thumb {
 .history-tabs {
     display: flex;
     gap: 6px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--active-station-color) transparent;
+    padding-bottom: 4px;
+}
+
+.history-tabs::-webkit-scrollbar {
+    height: 3px;
+}
+
+.history-tabs::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.history-tabs::-webkit-scrollbar-thumb {
+    background: var(--active-station-color);
+    border-radius: 3px;
 }
 
 .history-tab {
-    flex: 1;
+    flex: 0 0 auto;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.5);
@@ -4785,6 +4803,7 @@ body::-webkit-scrollbar-thumb {
     align-items: center;
     justify-content: center;
     gap: 6px;
+    white-space: nowrap;
 }
 
 .history-tab:hover {
@@ -5599,6 +5618,7 @@ body::-webkit-scrollbar-thumb {
     display: flex;
     align-items: center;
     gap: 12px;
+    overflow: hidden;
 }
 
 .view-mode-toggle {
@@ -5606,6 +5626,7 @@ body::-webkit-scrollbar-thumb {
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.6);
     width: 38px;
+    min-width: 38px;
     height: 38px;
     border-radius: 10px;
     cursor: pointer;
@@ -5613,6 +5634,7 @@ body::-webkit-scrollbar-thumb {
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 .view-mode-toggle:hover {
