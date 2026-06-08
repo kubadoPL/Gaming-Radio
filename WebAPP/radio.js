@@ -2692,7 +2692,7 @@ async function renderUserProfileStats(data) {
                 </div>
                 <div class="user-stat-card">
                     <span class="stat-label">Favorites</span>
-                    <span class="stat-value">${data.favorites ? data.favorites.length : 0}</span>
+                    <span class="stat-value">${data.total_favorites_count !== undefined ? data.total_favorites_count : (data.favorites ? data.favorites.length : 0)}</span>
                 </div>
             </div>
         `;
