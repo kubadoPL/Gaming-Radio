@@ -1719,10 +1719,11 @@ function changeStation(source, name, metadataURL) {
         IsChangingStation = false;
     };
 
-    // Immediately notify backend of station change for anonymous listeners
-    if (typeof window.sendAnonHeartbeat === 'function') {
-        setTimeout(window.sendAnonHeartbeat, 500); // slight delay so StationNameInh1 is updated
-    }
+    // Immediately notify backend of station change (both anon and logged-in)
+    setTimeout(() => {
+        if (typeof window.sendAnonHeartbeat === 'function') window.sendAnonHeartbeat();
+        updateAllOnlineUsers();
+    }, 500); // slight delay so StationNameInh1 is updated
 }
 
 function formatTime(time) {

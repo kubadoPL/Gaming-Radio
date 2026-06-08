@@ -1387,6 +1387,11 @@ function changeStation(source, name, metadataURL) {
         cooldown = false;
         IsChangingStation = false;
     };
+
+    // Immediately notify backend of station change (both anon and logged-in)
+    setTimeout(() => {
+        updateAllOnlineUsers();
+    }, 500); // slight delay so StationNameInh1 is updated
 }
 
 function formatTime(time) {
