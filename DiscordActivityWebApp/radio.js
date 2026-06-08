@@ -1610,23 +1610,12 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
             headers['Authorization'] = `Bearer ${discordAuthToken}`;
         }
 
-        // Fetch Logic
-        const fetchPromises = [
-            fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?since=${Date.now()}`, { headers }).then(r => r.json())
-        ];
-
-        if (shouldFetchZeno) {
-            fetchPromises.push(fetch(proxyUrl('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationId)).then(r => r.json()));
-        }
-
-        const results = await Promise.allSettled(fetchPromises);
-
-        // Handle Chat Data (always the first promise)
+        // ── Step 1: Fetch Chat API FIRST and update UI immediately ──
         let chatRoomCount = 0;
         let usersListeningToStation = 0;
 
-        if (results[0].status === 'fulfilled') {
-            const chatData = results[0].value;
+        try {
+            const chatData = await fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?since=${Date.now()}`, { headers }).then(r => r.json());
             chatRoomCount = chatData.online_count !== undefined ? chatData.online_count : 0;
 
             if (chatData.online_users && Array.isArray(chatData.online_users)) {
@@ -1637,21 +1626,38 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
                 usersListeningToStation = chatRoomCount;
             }
             console.log(`[OnlineCountDebug] ${sName} (Chat API - Room): ${chatRoomCount}, Listening: ${usersListeningToStation}`);
+        } catch (chatErr) {
+            console.warn(`[OnlineCountDebug] ${sName} Chat API failed:`, chatErr);
         }
 
-        // Handle Zeno Data (if requested, it's the second promise)
-        if (shouldFetchZeno && results[1] && results[1].status === 'fulfilled') {
-            zenoCount = results[1].value.total_sum || 0;
-            localStorage.setItem(zenoCacheKey, JSON.stringify({ count: zenoCount, timestamp: Date.now() }));
-            console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Refreshed):`, zenoCount);
-        } else if (!shouldFetchZeno) {
+        // Show tooltip immediately with Chat API data + cached ZenoFM count (no waiting for ZenoFM)
+        const immediateListenersCount = Math.max(zenoCount, usersListeningToStation);
+        updateTooltip(tooltipElement, immediateListenersCount, chatRoomCount, sName);
+
+        // ── Step 2: Fetch ZenoFM in the background (non-blocking) ──
+        if (shouldFetchZeno) {
+            fetch(proxyUrl('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/ZenoFMApi/get-sum?station=' + stationId))
+                .then(r => r.json())
+                .then(zenoData => {
+                    const freshZenoCount = zenoData.total_sum || 0;
+                    localStorage.setItem(zenoCacheKey, JSON.stringify({ count: freshZenoCount, timestamp: Date.now() }));
+                    console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Refreshed):`, freshZenoCount);
+
+                    // Re-update tooltip with fresh ZenoFM data if it changed
+                    if (freshZenoCount !== zenoCount) {
+                        const updatedListenersCount = Math.max(freshZenoCount, usersListeningToStation);
+                        console.log(`[OnlineCountDebug] ${sName} -> Tooltip updated with fresh Zeno: ${updatedListenersCount}`);
+                        updateTooltip(tooltipElement, updatedListenersCount, chatRoomCount, sName);
+                    }
+                })
+                .catch(zenoErr => {
+                    console.warn(`[OnlineCountDebug] ${sName} ZenoFM fetch failed (non-blocking):`, zenoErr);
+                });
+        } else {
             console.log(`[OnlineCountDebug] ${sName} (ZenoFM - Cached):`, zenoCount);
         }
 
-        const tooltipListenersCount = Math.max(zenoCount, usersListeningToStation);
-        console.log(`[OnlineCountDebug] ${sName} -> Tooltip: ${tooltipListenersCount}, Chat: ${chatRoomCount}`);
-
-        updateTooltip(tooltipElement, tooltipListenersCount, chatRoomCount, sName);
+        console.log(`[OnlineCountDebug] ${sName} -> Tooltip: ${immediateListenersCount}, Chat: ${chatRoomCount}`);
     } catch (e) {
         console.error(`[OnlineCountDebug] Error fetching count for ${sName}:`, e);
         updateTooltip(tooltipElement, 0, 0, sName, true);
