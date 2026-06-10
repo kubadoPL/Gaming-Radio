@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Radio GAMING Broadcaster — Admin streaming panel for Icecast/Zeno FM.">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Radio GAMING — Streamer</title>
+    <link rel="icon" href="../favicon.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ─── Design System ──────────────────────────────────────────────── */
+        :root {
+            --bg-primary: #07070f;
+            --bg-secondary: #0c0c1a;
+            --bg-card: #101024;
+            --bg-input: #08081a;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-glow: rgba(157, 78, 221, 0.4);
+            --text-primary: #e8e8f0;
+            --text-secondary: rgba(255, 255, 255, 0.55);
+            --text-muted: rgba(255, 255, 255, 0.3);
+            --accent-purple: #9d4edd;
+            --accent-purple-hover: #c77dff;
+            --accent-blue: #3e5aff;
+            --accent-blue-hover: #5b77ff;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-orange: #f59e0b;
+            --accent-cyan: #06b6d4;
+            --glass-bg: rgba(16, 16, 36, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --shadow-glow: 0 0 40px rgba(157, 78, 221, 0.15);
+
+            /* Station colors */
+            --station0-color: #293cca;
+            --station1-color: #272956;
+            --station2-color: #7300ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ─── Background Ambient ──────────────────────────────────── */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .ambient-bg .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+            animation: orbFloat 20s ease-in-out infinite;
+        }
+
+        .ambient-bg .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--accent-purple);
+            top: -200px;
+            left: -100px;
+        }
+
+        .ambient-bg .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent-blue);
+            bottom: -200px;
+            right: -100px;
+            animation-delay: -10s;
+        }
+
+        .ambient-bg .orb-3 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-cyan);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -5s;
+            opacity: 0.08;
+        }
+
+        @keyframes orbFloat {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -20px) scale(1.05);
+            }
+
+            66% {
+                transform: translate(-20px, 30px) scale(0.95);
+            }
+        }
+
+        /* ─── Layout ──────────────────────────────────────────────── */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── Header ──────────────────────────────────────────────── */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .header-logo img {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+        }
+
+        .header-logo .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 20px;
+            letter-spacing: -0.3px;
+        }
+
+        .header-logo .logo-sub {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent-purple);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .header-auth {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 20px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .header-status .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .dot-green {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        .dot-red {
+            background: var(--accent-red);
+            box-shadow: 0 0 8px var(--accent-red);
+        }
+
+        .dot-yellow {
+            background: var(--accent-orange);
+            box-shadow: 0 0 8px var(--accent-orange);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        .btn-discord {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #5865F2;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-discord:hover {
+            background: #4752c4;
+            transform: translateY(-1px);
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 14px 6px 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+        }
+
+        .user-badge img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .user-badge span {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .btn-logout {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* ─── Auth Screen ──────────────────────────────────────── */
+        .auth-screen {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-card {
+            text-align: center;
+            padding: 60px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            max-width: 480px;
+        }
+
+        .auth-card i.fa-lock {
+            font-size: 48px;
+            color: var(--accent-purple);
+            margin-bottom: 20px;
+        }
+
+        .auth-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .auth-card p {
+            color: var(--text-secondary);
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .auth-card .btn-discord {
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* ─── Global Controls ──────────────────────────────────── */
+        .global-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: var(--accent-purple);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-purple-hover);
+            box-shadow: 0 4px 20px rgba(157, 78, 221, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ─── Station Cards Grid ──────────────────────────────── */
+        .stations-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .station-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .station-card:hover {
+            border-color: var(--border-glow);
+        }
+
+        .station-card.live {
+            box-shadow: var(--shadow-glow);
+        }
+
+        .station-card-bg {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.12;
+            transition: opacity 0.3s;
+        }
+
+        .station-card:hover .station-card-bg {
+            opacity: 0.18;
+        }
+
+        .station-card-content {
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Station Header */
+        .station-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .station-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .station-info h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .station-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .badge-stopped {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-live {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .badge-connecting {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-orange);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        /* Now Playing */
+        .now-playing {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .now-playing-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .now-playing-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--accent-purple-hover);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Station Controls */
+        .station-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .station-controls .btn {
+            flex: 1;
+            justify-content: center;
+            padding: 10px 8px;
+            font-size: 12px;
+        }
+
+        .btn-start {
+            background: var(--accent-purple);
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: var(--accent-purple-hover);
+        }
+
+        .btn-stop {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+        }
+
+        .btn-stop:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-skip {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-skip:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Loop button modes */
+        .btn-loop {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-loop.loop-single {
+            background: rgba(157, 78, 221, 0.15);
+            color: var(--accent-purple);
+            border-color: rgba(157, 78, 221, 0.3);
+        }
+
+        .btn-loop.loop-queue {
+            background: rgba(62, 90, 255, 0.15);
+            color: var(--accent-blue);
+            border-color: rgba(62, 90, 255, 0.3);
+        }
+
+        /* Mic button */
+        .btn-mic {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-mic.mic-on {
+            background: rgba(245, 158, 11, 0.25);
+            color: var(--accent-orange);
+            border-color: rgba(245, 158, 11, 0.4);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Manual Injection */
+        .inject-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 14px;
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .inject-section label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .inject-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .inject-input {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .inject-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .inject-input:focus {
+            border-color: var(--accent-purple);
+        }
+
+        .inject-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .inject-actions .btn {
+            flex: 1;
+            font-size: 11px;
+            padding: 8px 10px;
+            justify-content: center;
+        }
+
+        .btn-instant {
+            background: linear-gradient(135deg, #bf40bf, #9d4edd);
+            color: white;
+        }
+
+        .btn-instant:hover {
+            background: linear-gradient(135deg, #d946ef, #a855f7);
+        }
+
+        .btn-queue-add {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        /* Settings Section */
+        .settings-section {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            overflow: hidden;
+        }
+
+        .settings-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .settings-toggle:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .settings-toggle span {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .settings-toggle i.chevron {
+            font-size: 10px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+
+        .settings-section.open .settings-toggle i.chevron {
+            transform: rotate(180deg);
+        }
+
+        .settings-body {
+            display: none;
+            padding: 0 14px 14px;
+        }
+
+        .settings-section.open .settings-body {
+            display: block;
+        }
+
+        .settings-field {
+            margin-bottom: 8px;
+        }
+
+        .settings-field label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .settings-field input {
+            width: 100%;
+            background: var(--bg-input);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .settings-field input:focus {
+            border-color: var(--accent-purple);
+        }
+
+        .settings-field input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .settings-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .settings-row .settings-field {
+            flex: 1;
+        }
+
+        .settings-row .settings-field.small {
+            flex: 0 0 80px;
+        }
+
+        .btn-save-config {
+            width: 100%;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            justify-content: center;
+            margin-top: 4px;
+        }
+
+        .btn-save-config:hover {
+            background: rgba(16, 185, 129, 0.25);
+        }
+
+        .config-saved-badge {
+            font-size: 10px;
+            color: var(--accent-green);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .config-saved-badge.show {
+            opacity: 1;
+        }
+
+        /* Cookie Upload Bar */
+        .cookie-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            margin-bottom: 16px;
+        }
+
+        .cookie-bar-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .cookie-bar-label i {
+            color: var(--accent-orange);
+        }
+
+        .cookie-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .cookie-status.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .cookie-status.missing {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .cookie-file-input {
+            display: none;
+        }
+
+        .btn-cookie-upload {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-orange);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .btn-cookie-upload:hover {
+            background: rgba(245, 158, 11, 0.25);
+        }
+
+        .btn-cookie-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            padding: 8px 12px;
+        }
+
+        .btn-cookie-delete:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* Queue Section */
+        .queue-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 14px;
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .queue-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .queue-header span {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .queue-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .queue-actions .btn-tiny {
+            padding: 4px 10px;
+            font-size: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .queue-actions .btn-tiny:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .queue-list {
+            max-height: 120px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+        }
+
+        .queue-item {
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 6px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.15s;
+        }
+
+        .queue-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .queue-item .index {
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-right: 6px;
+            font-size: 10px;
+        }
+
+        .queue-empty {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 16px;
+            font-style: italic;
+        }
+
+        /* ─── Log Console ──────────────────────────────────────── */
+        .log-section {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .log-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .log-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-header h3 i {
+            color: var(--accent-purple);
+        }
+
+        .log-body {
+            height: 180px;
+            overflow-y: auto;
+            padding: 12px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+        }
+
+        .log-entry {
+            color: var(--text-secondary);
+        }
+
+        .log-entry .log-time {
+            color: var(--text-muted);
+            margin-right: 8px;
+        }
+
+        .log-entry .log-station {
+            color: var(--accent-purple);
+            font-weight: 500;
+            margin-right: 6px;
+        }
+
+        .log-entry.log-error {
+            color: var(--accent-red);
+        }
+
+        .log-entry.log-success {
+            color: var(--accent-green);
+        }
+
+        .log-entry.log-playing {
+            color: var(--accent-cyan);
+        }
+
+        /* ─── Notifications ──────────────────────────────────── */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 1000;
+            animation: notifSlide 0.3s ease;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .notification.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .notification.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        @keyframes notifSlide {
+            from {
+                transform: translateX(100px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* ─── Responsive ──────────────────────────────────────── */
+        @media (max-width: 1200px) {
+            .stations-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stations-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .app-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .global-controls {
+                flex-wrap: wrap;
+            }
+        }
+
+        /* ─── Scrollbar ──────────────────────────────────────── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Ambient Background -->
+    <div class="ambient-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <a href="https://radio-gaming.stream/" class="header-logo">
+                <img src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp" alt="Radio Gaming">
+                <div>
+                    <div class="logo-text">Radio GAMING</div>
+                    <div class="logo-sub">Broadcaster Suite</div>
+                </div>
+            </a>
+            <div class="header-auth">
+                <div class="header-status" id="connection-status">
+                    <span class="dot dot-yellow"></span>
+                    <span>Connecting...</span>
+                </div>
+                <!-- Auth: Login Button (shown when not logged in) -->
+                <a class="btn-discord" id="login-btn" href="https://radio-gaming.stream/" target="_blank">
+                    <i class="fab fa-discord"></i> Login on Radio
+                </a>
+                <!-- Auth: User Badge (shown when logged in) -->
+                <div class="user-badge hidden" id="user-badge">
+                    <img id="user-avatar" src="" alt="">
+                    <span id="user-name"></span>
+                    <button class="btn-logout" onclick="logoutDiscord()" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Auth Required Screen (non-admin) -->
+        <div class="auth-screen" id="auth-screen">
+            <div class="auth-card">
+                <i class="fas fa-lock"></i>
+                <h2>Admin Access Required</h2>
+                <p>This broadcasting panel is restricted to Radio GAMING administrators. Please log in with your
+                    Discord account.</p>
+                <a class="btn-discord" href="https://radio-gaming.stream/" target="_blank">
+                    <i class="fab fa-discord"></i> Login on Radio
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Streamer Panel (hidden until admin auth) -->
+        <div class="hidden" id="streamer-panel">
+            <!-- Global Controls -->
+            <div class="global-controls">
+                <button class="btn btn-primary" onclick="startAll()">
+                    <i class="fas fa-rocket"></i> Start All
+                </button>
+                <button class="btn btn-danger" onclick="stopAll()">
+                    <i class="fas fa-stop"></i> Stop All
+                </button>
+                <button class="btn btn-ghost" onclick="refreshStatus()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+
+            <!-- YouTube Cookies -->
+            <div class="cookie-bar" id="cookie-bar">
+                <span class="cookie-bar-label">
+                    <i class="fab fa-youtube"></i> YouTube Cookies
+                </span>
+                <span class="cookie-status missing" id="cookie-status">No cookies</span>
+                <input type="file" class="cookie-file-input" id="cookie-file-input" accept=".txt" onchange="uploadCookieFile(this)">
+                <button class="btn btn-cookie-upload" onclick="document.getElementById('cookie-file-input').click()">
+                    <i class="fas fa-upload"></i> Upload cookies.txt
+                </button>
+                <button class="btn btn-cookie-delete" onclick="deleteCookies()" title="Remove cookies">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+
+            <!-- Station Cards -->
+            <div class="stations-grid" id="stations-grid">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Log Console -->
+            <div class="log-section">
+                <div class="log-header">
+                    <h3><i class="fas fa-terminal"></i> System Log</h3>
+                    <button class="btn btn-ghost" onclick="clearLogs()"
+                        style="padding: 6px 12px; font-size: 11px;">Clear</button>
+                </div>
+                <div class="log-body" id="log-body">
+                    <div class="log-entry">
+                        <span class="log-time">[--:--:--]</span>
+                        <span>Radio GAMING Broadcaster Suite initialized. Awaiting admin authentication...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── Configuration ──────────────────────────────────────────────────
+        const API_BASE = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/StreamerApi';
+        const CHAT_API_BASE = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/DiscordAuthChatApi';
+        const ADMIN_USER_IDS = new Set(['264079253757231104']);
+
+        // Auth state
+        let authToken = localStorage.getItem('RadioGaming-discordAuthToken');
+        let currentUser = null;
+        let isAdmin = false;
+
+        // Polling state
+        let statusPollInterval = null;
+        let logPollIntervals = {};
+        let logCounts = { 0: 0, 1: 0, 2: 0 };
+
+        // Station metadata
+        const STATION_META = {
+            0: {
+                name: 'Radio GAMING DARK',
+                color: '#293cca',
+                logo: 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp',
+                bg: 'https://radio-gaming.stream/Images/Radio-Gaming-Dark-background.webp',
+            },
+            1: {
+                name: 'Radio GAMING MARON FM',
+                color: '#4a4e8a',
+                logo: 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp',
+                bg: 'https://radio-gaming.stream/Images/Radio-Gaming-Maron-FM-background-Polished.webp',
+            },
+            2: {
+                name: 'Radio GAMING',
+                color: '#7300ff',
+                logo: 'https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp',
+                bg: 'https://radio-gaming.stream/Images/Radio-Gaming-Background.webp',
+            },
+        };
+
+        // ─── Auth System ──────────────────────────────────────────────────
+
+        function initiateDiscordLogin() {
+            // Redirect to main radio site where auth is handled
+            window.open('https://radio-gaming.stream/', '_blank');
+        }
+
+        function logoutDiscord() {
+            localStorage.removeItem('RadioGaming-discordAuthToken');
+            authToken = null;
+            currentUser = null;
+            isAdmin = false;
+            stopPolling();
+            updateUI();
+        }
+
+        async function checkSession() {
+            if (!authToken) {
+                updateUI();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${CHAT_API_BASE}/discord/user`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    currentUser = data.user;
+                    isAdmin = ADMIN_USER_IDS.has(String(currentUser.id));
+
+                    if (isAdmin) {
+                        addLog('Authenticated as admin: ' + currentUser.global_name, 'success');
+                        startPolling();
+                        checkCookieStatus();
+                    }
+                } else {
+                    authToken = null;
+                    localStorage.removeItem('RadioGaming-discordAuthToken');
+                }
+            } catch (e) {
+                addLog('Auth check failed: ' + e.message, 'error');
+            }
+
+            updateUI();
+        }
+
+        function handleAuthCallback() {
+            let token = null;
+
+            if (window.location.hash && window.location.hash.length > 1) {
+                const params = new URLSearchParams(window.location.hash.substring(1));
+                token = params.get('auth_token');
+            }
+            if (!token) {
+                const params = new URLSearchParams(window.location.search);
+                token = params.get('auth_token');
+            }
+
+            if (token) {
+                localStorage.setItem('RadioGaming-discordAuthToken', token);
+                authToken = token;
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        function updateUI() {
+            const loginBtn = document.getElementById('login-btn');
+            const userBadge = document.getElementById('user-badge');
+            const authScreen = document.getElementById('auth-screen');
+            const streamerPanel = document.getElementById('streamer-panel');
+
+            if (currentUser && isAdmin) {
+                loginBtn.classList.add('hidden');
+                userBadge.classList.remove('hidden');
+                document.getElementById('user-avatar').src = currentUser.avatar_url;
+                document.getElementById('user-name').textContent = currentUser.global_name;
+                authScreen.classList.add('hidden');
+                streamerPanel.classList.remove('hidden');
+                setConnectionStatus('connected', 'Admin Panel Active');
+            } else if (currentUser && !isAdmin) {
+                loginBtn.classList.add('hidden');
+                userBadge.classList.remove('hidden');
+                document.getElementById('user-avatar').src = currentUser.avatar_url;
+                document.getElementById('user-name').textContent = currentUser.global_name;
+                authScreen.classList.remove('hidden');
+                streamerPanel.classList.add('hidden');
+                setConnectionStatus('error', 'Not Admin');
+                document.querySelector('.auth-card h2').textContent = 'Access Denied';
+                document.querySelector('.auth-card p').textContent = 'Your Discord account does not have administrator privileges for Radio GAMING.';
+            } else {
+                loginBtn.classList.remove('hidden');
+                userBadge.classList.add('hidden');
+                authScreen.classList.remove('hidden');
+                streamerPanel.classList.add('hidden');
+                setConnectionStatus('warning', 'Not Authenticated');
+            }
+        }
+
+        function setConnectionStatus(type, text) {
+            const el = document.getElementById('connection-status');
+            const dotClass = type === 'connected' ? 'dot-green' : type === 'error' ? 'dot-red' : 'dot-yellow';
+            el.innerHTML = `<span class="dot ${dotClass}"></span><span>${text}</span>`;
+        }
+
+        // ─── Station Cards Builder ──────────────────────────────────────────
+
+        function buildStationCards() {
+            const grid = document.getElementById('stations-grid');
+            grid.innerHTML = '';
+
+            for (const [id, meta] of Object.entries(STATION_META)) {
+                grid.innerHTML += `
+                <div class="station-card" id="station-${id}">
+                    <div class="station-card-bg" style="background-image: url('${meta.bg}')"></div>
+                    <div class="station-card-content">
+                        <!-- Header -->
+                        <div class="station-header">
+                            <img class="station-logo" src="${meta.logo}" alt="${meta.name}">
+                            <div class="station-info">
+                                <h3>${meta.name}</h3>
+                                <div class="station-badge badge-stopped" id="badge-${id}">
+                                    <i class="fas fa-circle" style="font-size: 6px;"></i> STOPPED
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Now Playing -->
+                        <div class="now-playing">
+                            <div class="now-playing-label">Now Playing</div>
+                            <div class="now-playing-title" id="song-${id}">Waiting for stream...</div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="station-controls">
+                            <button class="btn btn-start" onclick="startStation(${id})" id="start-btn-${id}">
+                                <i class="fas fa-play"></i> Start
+                            </button>
+                            <button class="btn btn-stop" onclick="stopStation(${id})">
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                            <button class="btn btn-skip" onclick="skipSong(${id})">
+                                <i class="fas fa-forward"></i>
+                            </button>
+                            <button class="btn btn-loop" onclick="cycleLoop(${id})" id="loop-btn-${id}" title="Loop Mode">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <button class="btn btn-mic" onclick="toggleMic(${id})" id="mic-btn-${id}" title="Microphone">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                        </div>
+
+                        <!-- Manual Injection -->
+                        <div class="inject-section">
+                            <label><i class="fas fa-syringe"></i> Manual Injection</label>
+                            <div class="inject-row">
+                                <input type="text" class="inject-input" id="inject-input-${id}"
+                                    placeholder="YouTube URL, Spotify URL, or search..."
+                                    onkeydown="if(event.key==='Enter')playInstant(${id})">
+                            </div>
+                            <div class="inject-actions">
+                                <button class="btn btn-instant" onclick="playInstant(${id})">
+                                    <i class="fas fa-bolt"></i> Instant
+                                </button>
+                                <button class="btn btn-queue-add" onclick="queueNext(${id})">
+                                    <i class="fas fa-plus"></i> Queue
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Queue -->
+                        <div class="queue-section">
+                            <div class="queue-header">
+                                <span><i class="fas fa-list"></i> Queue (<span id="queue-count-${id}">0</span>)</span>
+                                <div class="queue-actions">
+                                    <button class="btn-tiny" onclick="shuffleQueue(${id})"><i class="fas fa-random"></i></button>
+                                    <button class="btn-tiny" onclick="clearQueue(${id})"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <div class="queue-list" id="queue-list-${id}">
+                                <div class="queue-empty">Queue is empty</div>
+                            </div>
+                        </div>
+
+                        <!-- Icecast Settings -->
+                        <div class="settings-section" id="settings-${id}">
+                            <div class="settings-toggle" onclick="toggleSettings(${id})">
+                                <span><i class="fas fa-cog"></i> Icecast Settings</span>
+                                <span class="config-saved-badge" id="config-saved-${id}">Saved ✓</span>
+                                <i class="fas fa-chevron-down chevron"></i>
+                            </div>
+                            <div class="settings-body">
+                                <div class="settings-row">
+                                    <div class="settings-field">
+                                        <label>Server</label>
+                                        <input type="text" id="cfg-server-${id}" placeholder="link.zeno.fm">
+                                    </div>
+                                    <div class="settings-field small">
+                                        <label>Port</label>
+                                        <input type="text" id="cfg-port-${id}" placeholder="80">
+                                    </div>
+                                </div>
+                                <div class="settings-field">
+                                    <label>Mount Point</label>
+                                    <input type="text" id="cfg-mount-${id}" placeholder="/mountpoint">
+                                </div>
+                                <div class="settings-field">
+                                    <label>Password</label>
+                                    <input type="password" id="cfg-pass-${id}" placeholder="Icecast password">
+                                </div>
+                                <button class="btn btn-save-config" onclick="saveStationConfig(${id})">
+                                    <i class="fas fa-save"></i> Save & Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+        }
+
+        // ─── API Helpers ──────────────────────────────────────────────────
+
+        async function apiCall(endpoint, method = 'GET', body = null, silent = false) {
+            const opts = {
+                method,
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json',
+                },
+            };
+            if (body) opts.body = JSON.stringify(body);
+
+            try {
+                const res = await fetch(`${API_BASE}${endpoint}`, opts);
+                const data = await res.json();
+                if (!res.ok) {
+                    if (!silent) showNotification(data.error || 'API Error', 'error');
+                    return null;
+                }
+                return data;
+            } catch (e) {
+                if (!silent) showNotification('Network error: ' + e.message, 'error');
+                return null;
+            }
+        }
+
+        // ─── Station Actions ──────────────────────────────────────────────
+
+        async function startStation(id) {
+            addLog(`Starting station ${STATION_META[id].name}...`);
+            const data = await apiCall(`/start/${id}`, 'POST');
+            if (data) {
+                showNotification(data.message, 'success');
+                setTimeout(refreshStatus, 2000);
+            }
+        }
+
+        async function stopStation(id) {
+            const data = await apiCall(`/stop/${id}`, 'POST');
+            if (data) {
+                showNotification(data.message, 'success');
+                setTimeout(refreshStatus, 500);
+            }
+        }
+
+        async function skipSong(id) {
+            await apiCall(`/skip/${id}`, 'POST');
+        }
+
+        async function startAll() {
+            addLog('Starting all stations...');
+            const data = await apiCall('/start-all', 'POST');
+            if (data) showNotification(data.message, 'success');
+        }
+
+        async function stopAll() {
+            const data = await apiCall('/stop-all', 'POST');
+            if (data) showNotification(data.message, 'success');
+            setTimeout(refreshStatus, 500);
+        }
+
+        // Loop modes
+        const loopModes = ['off', 'single', 'queue'];
+        const stationLoopModes = { 0: 'off', 1: 'off', 2: 'off' };
+
+        async function cycleLoop(id) {
+            const current = stationLoopModes[id] || 'off';
+            const next = loopModes[(loopModes.indexOf(current) + 1) % loopModes.length];
+            stationLoopModes[id] = next;
+
+            await apiCall(`/loop/${id}`, 'POST', { mode: next });
+            updateLoopButton(id, next);
+        }
+
+        function updateLoopButton(id, mode) {
+            const btn = document.getElementById(`loop-btn-${id}`);
+            if (!btn) return;
+
+            btn.className = 'btn btn-loop';
+            if (mode === 'single') {
+                btn.classList.add('loop-single');
+                btn.innerHTML = '<i class="fas fa-redo"></i>';
+                btn.title = 'Loop: Song';
+            } else if (mode === 'queue') {
+                btn.classList.add('loop-queue');
+                btn.innerHTML = '<i class="fas fa-sync"></i>';
+                btn.title = 'Loop: Queue';
+            } else {
+                btn.innerHTML = '<i class="fas fa-redo"></i>';
+                btn.title = 'Loop: Off';
+            }
+        }
+
+        // Injection
+        async function playInstant(id) {
+            const input = document.getElementById(`inject-input-${id}`);
+            const url = input.value.trim();
+            if (!url) return;
+            await apiCall(`/enqueue/${id}`, 'POST', { url, instant: true });
+            input.value = '';
+        }
+
+        async function queueNext(id) {
+            const input = document.getElementById(`inject-input-${id}`);
+            const url = input.value.trim();
+            if (!url) return;
+            await apiCall(`/enqueue/${id}`, 'POST', { url, instant: false });
+            input.value = '';
+        }
+
+        // Queue management
+        async function clearQueue(id) {
+            await apiCall(`/queue/${id}/clear`, 'POST');
+            refreshStatus();
+        }
+
+        async function shuffleQueue(id) {
+            await apiCall(`/queue/${id}/shuffle`, 'POST');
+            refreshStatus();
+        }
+
+        // ─── Status Polling ──────────────────────────────────────────────
+
+        async function refreshStatus() {
+            const data = await apiCall('/status', 'GET', null, true);
+            if (!data) return;
+
+            for (const [id, status] of Object.entries(data)) {
+                updateStationUI(parseInt(id), status);
+            }
+        }
+
+        function updateStationUI(id, status) {
+            const card = document.getElementById(`station-${id}`);
+            const badge = document.getElementById(`badge-${id}`);
+            const song = document.getElementById(`song-${id}`);
+            const queueCount = document.getElementById(`queue-count-${id}`);
+            const queueList = document.getElementById(`queue-list-${id}`);
+
+            if (!card) return;
+
+            // Status badge
+            if (status.running && status.established) {
+                card.classList.add('live');
+                badge.className = 'station-badge badge-live';
+                badge.innerHTML = '<i class="fas fa-circle" style="font-size: 6px;"></i> LIVE';
+            } else if (status.running) {
+                card.classList.remove('live');
+                badge.className = 'station-badge badge-connecting';
+                badge.innerHTML = '<i class="fas fa-circle" style="font-size: 6px;"></i> CONNECTING';
+            } else {
+                card.classList.remove('live');
+                badge.className = 'station-badge badge-stopped';
+                badge.innerHTML = '<i class="fas fa-circle" style="font-size: 6px;"></i> STOPPED';
+            }
+
+            // Song
+            song.textContent = status.current_song || 'Waiting for stream...';
+
+            // Loop mode
+            if (status.loop_mode) {
+                stationLoopModes[id] = status.loop_mode;
+                updateLoopButton(id, status.loop_mode);
+            }
+
+            // Mic state sync
+            if (status.mic_active !== undefined) {
+                syncMicState(id, status.mic_active);
+            }
+
+            // Queue
+            queueCount.textContent = status.queue_length || 0;
+            if (status.queue && status.queue.length > 0) {
+                queueList.innerHTML = status.queue.slice(0, 15).map((item, i) => {
+                    const display = item.length > 60 ? item.substring(0, 60) + '...' : item;
+                    return `<div class="queue-item"><span class="index">${i + 1}.</span>${display}</div>`;
+                }).join('');
+                if (status.queue.length > 15) {
+                    queueList.innerHTML += `<div class="queue-item" style="color: var(--text-muted); text-align: center;">... and ${status.queue.length - 15} more</div>`;
+                }
+            } else {
+                queueList.innerHTML = '<div class="queue-empty">Queue is empty</div>';
+            }
+        }
+
+        // ─── Log Polling ──────────────────────────────────────────────────
+
+        async function pollLogs() {
+            for (const id of [0, 1, 2]) {
+                try {
+                    const since = logCounts[id] || 0;
+                    const data = await apiCall(`/logs/${id}?since=${since}`, 'GET', null, true);
+                    if (data && data.logs && data.logs.length > 0) {
+                        for (const entry of data.logs) {
+                            addLog(entry.message, getLogType(entry.message), STATION_META[id].name);
+                        }
+                        logCounts[id] = data.total;
+                    }
+                } catch (e) { /* silently fail */ }
+            }
+        }
+
+        function getLogType(msg) {
+            if (msg.includes('Error') || msg.includes('Failed') || msg.includes('401')) return 'error';
+            if (msg.includes('Playing:')) return 'playing';
+            if (msg.includes('Connected') || msg.includes('success')) return 'success';
+            return '';
+        }
+
+        // ─── Polling Control ──────────────────────────────────────────────
+
+        function startPolling() {
+            stopPolling();
+            refreshStatus();
+            statusPollInterval = setInterval(refreshStatus, 5000);
+            setInterval(pollLogs, 3000);
+        }
+
+        function stopPolling() {
+            if (statusPollInterval) clearInterval(statusPollInterval);
+        }
+
+        // ─── Log Console ──────────────────────────────────────────────────
+
+        function addLog(message, type = '', station = '') {
+            const logBody = document.getElementById('log-body');
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const stationHtml = station ? `<span class="log-station">[${station}]</span>` : '';
+            const className = type ? `log-entry log-${type}` : 'log-entry';
+
+            logBody.innerHTML += `<div class="${className}"><span class="log-time">[${time}]</span>${stationHtml}${message}</div>`;
+            logBody.scrollTop = logBody.scrollHeight;
+
+            // Keep max 200 log entries
+            while (logBody.children.length > 200) {
+                logBody.removeChild(logBody.firstChild);
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('log-body').innerHTML = '';
+            addLog('Log cleared.');
+        }
+
+        // ─── Notifications ──────────────────────────────────────────────
+
+        function showNotification(message, type = 'success') {
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3500);
+        }
+
+        // ─── Icecast Settings (cache + push) ─────────────────────────────────────
+
+        function toggleSettings(id) {
+            const el = document.getElementById(`settings-${id}`);
+            el.classList.toggle('open');
+        }
+
+        function getConfigCacheKey(id) {
+            return `RadioGaming-streamer-config-${id}`;
+        }
+
+        function loadCachedConfigs() {
+            for (const id of [0, 1, 2]) {
+                const cached = localStorage.getItem(getConfigCacheKey(id));
+                if (cached) {
+                    try {
+                        const cfg = JSON.parse(cached);
+                        if (cfg.server) document.getElementById(`cfg-server-${id}`).value = cfg.server;
+                        if (cfg.port) document.getElementById(`cfg-port-${id}`).value = cfg.port;
+                        if (cfg.mount) document.getElementById(`cfg-mount-${id}`).value = cfg.mount;
+                        if (cfg.password) document.getElementById(`cfg-pass-${id}`).value = cfg.password;
+                    } catch (e) { /* invalid cache */ }
+                }
+            }
+        }
+
+        async function saveStationConfig(id) {
+            const server = document.getElementById(`cfg-server-${id}`).value.trim();
+            const port = document.getElementById(`cfg-port-${id}`).value.trim();
+            const mount = document.getElementById(`cfg-mount-${id}`).value.trim();
+            const password = document.getElementById(`cfg-pass-${id}`).value.trim();
+
+            const config = {};
+            if (server) config.server = server;
+            if (port) config.port = port;
+            if (mount) config.mount = mount;
+            if (password) config.password = password;
+
+            if (Object.keys(config).length === 0) {
+                showNotification('No settings to save', 'error');
+                return;
+            }
+
+            // Save to localStorage cache
+            const cacheData = { server, port, mount, password };
+            localStorage.setItem(getConfigCacheKey(id), JSON.stringify(cacheData));
+
+            // Push to backend
+            const res = await apiCall(`/config/${id}`, 'POST', config);
+            if (res) {
+                showNotification(res.message, 'success');
+                // Flash saved badge
+                const badge = document.getElementById(`config-saved-${id}`);
+                badge.classList.add('show');
+                setTimeout(() => badge.classList.remove('show'), 2000);
+            }
+        }
+
+        async function pushAllCachedConfigs() {
+            // On login, push all cached configs to backend
+            for (const id of [0, 1, 2]) {
+                const cached = localStorage.getItem(getConfigCacheKey(id));
+                if (cached) {
+                    try {
+                        const cfg = JSON.parse(cached);
+                        const config = {};
+                        if (cfg.server) config.server = cfg.server;
+                        if (cfg.port) config.port = cfg.port;
+                        if (cfg.mount) config.mount = cfg.mount;
+                        if (cfg.password) config.password = cfg.password;
+                        if (Object.keys(config).length > 0) {
+                            await apiCall(`/config/${id}`, 'POST', config);
+                        }
+                    } catch (e) { /* skip */ }
+                }
+            }
+            addLog('Cached Icecast configs pushed to server.', 'success');
+        }
+
+        // ─── YouTube Cookies ──────────────────────────────────────────────────
+
+        async function checkCookieStatus() {
+            const data = await apiCall('/cookies', 'GET', null, true);
+            const statusEl = document.getElementById('cookie-status');
+            if (!statusEl) return;
+
+            if (data && data.has_cookies) {
+                statusEl.className = 'cookie-status active';
+                statusEl.textContent = `Active (${(data.file_size / 1024).toFixed(1)}KB)`;
+            } else {
+                statusEl.className = 'cookie-status missing';
+                statusEl.textContent = 'No cookies';
+            }
+        }
+
+        async function uploadCookieFile(input) {
+            if (!input.files || !input.files[0]) return;
+
+            const file = input.files[0];
+            if (!file.name.toLowerCase().includes('cookie')) {
+                showNotification('File name should contain "cookies"', 'error');
+                input.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch(`${API_BASE}/cookies`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    body: formData,
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification(data.message, 'success');
+                    addLog('Cookies.txt uploaded!', 'success');
+                } else {
+                    showNotification(data.error || 'Upload failed', 'error');
+                }
+            } catch (e) {
+                showNotification('Upload error: ' + e.message, 'error');
+            }
+
+            input.value = '';
+            checkCookieStatus();
+        }
+
+        async function deleteCookies() {
+            const res = await apiCall('/cookies', 'DELETE');
+            if (res) {
+                showNotification(res.message, 'success');
+                addLog('Cookies.txt removed.', 'error');
+            }
+            checkCookieStatus();
+        }
+
+        // ─── Microphone Broadcasting ───────────────────────────────────────────
+
+        const micStates = {}; // station_id -> { active, stream, context, processor, sendInterval }
+
+        async function toggleMic(id) {
+            if (micStates[id] && micStates[id].active) {
+                await stopMic(id);
+            } else {
+                await startMic(id);
+            }
+        }
+
+        async function startMic(id) {
+            try {
+                // Request mic permission
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 44100,
+                    }
+                });
+
+                // Tell backend to enable mic mode
+                const res = await apiCall(`/mic/start/${id}`, 'POST');
+                if (!res) {
+                    stream.getTracks().forEach(t => t.stop());
+                    return;
+                }
+
+                // Create AudioContext at 44100Hz (matches Icecast transmitter)
+                const context = new AudioContext({ sampleRate: 44100 });
+                const source = context.createMediaStreamSource(stream);
+
+                // ScriptProcessorNode to capture raw PCM
+                const bufferSize = 8192;
+                const processor = context.createScriptProcessor(bufferSize, 1, 1);
+
+                let pcmBuffer = [];
+                let bufferBytes = 0;
+                const SEND_THRESHOLD = 44100 * 2 * 2 * 0.2; // ~200ms of stereo s16le at 44100Hz
+
+                processor.onaudioprocess = (e) => {
+                    const input = e.inputBuffer.getChannelData(0);
+                    // Convert float32 mono to int16 stereo (s16le)
+                    const samples = input.length;
+                    const buffer = new ArrayBuffer(samples * 4); // stereo = 2 channels * 2 bytes
+                    const view = new DataView(buffer);
+
+                    for (let i = 0; i < samples; i++) {
+                        const s = Math.max(-1, Math.min(1, input[i]));
+                        const val = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                        const intVal = Math.round(val);
+                        // Left channel
+                        view.setInt16(i * 4, intVal, true);
+                        // Right channel (duplicate mono to stereo)
+                        view.setInt16(i * 4 + 2, intVal, true);
+                    }
+
+                    pcmBuffer.push(new Uint8Array(buffer));
+                    bufferBytes += buffer.byteLength;
+
+                    // Send when we have ~200ms of audio
+                    if (bufferBytes >= SEND_THRESHOLD) {
+                        const merged = mergeBuffers(pcmBuffer, bufferBytes);
+                        pcmBuffer = [];
+                        bufferBytes = 0;
+                        sendMicData(id, merged);
+                    }
+                };
+
+                source.connect(processor);
+                processor.connect(context.destination);
+
+                micStates[id] = {
+                    active: true,
+                    stream,
+                    context,
+                    processor,
+                    source,
+                };
+
+                updateMicButton(id, true);
+                addLog(`Microphone ON for station ${id}`, 'success');
+
+            } catch (e) {
+                if (e.name === 'NotAllowedError') {
+                    showNotification('Microphone permission denied', 'error');
+                } else {
+                    showNotification('Mic error: ' + e.message, 'error');
+                }
+            }
+        }
+
+        async function stopMic(id) {
+            const state = micStates[id];
+            if (!state) return;
+
+            // Stop audio processing
+            if (state.processor) {
+                state.source.disconnect();
+                state.processor.disconnect();
+            }
+            if (state.context) {
+                state.context.close();
+            }
+            if (state.stream) {
+                state.stream.getTracks().forEach(t => t.stop());
+            }
+
+            // Tell backend
+            await apiCall(`/mic/stop/${id}`, 'POST');
+
+            micStates[id] = { active: false };
+            updateMicButton(id, false);
+            addLog(`Microphone OFF for station ${id}`);
+        }
+
+        function mergeBuffers(buffers, totalLength) {
+            const result = new Uint8Array(totalLength);
+            let offset = 0;
+            for (const buf of buffers) {
+                result.set(buf, offset);
+                offset += buf.length;
+            }
+            return result;
+        }
+
+        async function sendMicData(stationId, pcmData) {
+            try {
+                await fetch(`${API_BASE}/mic/data/${stationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/octet-stream',
+                    },
+                    body: pcmData,
+                });
+            } catch (e) {
+                // Silently fail to avoid flooding console during streaming
+            }
+        }
+
+        function updateMicButton(id, active) {
+            const btn = document.getElementById(`mic-btn-${id}`);
+            if (!btn) return;
+            if (active) {
+                btn.classList.add('mic-on');
+                btn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                btn.title = 'Mic: ON (click to stop)';
+            } else {
+                btn.classList.remove('mic-on');
+                btn.innerHTML = '<i class="fas fa-microphone"></i>';
+                btn.title = 'Microphone';
+            }
+        }
+
+        // Update mic state from server status
+        function syncMicState(id, serverMicActive) {
+            const localActive = micStates[id] && micStates[id].active;
+            // If server says mic is off but we think it's on, sync UI
+            if (!serverMicActive && localActive) {
+                stopMic(id);
+            }
+            // Update button visual even if we didn't start it
+            updateMicButton(id, serverMicActive);
+        }
+
+        // ─── Initialization ──────────────────────────────────────────────
+
+        document.addEventListener('DOMContentLoaded', () => {
+            buildStationCards();
+            loadCachedConfigs();
+            handleAuthCallback();
+            checkSession();
+        });
+    </script>
+</body>
+
+</html>
