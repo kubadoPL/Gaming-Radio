@@ -494,7 +494,34 @@
             text-transform: uppercase;
             letter-spacing: 1.2px;
             color: var(--text-muted);
-            margin-bottom: 4px;
+            margin-bottom: 8px;
+        }
+
+        .now-playing-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .now-playing-cover {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .now-playing-cover img {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            object-fit: cover;
         }
 
         .now-playing-title {
@@ -504,6 +531,8 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            flex: 1;
+            min-width: 0;
         }
 
         /* Station Controls */
@@ -1434,7 +1463,12 @@
                         <!-- Now Playing -->
                         <div class="now-playing">
                             <div class="now-playing-label">Now Playing</div>
-                            <div class="now-playing-title" id="song-${id}">Waiting for stream...</div>
+                            <div class="now-playing-content">
+                                <div class="now-playing-cover" id="np-cover-${id}">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div class="now-playing-title" id="song-${id}">Waiting for stream...</div>
+                            </div>
                         </div>
 
                         <!-- Controls -->
@@ -1781,6 +1815,32 @@
             } catch { /* silent */ }
         }
 
+        const _npCoverCache = {};  // stationId -> lastSong
+
+        async function fetchNowPlayingCover(stationId, songTitle) {
+            const coverEl = document.getElementById(`np-cover-${stationId}`);
+            if (!coverEl) return;
+
+            // Check queue cover cache first
+            const cacheKey = songTitle.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+            if (_coverCache[cacheKey]) {
+                coverEl.innerHTML = `<img src="${_coverCache[cacheKey]}" alt="">`;
+                return;
+            }
+
+            try {
+                const query = songTitle.replace(/[^\w\s]/g, ' ').trim();
+                if (!query) return;
+                const res = await fetch(`https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/music/cover?q=${encodeURIComponent(query)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.url) {
+                    _coverCache[cacheKey] = data.url;
+                    coverEl.innerHTML = `<img src="${data.url}" alt="">`;
+                }
+            } catch { /* silent */ }
+        }
+
         // ─── Status Polling ──────────────────────────────────────────────
 
         async function refreshStatus() {
@@ -1816,8 +1876,15 @@
                 badge.innerHTML = '<i class="fas fa-circle" style="font-size: 6px;"></i> STOPPED';
             }
 
-            // Song
-            song.textContent = status.current_song || 'Waiting for stream...';
+            // Song + cover
+            const newSong = status.current_song || 'Waiting for stream...';
+            const oldSong = song.textContent;
+            song.textContent = newSong;
+
+            // Fetch cover art when song changes
+            if (newSong !== oldSong && newSong !== 'Waiting for stream...' && newSong !== 'None') {
+                fetchNowPlayingCover(id, newSong);
+            }
 
             // Loop mode
             if (status.loop_mode) {
