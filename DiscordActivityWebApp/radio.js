@@ -585,7 +585,7 @@ async function getSpotifyAccessToken() {
         if (document.querySelector('.loading-screen')) {
             const ls = document.querySelector('.loading-screen');
             if (ls.style.display !== 'none' && !IsChangingStation) {
-                updateLoadingProgress(60, "Spotify authentication successful");
+                updateLoadingProgress(60, "Authentication Successful");
             }
         }
         return cachedToken;
@@ -599,7 +599,7 @@ async function getSpotifyAccessToken() {
 
     // Create a new promise for fetching the token
     tokenPromise = (async () => {
-        updateLoadingProgress(40, "Authenticating with Spotify...");
+        updateLoadingProgress(40, "Authenticating...");
         const tokenUrl = K5_API_BASE + '/spotify/token';
 
         try {
@@ -621,7 +621,7 @@ async function getSpotifyAccessToken() {
 
                 const ls = document.querySelector('.loading-screen');
                 if (ls && ls.style.display !== 'none' && !IsChangingStation) {
-                    updateLoadingProgress(60, "Spotify authentication successful");
+                    updateLoadingProgress(60, "Authentication Successful");
                 }
 
                 showNotification('Album Covers token fetched successfully!');
@@ -632,7 +632,7 @@ async function getSpotifyAccessToken() {
         } catch (error) {
             console.error('Spotify Auth Error:', error);
             showNotification('Failed to fetch Album Covers token.');
-            if (!IsChangingStation) updateLoadingProgress(60, "Spotify authentication failed");
+            if (!IsChangingStation) updateLoadingProgress(60, "Authentication Failed");
             return null;
         } finally {
             tokenPromise = null; // Clear promise after completion
