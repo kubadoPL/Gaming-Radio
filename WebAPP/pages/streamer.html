@@ -885,32 +885,123 @@
         }
 
         .queue-list {
-            max-height: 120px;
+            max-height: 340px;
             overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
 
         .queue-item {
-            font-size: 12px;
-            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
             padding: 6px 8px;
-            border-radius: 6px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            border-radius: 8px;
             transition: background 0.15s;
+            min-height: 40px;
         }
 
         .queue-item:hover {
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.05);
         }
 
-        .queue-item .index {
+        .queue-item .qi-index {
             color: var(--text-muted);
-            font-weight: 500;
-            margin-right: 6px;
+            font-weight: 600;
             font-size: 10px;
+            min-width: 22px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .queue-item .qi-cover {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .queue-item .qi-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .queue-item .qi-title {
+            font-size: 12px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
+
+        .queue-item .qi-url {
+            font-size: 10px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .queue-item .qi-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.15s, color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .queue-item:hover .qi-remove {
+            opacity: 1;
+        }
+
+        .queue-item .qi-remove:hover {
+            color: var(--accent-red);
+        }
+
+        .queue-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .queue-pagination .btn-tiny {
+            padding: 4px 10px;
+            font-size: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .queue-pagination .btn-tiny:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .queue-pagination .btn-tiny:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .queue-pagination .page-info {
+            font-size: 10px;
+            color: var(--text-muted);
         }
 
         .queue-empty {
@@ -1395,6 +1486,11 @@
                             <div class="queue-list" id="queue-list-${id}">
                                 <div class="queue-empty">Queue is empty</div>
                             </div>
+                            <div class="queue-pagination" id="queue-pagination-${id}" style="display:none;">
+                                <button class="btn-tiny" onclick="changeQueuePage(${id}, -1)"><i class="fas fa-chevron-left"></i></button>
+                                <span class="page-info" id="queue-page-info-${id}">1 / 1</span>
+                                <button class="btn-tiny" onclick="changeQueuePage(${id}, 1)"><i class="fas fa-chevron-right"></i></button>
+                            </div>
                         </div>
 
                         <!-- Icecast Settings -->
@@ -1554,6 +1650,137 @@
             refreshStatus();
         }
 
+        // ─── Queue Rendering (Paginated with Cover Art) ──────────────────
+
+        const QUEUE_PAGE_SIZE = 20;
+        const _coverCache = {};  // songTitle -> coverUrl
+
+        function extractTitleFromUrl(url, stationId) {
+            if (!url) return 'Unknown';
+            // Check backend title cache first
+            if (window._queueTitles && window._queueTitles[stationId] && window._queueTitles[stationId][url]) {
+                return window._queueTitles[stationId][url];
+            }
+            // YouTube URL -> just show video ID nicely
+            const ytMatch = url.match(/[?&]v=([^&]+)/);
+            if (ytMatch) return `YouTube: ${ytMatch[1]}`;
+            // ytsearch
+            if (url.startsWith('ytsearch')) return url.replace(/^ytsearch\d*:/, '').trim();
+            // Otherwise show domain + path
+            try {
+                const u = new URL(url);
+                return u.hostname + u.pathname;
+            } catch { return url.substring(0, 50); }
+        }
+
+        function renderQueuePage(id) {
+            const queueList = document.getElementById(`queue-list-${id}`);
+            const pagination = document.getElementById(`queue-pagination-${id}`);
+            const pageInfo = document.getElementById(`queue-page-info-${id}`);
+            const queue = (window._queueData && window._queueData[id]) || [];
+            const page = (window._queuePages && window._queuePages[id]) || 0;
+            const totalPages = Math.ceil(queue.length / QUEUE_PAGE_SIZE) || 1;
+
+            // Clamp page
+            if (page >= totalPages) {
+                window._queuePages[id] = totalPages - 1;
+            }
+            const currentPage = window._queuePages[id] || 0;
+            const start = currentPage * QUEUE_PAGE_SIZE;
+            const slice = queue.slice(start, start + QUEUE_PAGE_SIZE);
+
+            if (slice.length === 0) {
+                queueList.innerHTML = '<div class="queue-empty">Queue is empty</div>';
+                pagination.style.display = 'none';
+                return;
+            }
+
+            queueList.innerHTML = slice.map((item, i) => {
+                const globalIdx = start + i + 1;
+                const title = extractTitleFromUrl(item, id);
+                const cacheKey = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+                const coverUrl = _coverCache[cacheKey] || '';
+                const coverHtml = coverUrl
+                    ? `<img class="qi-cover" src="${coverUrl}" alt="" loading="lazy">`
+                    : `<div class="qi-cover" style="display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-muted);"><i class="fas fa-music"></i></div>`;
+
+                return `<div class="queue-item" id="qi-${id}-${globalIdx}">
+                    <span class="qi-index">${globalIdx}</span>
+                    ${coverHtml}
+                    <div class="qi-info">
+                        <div class="qi-title">${title}</div>
+                    </div>
+                    <button class="qi-remove" onclick="removeQueueItem(${id}, ${start + i})" title="Remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>`;
+            }).join('');
+
+            // Show/hide pagination
+            if (totalPages > 1) {
+                pagination.style.display = 'flex';
+                pageInfo.textContent = `${currentPage + 1} / ${totalPages}`;
+                // Update button states
+                const btns = pagination.querySelectorAll('.btn-tiny');
+                btns[0].disabled = currentPage === 0;
+                btns[1].disabled = currentPage >= totalPages - 1;
+            } else {
+                pagination.style.display = 'none';
+            }
+
+            // Fetch covers lazily for visible items
+            slice.forEach((item, i) => {
+                const title = extractTitleFromUrl(item, id);
+                const cacheKey = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+                if (!_coverCache[cacheKey] && !_coverCache[cacheKey + '_loading']) {
+                    _coverCache[cacheKey + '_loading'] = true;
+                    fetchQueueCover(title, cacheKey, id, start + i + 1);
+                }
+            });
+        }
+
+        function changeQueuePage(id, delta) {
+            if (!window._queuePages) window._queuePages = {};
+            const queue = (window._queueData && window._queueData[id]) || [];
+            const totalPages = Math.ceil(queue.length / QUEUE_PAGE_SIZE) || 1;
+            let page = (window._queuePages[id] || 0) + delta;
+            page = Math.max(0, Math.min(page, totalPages - 1));
+            window._queuePages[id] = page;
+            renderQueuePage(id);
+        }
+
+        async function removeQueueItem(id, index) {
+            await apiCall(`/queue/${id}/remove`, 'POST', { index });
+            refreshStatus();
+        }
+
+        async function fetchQueueCover(title, cacheKey, stationId, globalIdx) {
+            try {
+                const query = title.replace(/YouTube:\s*/i, '').replace(/[^\w\s]/g, ' ').trim();
+                if (!query) return;
+                const res = await fetch(`https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/music/cover?q=${encodeURIComponent(query)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.url) {
+                    _coverCache[cacheKey] = data.url;
+
+                    // Update the cover element if still visible
+                    const el = document.getElementById(`qi-${stationId}-${globalIdx}`);
+                    if (el) {
+                        const coverDiv = el.querySelector('.qi-cover');
+                        if (coverDiv) {
+                            const img = document.createElement('img');
+                            img.className = 'qi-cover';
+                            img.src = data.url;
+                            img.alt = '';
+                            img.loading = 'lazy';
+                            coverDiv.replaceWith(img);
+                        }
+                    }
+                }
+            } catch { /* silent */ }
+        }
+
         // ─── Status Polling ──────────────────────────────────────────────
 
         async function refreshStatus() {
@@ -1603,18 +1830,26 @@
                 syncMicState(id, status.mic_active);
             }
 
-            // Queue
+            // Queue — paginated with cover art
             queueCount.textContent = status.queue_length || 0;
             if (status.queue && status.queue.length > 0) {
-                queueList.innerHTML = status.queue.slice(0, 15).map((item, i) => {
-                    const display = item.length > 60 ? item.substring(0, 60) + '...' : item;
-                    return `<div class="queue-item"><span class="index">${i + 1}.</span>${display}</div>`;
-                }).join('');
-                if (status.queue.length > 15) {
-                    queueList.innerHTML += `<div class="queue-item" style="color: var(--text-muted); text-align: center;">... and ${status.queue.length - 15} more</div>`;
+                // Store full queue data per station
+                if (!window._queueData) window._queueData = {};
+                window._queueData[id] = status.queue;
+                if (!window._queuePages) window._queuePages = {};
+                if (window._queuePages[id] === undefined) window._queuePages[id] = 0;
+
+                // Store queue titles from backend
+                if (!window._queueTitles) window._queueTitles = {};
+                if (status.queue_titles) {
+                    window._queueTitles[id] = status.queue_titles;
                 }
+
+                renderQueuePage(id);
             } else {
                 queueList.innerHTML = '<div class="queue-empty">Queue is empty</div>';
+                const pagination = document.getElementById(`queue-pagination-${id}`);
+                if (pagination) pagination.style.display = 'none';
             }
         }
 
