@@ -800,6 +800,42 @@
             opacity: 1;
         }
 
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .toggle-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-purple);
+            cursor: pointer;
+        }
+
+        .settings-select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .settings-select:focus {
+            border-color: var(--accent-purple);
+        }
+
+        .settings-select option {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
         /* Cookie Upload Bar */
         .cookie-bar {
             display: flex;
@@ -1368,6 +1404,7 @@
                         addLog('Authenticated as admin: ' + currentUser.global_name, 'success');
                         startPolling();
                         checkCookieStatus();
+                        loadStartupConfigs();
                     }
                 } else {
                     authToken = null;
@@ -1555,6 +1592,76 @@
                                 </div>
                                 <button class="btn btn-save-config" onclick="saveStationConfig(${id})">
                                     <i class="fas fa-save"></i> Save & Apply
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Startup Options -->
+                        <div class="settings-section" id="startup-${id}">
+                            <div class="settings-toggle" onclick="toggleStartup(${id})">
+                                <span><i class="fas fa-rocket"></i> Startup Options</span>
+                                <span class="config-saved-badge" id="startup-saved-${id}" style="display:none">Saved ✓</span>
+                                <i class="fas fa-chevron-down chevron"></i>
+                            </div>
+                            <div class="settings-body">
+                                <div class="settings-field">
+                                    <label class="toggle-label">
+                                        <input type="checkbox" id="startup-auto-${id}">
+                                        <span>Auto-connect on server start</span>
+                                    </label>
+                                </div>
+                                <div class="settings-field">
+                                    <label class="toggle-label">
+                                        <input type="checkbox" id="startup-custom-icecast-${id}" onchange="toggleStartupIcecast(${id})">
+                                        <span>Use custom Icecast settings</span>
+                                    </label>
+                                </div>
+                                <div id="startup-icecast-fields-${id}" style="display:none">
+                                    <div class="settings-row">
+                                        <div class="settings-field">
+                                            <label>Server</label>
+                                            <input type="text" id="startup-server-${id}" placeholder="link.zeno.fm">
+                                        </div>
+                                        <div class="settings-field small">
+                                            <label>Port</label>
+                                            <input type="text" id="startup-port-${id}" placeholder="80">
+                                        </div>
+                                    </div>
+                                    <div class="settings-field">
+                                        <label>Mount Point</label>
+                                        <input type="text" id="startup-mount-${id}" placeholder="/mountpoint">
+                                    </div>
+                                    <div class="settings-field">
+                                        <label>Password</label>
+                                        <input type="password" id="startup-pass-${id}" placeholder="*****">
+                                    </div>
+                                </div>
+                                <div class="settings-field">
+                                    <label>Playlist URL (loaded on startup)</label>
+                                    <input type="text" id="startup-playlist-${id}" placeholder="https://youtube.com/playlist?list=...">
+                                </div>
+                                <div class="settings-row">
+                                    <div class="settings-field">
+                                        <label class="toggle-label">
+                                            <input type="checkbox" id="startup-shuffle-${id}">
+                                            <span>Shuffle playlist</span>
+                                        </label>
+                                    </div>
+                                    <div class="settings-field small">
+                                        <label>× times</label>
+                                        <input type="number" id="startup-shuffle-count-${id}" value="1" min="1" max="10">
+                                    </div>
+                                </div>
+                                <div class="settings-field">
+                                    <label>Loop mode</label>
+                                    <select id="startup-loop-${id}" class="settings-select">
+                                        <option value="off">Off</option>
+                                        <option value="single">Loop Single</option>
+                                        <option value="queue">Loop Queue</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-save-config" onclick="saveStartupConfig(${id})">
+                                    <i class="fas fa-save"></i> Save Startup Config
                                 </button>
                             </div>
                         </div>
@@ -2066,6 +2173,76 @@
                 }
             }
             addLog('Cached Icecast configs pushed to server.', 'success');
+        }
+
+        // ─── Startup Config ───────────────────────────────────────────────
+
+        function toggleStartup(id) {
+            const el = document.getElementById(`startup-${id}`);
+            el.classList.toggle('open');
+        }
+
+        function toggleStartupIcecast(id) {
+            const checked = document.getElementById(`startup-custom-icecast-${id}`).checked;
+            document.getElementById(`startup-icecast-fields-${id}`).style.display = checked ? 'block' : 'none';
+        }
+
+        async function loadStartupConfigs() {
+            for (const id of [0, 1, 2]) {
+                try {
+                    const data = await apiCall(`/startup/${id}`, 'GET', null, true);
+                    if (!data) continue;
+
+                    document.getElementById(`startup-auto-${id}`).checked = data.auto_connect;
+                    document.getElementById(`startup-custom-icecast-${id}`).checked = data.use_custom_icecast;
+                    document.getElementById(`startup-server-${id}`).value = data.icecast_server || '';
+                    document.getElementById(`startup-port-${id}`).value = data.icecast_port || '80';
+                    document.getElementById(`startup-mount-${id}`).value = data.icecast_mount || '';
+                    // Password: show placeholder if set, don't expose actual value
+                    if (data.has_password) {
+                        document.getElementById(`startup-pass-${id}`).placeholder = '***** (saved)';
+                    }
+                    document.getElementById(`startup-playlist-${id}`).value = data.playlist_url || '';
+                    document.getElementById(`startup-shuffle-${id}`).checked = data.shuffle_enabled;
+                    document.getElementById(`startup-shuffle-count-${id}`).value = data.shuffle_count || 1;
+                    document.getElementById(`startup-loop-${id}`).value = data.loop_mode || 'off';
+
+                    // Show/hide icecast fields
+                    toggleStartupIcecast(id);
+                } catch (e) { /* silent */ }
+            }
+        }
+
+        async function saveStartupConfig(id) {
+            const config = {
+                auto_connect: document.getElementById(`startup-auto-${id}`).checked,
+                use_custom_icecast: document.getElementById(`startup-custom-icecast-${id}`).checked,
+                icecast_server: document.getElementById(`startup-server-${id}`).value.trim(),
+                icecast_port: document.getElementById(`startup-port-${id}`).value.trim() || '80',
+                icecast_mount: document.getElementById(`startup-mount-${id}`).value.trim(),
+                playlist_url: document.getElementById(`startup-playlist-${id}`).value.trim(),
+                shuffle_enabled: document.getElementById(`startup-shuffle-${id}`).checked,
+                shuffle_count: parseInt(document.getElementById(`startup-shuffle-count-${id}`).value) || 1,
+                loop_mode: document.getElementById(`startup-loop-${id}`).value,
+            };
+
+            // Only send password if user typed a new one
+            const passField = document.getElementById(`startup-pass-${id}`);
+            if (passField.value.trim()) {
+                config.icecast_password = passField.value.trim();
+            }
+
+            const res = await apiCall(`/startup/${id}`, 'POST', config);
+            if (res) {
+                showNotification(res.message, 'success');
+                const badge = document.getElementById(`startup-saved-${id}`);
+                badge.style.display = 'inline';
+                badge.classList.add('show');
+                setTimeout(() => {
+                    badge.classList.remove('show');
+                    setTimeout(() => badge.style.display = 'none', 300);
+                }, 2000);
+            }
         }
 
         // ─── YouTube Cookies ──────────────────────────────────────────────────
