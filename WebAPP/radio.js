@@ -2472,13 +2472,14 @@ favoriteStore.init().then(async () => {
     gifFavorites = await favoriteStore.getAll();
     console.log(`[CHAT] Initialized ${gifFavorites.length} favorites from IndexedDB.`);
 
-    // If already logged in, sync with cloud
+    // If already logged in, sync with cloud in background (non-blocking)
     if (discordAuthToken) {
-        const merged = await favoriteStore.syncWithCloud();
-        if (merged) {
-            gifFavorites = merged;
-            console.log(`[CHAT] Cloud sync merged: ${gifFavorites.length} total favorites.`);
-        }
+        favoriteStore.syncWithCloud().then(merged => {
+            if (merged) {
+                gifFavorites = merged;
+                console.log(`[CHAT] Cloud sync merged: ${gifFavorites.length} total favorites.`);
+            }
+        });
     }
 });
 
