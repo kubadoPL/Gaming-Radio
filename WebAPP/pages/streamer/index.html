@@ -1398,7 +1398,25 @@
                 if (res.ok) {
                     const data = await res.json();
                     currentUser = data.user;
+
+                    // Check static admin list first
                     isAdmin = ADMIN_USER_IDS.has(String(currentUser.id));
+
+                    // Also check dynamic admins from server (promoted at runtime)
+                    if (!isAdmin) {
+                        try {
+                            const rolesRes = await fetch(`${CHAT_API_BASE}/user/roles`);
+                            if (rolesRes.ok) {
+                                const rolesData = await rolesRes.json();
+                                const serverAdmins = new Set((rolesData.admins || []).map(String));
+                                if (serverAdmins.has(String(currentUser.id))) {
+                                    isAdmin = true;
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Failed to fetch dynamic roles:', e);
+                        }
+                    }
 
                     if (isAdmin) {
                         addLog('Authenticated as admin: ' + currentUser.global_name, 'success');
