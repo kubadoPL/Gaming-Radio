@@ -3015,6 +3015,122 @@ body::-webkit-scrollbar-thumb {
     font-size: 8px;
 }
 
+/* ========================
+   OWNER BADGE
+   ======================== */
+
+.chat-owner-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #ff4444;
+    background: linear-gradient(135deg, rgba(255, 68, 68, 0.15), rgba(200, 30, 30, 0.08));
+    border: 1px solid rgba(255, 68, 68, 0.3);
+    border-radius: 6px;
+    padding: 2px 7px;
+    line-height: 1;
+    white-space: nowrap;
+    animation: ownerBadgeGlow 3s ease-in-out infinite alternate;
+    flex-shrink: 0;
+}
+
+.chat-owner-badge i {
+    font-size: 9px;
+    filter: drop-shadow(0 0 3px rgba(255, 68, 68, 0.5));
+}
+
+@keyframes ownerBadgeGlow {
+    0% {
+        box-shadow: 0 0 4px rgba(255, 68, 68, 0.15);
+    }
+    100% {
+        box-shadow: 0 0 12px rgba(255, 68, 68, 0.35);
+    }
+}
+
+.chat-owner-badge.small {
+    font-size: 0;
+    padding: 2px 4px;
+    border-radius: 4px;
+    gap: 0;
+    line-height: 1;
+}
+
+.chat-owner-badge.small i {
+    font-size: 8px;
+}
+
+/* ========================
+   PROMOTE / DEMOTE BUTTONS
+   ======================== */
+
+.user-profile-role-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.role-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: 1px solid;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.role-action-btn.promote {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.25);
+    color: #10b981;
+}
+
+.role-action-btn.promote:hover {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+    transform: translateY(-1px);
+}
+
+.role-action-btn.demote {
+    background: rgba(255, 68, 68, 0.08);
+    border-color: rgba(255, 68, 68, 0.25);
+    color: #ff4444;
+}
+
+.role-action-btn.demote:hover {
+    background: rgba(255, 68, 68, 0.15);
+    border-color: rgba(255, 68, 68, 0.5);
+    box-shadow: 0 4px 20px rgba(255, 68, 68, 0.2);
+    transform: translateY(-1px);
+}
+
+.role-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.role-action-btn i {
+    font-size: 11px;
+}
+
 /* Admin delete button (amber/orange, distinct from user's red) */
 .chat-message-delete-btn.admin-delete {
     background: rgba(30, 25, 45, 0.95);

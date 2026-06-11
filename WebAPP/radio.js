@@ -2088,19 +2088,122 @@ let currentChatStation = 'RADIOGAMING';
 let isSongShared = false;
 let sharedSongData = null; // Stores specific song data (from history) if sharing specific song
 
-// ─── Admin Role System ─────────────────────────────────────────────────────────
-const ADMIN_USER_IDS = new Set([
-    '264079253757231104', // Admin
+// ─── Owner & Admin Role System ─────────────────────────────────────────────────
+const OWNER_USER_IDS = new Set([
+    '264079253757231104', // kubado
 ]);
 
+const ADMIN_USER_IDS = new Set([
+    '264079253757231104', // kubado
+]);
+
+// Dynamic admins promoted at runtime (fetched from server)
+const dynamicAdminIds = new Set();
+
+function isUserOwner(userId) {
+    return OWNER_USER_IDS.has(String(userId));
+}
+
 function isUserAdmin(userId) {
-    return ADMIN_USER_IDS.has(String(userId));
+    const uid = String(userId);
+    return ADMIN_USER_IDS.has(uid) || dynamicAdminIds.has(uid) || OWNER_USER_IDS.has(uid);
+}
+
+function getUserRole(userId) {
+    const uid = String(userId);
+    if (OWNER_USER_IDS.has(uid)) return 'owner';
+    if (ADMIN_USER_IDS.has(uid) || dynamicAdminIds.has(uid)) return 'admin';
+    return null;
 }
 
 function getAdminBadgeHtml(userId, size = 'default') {
-    if (!isUserAdmin(userId)) return '';
+    const role = getUserRole(userId);
+    if (!role) return '';
+    if (role === 'owner') {
+        if (size === 'small') return `<span class="chat-owner-badge small" title="Owner"><i class="fas fa-crown"></i></span>`;
+        return `<span class="chat-owner-badge" title="Owner"><i class="fas fa-crown"></i> Owner</span>`;
+    }
+    // admin
     if (size === 'small') return `<span class="chat-admin-badge small" title="Administrator"><i class="fas fa-shield-alt"></i></span>`;
     return `<span class="chat-admin-badge" title="Administrator"><i class="fas fa-shield-alt"></i> Admin</span>`;
+}
+
+// Fetch all roles from server on startup (so badges show correctly after reload)
+async function fetchRoles() {
+    try {
+        const resp = await fetch(`${CHAT_API_BASE}/user/roles`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.admins) {
+            data.admins.forEach(id => dynamicAdminIds.add(String(id)));
+            // Remove IDs that are already in static sets to avoid duplication
+            ADMIN_USER_IDS.forEach(id => dynamicAdminIds.delete(id));
+            OWNER_USER_IDS.forEach(id => dynamicAdminIds.delete(id));
+        }
+        console.log('[ROLES] Loaded roles from server. Dynamic admins:', [...dynamicAdminIds]);
+    } catch (err) {
+        console.warn('[ROLES] Failed to fetch roles:', err);
+    }
+}
+// Fetch roles early
+fetchRoles();
+
+async function promoteUser(userId) {
+    if (!discordUser || !isUserOwner(discordUser.id)) return;
+    const btn = document.querySelector('.role-action-btn.promote');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Promoting...'; }
+    try {
+        const resp = await fetch(`${CHAT_API_BASE}/user/promote/${userId}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${discordAuthToken}`, 'Content-Type': 'application/json' },
+        });
+        const data = await resp.json();
+        if (data.success) {
+            dynamicAdminIds.add(String(userId));
+            // Invalidate profile cache and re-render
+            delete _userProfileCache[userId];
+            const profileData = _lastProfileData;
+            if (profileData && profileData.user) {
+                openUserProfileModal(userId, profileData.user.username, profileData.user.global_name, profileData.user.avatar_url, profileData.user.banner_url, profileData.user.accent_color);
+            }
+            console.log('[ROLES] User promoted to Admin');
+        } else {
+            console.error('[ROLES] Promote failed:', data.error);
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-up"></i> Promote to Admin'; }
+        }
+    } catch (err) {
+        console.error('Promote error:', err);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-up"></i> Promote to Admin'; }
+    }
+}
+
+async function demoteUser(userId) {
+    if (!discordUser || !isUserOwner(discordUser.id)) return;
+    const btn = document.querySelector('.role-action-btn.demote');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Demoting...'; }
+    try {
+        const resp = await fetch(`${CHAT_API_BASE}/user/demote/${userId}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${discordAuthToken}`, 'Content-Type': 'application/json' },
+        });
+        const data = await resp.json();
+        if (data.success) {
+            dynamicAdminIds.delete(String(userId));
+            // Invalidate profile cache and re-render
+            delete _userProfileCache[userId];
+            const profileData = _lastProfileData;
+            if (profileData && profileData.user) {
+                openUserProfileModal(userId, profileData.user.username, profileData.user.global_name, profileData.user.avatar_url, profileData.user.banner_url, profileData.user.accent_color);
+            }
+            console.log('[ROLES] User demoted from Admin');
+        } else {
+            console.error('[ROLES] Demote failed:', data.error);
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-down"></i> Demote from Admin'; }
+        }
+    } catch (err) {
+        console.error('Demote error:', err);
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-down"></i> Demote from Admin'; }
+    }
 }
 
 // ========================
@@ -2543,6 +2646,7 @@ window.closeDiscordProfileModal = function (event) {
 // ========================
 
 let _userProfileCache = {}; // userId -> {data, timestamp}
+let _lastProfileData = null; // Last rendered profile data (for re-render after role change)
 const USER_PROFILE_CACHE_TTL = 120000; // 2 minutes
 
 function _applyProfileBanner(bannerEl, bannerUrl, accentColor) {
@@ -2638,6 +2742,7 @@ window.openUserProfileModal = async function (userId, userName, globalName, avat
 };
 
 async function renderUserProfileStats(data) {
+    _lastProfileData = data; // Save for re-render after role changes
     const statsContainer = document.getElementById('user-profile-stats');
     if (!statsContainer) return;
 
@@ -2669,6 +2774,23 @@ async function renderUserProfileStats(data) {
         html += `<div class="user-ranking-badge">
             <i class="fas fa-trophy"></i> ${medal} Ranking #${pos}
         </div>`;
+    }
+
+    // Owner-only: Promote/Demote buttons (only if viewer is owner and target is not owner)
+    if (discordUser && isUserOwner(discordUser.id) && data.user && data.user.id !== discordUser.id && !isUserOwner(data.user.id)) {
+        const targetRole = data.role || getUserRole(data.user.id);
+        const targetIsAdmin = targetRole === 'admin';
+        html += `<div class="user-profile-role-actions" id="profile-role-actions" data-user-id="${data.user.id}">`;
+        if (targetIsAdmin) {
+            html += `<button class="role-action-btn demote" onclick="demoteUser('${data.user.id}')">
+                <i class="fas fa-arrow-down"></i> Demote from Admin
+            </button>`;
+        } else {
+            html += `<button class="role-action-btn promote" onclick="promoteUser('${data.user.id}')">
+                <i class="fas fa-arrow-up"></i> Promote to Admin
+            </button>`;
+        }
+        html += `</div>`;
     }
 
     // Stats overview
