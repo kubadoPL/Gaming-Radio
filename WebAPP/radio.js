@@ -2304,7 +2304,7 @@ async function demoteUser(userId) {
 }
 
 // ========================
-// UNLIMITED FAVORITES (IndexedDB)
+// UNLIMITED FAVORITES (IndexedDB + Cloud Sync)
 // ========================
 
 const dbName = "RadioGamingDB";
@@ -2312,6 +2312,7 @@ const storeName = "Favorites";
 
 const favoriteStore = {
     db: null,
+    _cloudSynced: false, // Track if we already merged with cloud this session
     async init() {
         return new Promise((resolve) => {
             const request = indexedDB.open(dbName, 1);
@@ -2371,6 +2372,95 @@ const favoriteStore = {
             tx.oncomplete = () => resolve(true);
             tx.onerror = () => resolve(false);
         });
+    },
+
+    // ─── Cloud Sync Methods ─────────────────────────────────────────────
+    async cloudGet() {
+        if (!discordAuthToken) return null;
+        try {
+            const resp = await fetch(`${CHAT_API_BASE}/favorites/gif`, {
+                headers: { 'Authorization': `Bearer ${discordAuthToken}` },
+            });
+            if (!resp.ok) return null;
+            const data = await resp.json();
+            return data.favorites || [];
+        } catch (e) {
+            console.warn('[FAV SYNC] Cloud fetch failed:', e);
+            return null;
+        }
+    },
+    async cloudAdd(urls) {
+        if (!discordAuthToken || !urls.length) return;
+        try {
+            await fetch(`${CHAT_API_BASE}/favorites/gif`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${discordAuthToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ urls }),
+            });
+        } catch (e) {
+            console.warn('[FAV SYNC] Cloud add failed:', e);
+        }
+    },
+    async cloudDelete(url) {
+        if (!discordAuthToken) return;
+        try {
+            await fetch(`${CHAT_API_BASE}/favorites/gif`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${discordAuthToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url }),
+            });
+        } catch (e) {
+            console.warn('[FAV SYNC] Cloud delete failed:', e);
+        }
+    },
+
+    /**
+     * Merge local + cloud favorites (union). Called once after login.
+     * - New local items → pushed to cloud
+     * - New cloud items → saved to IndexedDB
+     * - Returns the merged list
+     */
+    async syncWithCloud() {
+        if (this._cloudSynced || !discordAuthToken) return null;
+        this._cloudSynced = true;
+
+        const cloudFavs = await this.cloudGet();
+        if (cloudFavs === null) {
+            this._cloudSynced = false; // Retry next time
+            return null;
+        }
+
+        const localFavs = await this.getAll();
+        const cloudSet = new Set(cloudFavs);
+        const localSet = new Set(localFavs);
+
+        // Items only in local → push to cloud
+        const onlyLocal = localFavs.filter(u => !cloudSet.has(u));
+        // Items only in cloud → save to IndexedDB
+        const onlyCloud = cloudFavs.filter(u => !localSet.has(u));
+
+        if (onlyLocal.length > 0) {
+            console.log(`[FAV SYNC] Pushing ${onlyLocal.length} local favorites to cloud`);
+            await this.cloudAdd(onlyLocal);
+        }
+
+        if (onlyCloud.length > 0) {
+            console.log(`[FAV SYNC] Pulling ${onlyCloud.length} cloud favorites to local`);
+            for (const url of onlyCloud) {
+                await this.save(url);
+            }
+        }
+
+        // Return merged list
+        const merged = [...new Set([...localFavs, ...cloudFavs])];
+        console.log(`[FAV SYNC] Sync complete. Total favorites: ${merged.length} (local-only: ${onlyLocal.length}, cloud-only: ${onlyCloud.length})`);
+        return merged;
     }
 };
 
@@ -2381,6 +2471,15 @@ let currentGifTab = 'trending';
 favoriteStore.init().then(async () => {
     gifFavorites = await favoriteStore.getAll();
     console.log(`[CHAT] Initialized ${gifFavorites.length} favorites from IndexedDB.`);
+
+    // If already logged in, sync with cloud
+    if (discordAuthToken) {
+        const merged = await favoriteStore.syncWithCloud();
+        if (merged) {
+            gifFavorites = merged;
+            console.log(`[CHAT] Cloud sync merged: ${gifFavorites.length} total favorites.`);
+        }
+    }
 });
 
 window.switchGifTab = function (tab) {
@@ -2422,6 +2521,13 @@ window.toggleFavoriteGif = async function (btn, event) {
         storageSuccess = await favoriteStore.save(url);
     } else {
         storageSuccess = await favoriteStore.delete(url);
+    }
+
+    // 3. Sync to cloud (fire-and-forget, non-blocking)
+    if (isAdding) {
+        favoriteStore.cloudAdd([url]);
+    } else {
+        favoriteStore.cloudDelete(url);
     }
 
     // Handle failure (unlikely with IndexedDB)
@@ -2587,6 +2693,14 @@ async function checkExistingSession() {
 
             // Sync user data from cloud (listening history, favorites, stats)
             syncUserDataFromCloud();
+
+            // Sync GIF favorites with cloud (merge local + server)
+            favoriteStore.syncWithCloud().then(merged => {
+                if (merged) {
+                    gifFavorites = merged;
+                    console.log(`[CHAT] GIF favorites synced after login: ${gifFavorites.length} total.`);
+                }
+            });
 
             // Claim anonymous listener entry to prevent double-counting
             if (anonListenerId) {
