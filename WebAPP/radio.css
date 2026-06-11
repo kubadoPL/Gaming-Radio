@@ -1049,21 +1049,48 @@ body.is-fullscreen main {
     }
 
     .header-content {
-        height: 46px;
-        justify-content: space-between;
+        height: 52px;
+        justify-content: flex-start;
         padding: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .header-content::-webkit-scrollbar {
+        display: none;
+    }
+
+    nav {
+        flex-shrink: 0;
     }
 
     nav ul {
-        gap: 6px;
+        gap: 4px;
     }
 
     nav ul li a {
-        padding: 6px 5px;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    nav ul li a i {
+        font-size: 11px;
     }
 
     .header-right {
-        gap: 6px;
+        gap: 3px;
+        flex-shrink: 0;
+        margin-left: 8px;
     }
 
     .logo {
@@ -1075,7 +1102,33 @@ body.is-fullscreen main {
     }
 
     .status-badge {
-        padding: 4px 10px;
+        padding: 3px 8px;
+        font-size: 9px;
+    }
+
+    .status-badge .dot {
+        width: 5px;
+        height: 5px;
+    }
+
+    .discord-avatar {
+        width: 26px;
+        height: 26px;
+        border-width: 1.5px;
+    }
+
+    .admin-streamer-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    #discord-user-name {
+        display: none;
+    }
+
+    #login-btn {
+        padding: 5px 10px;
         font-size: 10px;
     }
 
@@ -3070,56 +3123,157 @@ body::-webkit-scrollbar-thumb {
 
 .user-profile-role-actions {
     display: flex;
-    gap: 8px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    flex-direction: column;
+    gap: 0;
+    margin-top: 10px;
 }
 
 .role-action-btn {
-    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.role-action-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+}
+
+.role-action-btn:hover::before {
+    opacity: 1;
+}
+
+.role-action-btn .role-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px 16px;
-    border: 1px solid;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: all 0.35s ease;
 }
 
+.role-action-btn .role-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-width: 0;
+}
+
+.role-action-btn .role-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+}
+
+.role-action-btn .role-desc {
+    font-size: 10px;
+    opacity: 0.5;
+    line-height: 1.2;
+}
+
+.role-action-btn .role-arrow {
+    font-size: 10px;
+    opacity: 0.3;
+    transition: all 0.35s ease;
+    flex-shrink: 0;
+}
+
+/* Promote (green) */
 .role-action-btn.promote {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.role-action-btn.promote::before {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), transparent 70%);
+}
+
+.role-action-btn.promote .role-icon {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    box-shadow: 0 0 0 rgba(16, 185, 129, 0);
+}
+
+.role-action-btn.promote .role-title {
     color: #10b981;
 }
 
 .role-action-btn.promote:hover {
-    background: rgba(16, 185, 129, 0.15);
-    border-color: rgba(16, 185, 129, 0.5);
-    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.3);
     transform: translateY(-1px);
+    box-shadow: 0 4px 24px rgba(16, 185, 129, 0.12);
 }
 
+.role-action-btn.promote:hover .role-icon {
+    background: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+    transform: scale(1.05);
+}
+
+.role-action-btn.promote:hover .role-arrow {
+    opacity: 0.8;
+    color: #10b981;
+    transform: translateX(2px);
+}
+
+/* Demote (red) */
 .role-action-btn.demote {
-    background: rgba(255, 68, 68, 0.08);
-    border-color: rgba(255, 68, 68, 0.25);
+    border-color: rgba(255, 68, 68, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.role-action-btn.demote::before {
+    background: linear-gradient(135deg, rgba(255, 68, 68, 0.08), transparent 70%);
+}
+
+.role-action-btn.demote .role-icon {
+    background: rgba(255, 68, 68, 0.12);
+    color: #ff4444;
+    box-shadow: 0 0 0 rgba(255, 68, 68, 0);
+}
+
+.role-action-btn.demote .role-title {
     color: #ff4444;
 }
 
 .role-action-btn.demote:hover {
-    background: rgba(255, 68, 68, 0.15);
-    border-color: rgba(255, 68, 68, 0.5);
-    box-shadow: 0 4px 20px rgba(255, 68, 68, 0.2);
+    border-color: rgba(255, 68, 68, 0.3);
     transform: translateY(-1px);
+    box-shadow: 0 4px 24px rgba(255, 68, 68, 0.12);
 }
 
+.role-action-btn.demote:hover .role-icon {
+    background: rgba(255, 68, 68, 0.2);
+    box-shadow: 0 0 16px rgba(255, 68, 68, 0.25);
+    transform: scale(1.05);
+}
+
+.role-action-btn.demote:hover .role-arrow {
+    opacity: 0.8;
+    color: #ff4444;
+    transform: translateX(2px);
+}
+
+/* Disabled state */
 .role-action-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -3127,8 +3281,13 @@ body::-webkit-scrollbar-thumb {
     box-shadow: none !important;
 }
 
-.role-action-btn i {
-    font-size: 11px;
+.role-action-btn:disabled .role-icon {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.role-action-btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
 }
 
 /* Admin delete button (amber/orange, distinct from user's red) */

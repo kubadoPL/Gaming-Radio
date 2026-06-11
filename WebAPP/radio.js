@@ -2246,7 +2246,7 @@ function refreshAllBadgesForUser(userId) {
 async function promoteUser(userId) {
     if (!discordUser || !isUserOwner(discordUser.id)) return;
     const btn = document.querySelector('.role-action-btn.promote');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Promoting...'; }
+    if (btn) { btn.disabled = true; btn.querySelector('.role-icon').innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.querySelector('.role-title').textContent = 'Promoting...'; }
     try {
         const resp = await fetch(`${CHAT_API_BASE}/user/promote/${userId}`, {
             method: 'POST',
@@ -2265,18 +2265,18 @@ async function promoteUser(userId) {
             console.log('[ROLES] User promoted to Admin');
         } else {
             console.error('[ROLES] Promote failed:', data.error);
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-up"></i> Promote to Admin'; }
+            if (btn) { btn.disabled = false; btn.querySelector('.role-icon').innerHTML = '<i class="fas fa-shield-alt"></i>'; btn.querySelector('.role-title').textContent = 'Promote to Admin'; }
         }
     } catch (err) {
         console.error('Promote error:', err);
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-up"></i> Promote to Admin'; }
+        if (btn) { btn.disabled = false; btn.querySelector('.role-icon').innerHTML = '<i class="fas fa-shield-alt"></i>'; btn.querySelector('.role-title').textContent = 'Promote to Admin'; }
     }
 }
 
 async function demoteUser(userId) {
     if (!discordUser || !isUserOwner(discordUser.id)) return;
     const btn = document.querySelector('.role-action-btn.demote');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Demoting...'; }
+    if (btn) { btn.disabled = true; btn.querySelector('.role-icon').innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; btn.querySelector('.role-title').textContent = 'Removing...'; }
     try {
         const resp = await fetch(`${CHAT_API_BASE}/user/demote/${userId}`, {
             method: 'POST',
@@ -2295,11 +2295,11 @@ async function demoteUser(userId) {
             console.log('[ROLES] User demoted from Admin');
         } else {
             console.error('[ROLES] Demote failed:', data.error);
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-down"></i> Demote from Admin'; }
+            if (btn) { btn.disabled = false; btn.querySelector('.role-icon').innerHTML = '<i class="fas fa-shield-alt"></i>'; btn.querySelector('.role-title').textContent = 'Remove Admin'; }
         }
     } catch (err) {
         console.error('Demote error:', err);
-        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-arrow-down"></i> Demote from Admin'; }
+        if (btn) { btn.disabled = false; btn.querySelector('.role-icon').innerHTML = '<i class="fas fa-shield-alt"></i>'; btn.querySelector('.role-title').textContent = 'Remove Admin'; }
     }
 }
 
@@ -2880,11 +2880,21 @@ async function renderUserProfileStats(data) {
         html += `<div class="user-profile-role-actions" id="profile-role-actions" data-user-id="${data.user.id}">`;
         if (targetIsAdmin) {
             html += `<button class="role-action-btn demote" onclick="demoteUser('${data.user.id}')">
-                <i class="fas fa-arrow-down"></i> Demote from Admin
+                <div class="role-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="role-text">
+                    <span class="role-title">Remove Admin</span>
+                    <span class="role-desc">Revoke admin privileges</span>
+                </div>
+                <i class="fas fa-chevron-right role-arrow"></i>
             </button>`;
         } else {
             html += `<button class="role-action-btn promote" onclick="promoteUser('${data.user.id}')">
-                <i class="fas fa-arrow-up"></i> Promote to Admin
+                <div class="role-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="role-text">
+                    <span class="role-title">Promote to Admin</span>
+                    <span class="role-desc">Grant admin privileges</span>
+                </div>
+                <i class="fas fa-chevron-right role-arrow"></i>
             </button>`;
         }
         html += `</div>`;
