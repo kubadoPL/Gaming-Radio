@@ -4673,6 +4673,82 @@ body::-webkit-scrollbar-thumb {
 }
 
 /* ========================
+   ADMIN STREAMER BUTTON
+   ======================== */
+
+.admin-streamer-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 50, 50, 0.08);
+    border: 1px solid rgba(255, 50, 50, 0.2);
+    color: #ff4444;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    overflow: hidden;
+}
+
+.admin-streamer-btn::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        rgba(255, 50, 50, 0.4),
+        rgba(255, 20, 20, 0.1),
+        rgba(255, 80, 80, 0.4),
+        rgba(255, 20, 20, 0.1),
+        rgba(255, 50, 50, 0.4)
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: -1;
+    animation: adminBtnSpin 4s linear infinite;
+}
+
+.admin-streamer-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(255, 50, 50, 0.15);
+    animation: adminBtnPulse 2.5s ease-in-out infinite;
+}
+
+.admin-streamer-btn:hover {
+    background: rgba(255, 50, 50, 0.15);
+    border-color: rgba(255, 50, 50, 0.5);
+    color: #ff6666;
+    transform: translateY(-2px) scale(1.08);
+    box-shadow: 0 6px 24px rgba(255, 50, 50, 0.25);
+}
+
+.admin-streamer-btn:hover::before {
+    opacity: 1;
+}
+
+.admin-streamer-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+
+@keyframes adminBtnPulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(255, 50, 50, 0.1); }
+    50% { box-shadow: 0 0 18px rgba(255, 50, 50, 0.3); }
+}
+
+@keyframes adminBtnSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ========================
    SONG HISTORY DRAWER
    ======================== */
 

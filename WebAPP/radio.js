@@ -2381,6 +2381,8 @@ async function checkExistingSession() {
             if (isUserAdmin(discordUser.id)) {
                 const anonTab = document.getElementById('anon-stats-tab');
                 if (anonTab) anonTab.style.display = '';
+                const streamerBtn = document.getElementById('admin-streamer-btn');
+                if (streamerBtn) streamerBtn.style.display = '';
             }
 
             // Sync user data from cloud (listening history, favorites, stats)
