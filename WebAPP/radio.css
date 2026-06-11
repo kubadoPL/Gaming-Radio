@@ -1049,21 +1049,21 @@ body.is-fullscreen main {
     }
 
     .header-content {
-        height: 54px;
+        height: 46px;
         justify-content: space-between;
         padding: 0;
     }
 
     nav ul {
-        gap: 8px;
+        gap: 6px;
     }
 
     nav ul li a {
-        padding: 8px 6px;
+        padding: 6px 5px;
     }
 
     .header-right {
-        gap: 8px;
+        gap: 6px;
     }
 
     .logo {
@@ -4714,18 +4714,18 @@ body::-webkit-scrollbar-thumb {
 }
 
 .admin-streamer-btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    box-shadow: 0 0 12px rgba(255, 50, 50, 0.15);
-    animation: adminBtnPulse 2.5s ease-in-out infinite;
+    content: none;
+    display: none;
+    width: 0;
+    height: 0;
+    background: none;
 }
 
 .admin-streamer-btn:hover {
     background: rgba(255, 50, 50, 0.15);
     border-color: rgba(255, 50, 50, 0.5);
     color: #ff6666;
+    text-shadow: none;
     transform: translateY(-2px) scale(1.08);
     box-shadow: 0 6px 24px rgba(255, 50, 50, 0.25);
 }
