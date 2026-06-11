@@ -2129,24 +2129,119 @@ function getAdminBadgeHtml(userId, size = 'default') {
 }
 
 // Fetch all roles from server on startup (so badges show correctly after reload)
+let _rolesInitialized = false;
 async function fetchRoles() {
     try {
         const resp = await fetch(`${CHAT_API_BASE}/user/roles`);
         if (!resp.ok) return;
         const data = await resp.json();
         if (data.admins) {
-            data.admins.forEach(id => dynamicAdminIds.add(String(id)));
-            // Remove IDs that are already in static sets to avoid duplication
-            ADMIN_USER_IDS.forEach(id => dynamicAdminIds.delete(id));
-            OWNER_USER_IDS.forEach(id => dynamicAdminIds.delete(id));
+            const serverAdmins = new Set(data.admins.map(String));
+            
+            // Build the new dynamic set (exclude static admins/owners)
+            const newDynamic = new Set();
+            serverAdmins.forEach(id => {
+                if (!ADMIN_USER_IDS.has(id) && !OWNER_USER_IDS.has(id)) {
+                    newDynamic.add(id);
+                }
+            });
+            
+            if (_rolesInitialized) {
+                // Find users whose role changed
+                const changedUsers = new Set();
+                // Newly added admins
+                newDynamic.forEach(id => { if (!dynamicAdminIds.has(id)) changedUsers.add(id); });
+                // Removed admins
+                dynamicAdminIds.forEach(id => { if (!newDynamic.has(id)) changedUsers.add(id); });
+                
+                // Apply changes
+                dynamicAdminIds.clear();
+                newDynamic.forEach(id => dynamicAdminIds.add(id));
+                
+                // Refresh badges for every changed user
+                if (changedUsers.size > 0) {
+                    console.log(`[ROLES] Role changes detected for: ${[...changedUsers].join(', ')}`);
+                    changedUsers.forEach(uid => refreshAllBadgesForUser(uid));
+                    
+                    // If current user's role changed, update admin UI
+                    if (discordUser && changedUsers.has(String(discordUser.id))) {
+                        updateAdminUI();
+                    }
+                }
+            } else {
+                // First load — just populate
+                dynamicAdminIds.clear();
+                newDynamic.forEach(id => dynamicAdminIds.add(id));
+                _rolesInitialized = true;
+            }
         }
-        console.log('[ROLES] Loaded roles from server. Dynamic admins:', [...dynamicAdminIds]);
+        console.log('[ROLES] Roles synced. Dynamic admins:', [...dynamicAdminIds]);
     } catch (err) {
         console.warn('[ROLES] Failed to fetch roles:', err);
     }
 }
 // Fetch roles early
 fetchRoles();
+// Re-check roles every 30s so promoted/demoted users see changes
+setInterval(fetchRoles, 30000);
+
+// Update admin-only UI elements (streamer button, anon stats tab)
+function updateAdminUI() {
+    const anonTab = document.getElementById('anon-stats-tab');
+    const streamerBtn = document.getElementById('admin-streamer-btn');
+    if (discordUser && isUserAdmin(discordUser.id)) {
+        if (anonTab) anonTab.style.display = '';
+        if (streamerBtn) streamerBtn.style.display = '';
+    } else {
+        if (anonTab) anonTab.style.display = 'none';
+        if (streamerBtn) streamerBtn.style.display = 'none';
+    }
+}
+
+// Refresh all badges for a specific user across all visible UI
+function refreshAllBadgesForUser(userId) {
+    const uid = String(userId);
+    
+    // 1. Update badges in all chat messages from this user
+    document.querySelectorAll(`.chat-message[data-user-id="${uid}"]`).forEach(msgEl => {
+        const header = msgEl.querySelector('.chat-message-header');
+        if (!header) return;
+        // Remove existing badges
+        header.querySelectorAll('.chat-admin-badge, .chat-owner-badge').forEach(b => b.remove());
+        // Insert new badge after username
+        const usernameEl = header.querySelector('.chat-message-username');
+        if (usernameEl) {
+            const badgeHtml = getAdminBadgeHtml(uid);
+            if (badgeHtml) {
+                usernameEl.insertAdjacentHTML('afterend', badgeHtml);
+            }
+        }
+    });
+    
+    // 2. Update profile modal name badge if open for this user
+    const profileName = document.getElementById('user-profile-name');
+    if (profileName && _lastProfileData && _lastProfileData.user && _lastProfileData.user.id === uid) {
+        const name = _lastProfileData.user.global_name || _lastProfileData.user.username || 'Unknown';
+        profileName.innerHTML = `${escapeHtml(name)} ${getAdminBadgeHtml(uid)}`;
+    }
+    
+    // 3. Update ranking badges if visible
+    document.querySelectorAll('.ranking-user-name').forEach(nameEl => {
+        const listItem = nameEl.closest('.ranking-list-item, .podium-item');
+        if (!listItem) return;
+        const onclickAttr = listItem.getAttribute('onclick') || '';
+        if (onclickAttr.includes(`'${uid}'`)) {
+            // Remove old badges
+            nameEl.querySelectorAll('.chat-admin-badge, .chat-owner-badge').forEach(b => b.remove());
+            const badgeHtml = getAdminBadgeHtml(uid, 'small');
+            if (badgeHtml) {
+                nameEl.insertAdjacentHTML('beforeend', ' ' + badgeHtml);
+            }
+        }
+    });
+    
+    console.log(`[ROLES] Refreshed all badges for user ${uid}`);
+}
 
 async function promoteUser(userId) {
     if (!discordUser || !isUserOwner(discordUser.id)) return;
@@ -2160,6 +2255,7 @@ async function promoteUser(userId) {
         const data = await resp.json();
         if (data.success) {
             dynamicAdminIds.add(String(userId));
+            refreshAllBadgesForUser(userId);
             // Invalidate profile cache and re-render
             delete _userProfileCache[userId];
             const profileData = _lastProfileData;
@@ -2189,6 +2285,7 @@ async function demoteUser(userId) {
         const data = await resp.json();
         if (data.success) {
             dynamicAdminIds.delete(String(userId));
+            refreshAllBadgesForUser(userId);
             // Invalidate profile cache and re-render
             delete _userProfileCache[userId];
             const profileData = _lastProfileData;
@@ -3978,6 +4075,7 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     messageEl.className = 'chat-message';
     messageEl.id = `msg-${message.id}`;
     messageEl.dataset.messageId = message.id;
+    messageEl.dataset.userId = message.user.id;
 
     const timestamp = new Date(message.timestamp);
     const now = new Date();
@@ -4078,10 +4176,8 @@ function appendChatMessage(message, scrollToBottom = true, showNotify = true) {
     const safeAvatarUrl = encodeURI(message.user.avatar_url || '');
     const safeUserId = escapeHtml(message.user.id);
 
-    // Build admin badge HTML
-    const adminBadgeHtml = isMessageAuthorAdmin
-        ? `<span class="chat-admin-badge" title="Administrator"><i class="fas fa-shield-alt"></i> Admin</span>`
-        : '';
+    // Build admin/owner badge HTML
+    const adminBadgeHtml = getAdminBadgeHtml(message.user.id);
 
     // Build delete button HTML
     let deleteButtonHtml = '';
