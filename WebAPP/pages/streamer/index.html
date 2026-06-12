@@ -1221,6 +1221,415 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
+        /* ─── Admin Presence Panel ──────────────────────────────── */
+        .admin-presence-section {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .admin-presence-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .admin-presence-header:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .admin-presence-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-presence-header h3 i {
+            color: var(--accent-cyan);
+        }
+
+        .admin-presence-header .online-count {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .admin-presence-header .chevron-icon {
+            color: var(--text-muted);
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+
+        .admin-presence-section.open .admin-presence-header .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .admin-presence-body {
+            display: none;
+            padding: 12px 16px;
+        }
+
+        .admin-presence-section.open .admin-presence-body {
+            display: block;
+        }
+
+        .admin-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .admin-card {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            padding: 12px;
+            transition: border-color 0.2s;
+        }
+
+        .admin-card.online {
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .admin-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .admin-card-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .admin-card-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .admin-card-avatar .presence-dot {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-card);
+        }
+
+        .presence-dot.online {
+            background: var(--accent-green);
+            box-shadow: 0 0 6px var(--accent-green);
+        }
+
+        .presence-dot.offline {
+            background: #555;
+        }
+
+        .admin-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .admin-card-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .admin-card-status {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .admin-card-status .status-online {
+            color: var(--accent-green);
+        }
+
+        .admin-card-status .status-offline {
+            color: var(--text-muted);
+        }
+
+        .admin-actions-log {
+            max-height: 120px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+        }
+
+        .admin-action-entry {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            padding: 2px 0;
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .admin-action-entry .action-time {
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        .admin-action-entry .action-text {
+            word-break: break-word;
+        }
+
+        /* ─── Input History Panel ───────────────────────────────── */
+        .input-history-section {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .input-history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .input-history-header:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .input-history-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-history-header h3 i {
+            color: var(--accent-orange);
+        }
+
+        .input-history-header .chevron-icon {
+            color: var(--text-muted);
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+
+        .input-history-section.open .input-history-header .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .input-history-body {
+            display: none;
+            padding: 12px 16px;
+        }
+
+        .input-history-section.open .input-history-body {
+            display: block;
+        }
+
+        .ih-filters {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .ih-filter-btn {
+            padding: 5px 12px;
+            font-size: 11px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .ih-filter-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .ih-filter-btn.active {
+            background: rgba(157, 78, 221, 0.2);
+            color: var(--accent-purple);
+            border-color: rgba(157, 78, 221, 0.3);
+        }
+
+        .ih-list {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ih-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .ih-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .ih-item-station {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 7px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .ih-item-station.s0 { background: rgba(41,60,202,0.25); color: #6b83ff; }
+        .ih-item-station.s1 { background: rgba(74,78,138,0.25); color: #9a9ed0; }
+        .ih-item-station.s2 { background: rgba(115,0,255,0.25); color: #b366ff; }
+
+        .ih-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .ih-item-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ih-item-url {
+            font-size: 10px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ih-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .ih-item-meta .ih-admin {
+            color: var(--accent-cyan);
+        }
+
+        .ih-item-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .ih-item:hover .ih-item-actions {
+            opacity: 1;
+        }
+
+        .ih-item-actions button {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 10px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.15s;
+        }
+
+        .ih-item-actions button:hover {
+            background: rgba(157, 78, 221, 0.2);
+            color: var(--accent-purple);
+        }
+
+        .ih-empty {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        .ih-load-more {
+            text-align: center;
+            padding: 8px;
+        }
+
+        /* ─── Custom Name Edit Inline ───────────────────── */
+        .ih-name-edit {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .ih-name-edit input {
+            background: var(--bg-input);
+            border: 1px solid rgba(157, 78, 221, 0.4);
+            border-radius: 6px;
+            padding: 3px 8px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            outline: none;
+            width: 180px;
+        }
+
+        .ih-name-edit button {
+            background: rgba(16, 185, 129, 0.2);
+            border: none;
+            color: var(--accent-green);
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -1311,6 +1720,48 @@
             <!-- Station Cards -->
             <div class="stations-grid" id="stations-grid">
                 <!-- Populated by JS -->
+            </div>
+
+            <!-- Admin Presence Panel -->
+            <div class="admin-presence-section open" id="admin-presence-section">
+                <div class="admin-presence-header" onclick="toggleAdminPresence()">
+                    <h3>
+                        <i class="fas fa-users-cog"></i> Aktywni Admini
+                        <span class="online-count" id="admin-online-count">0 online</span>
+                    </h3>
+                    <i class="fas fa-chevron-down chevron-icon"></i>
+                </div>
+                <div class="admin-presence-body">
+                    <div class="admin-list" id="admin-list">
+                        <div class="ih-empty">Brak danych o adminach...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input History Panel -->
+            <div class="input-history-section" id="input-history-section">
+                <div class="input-history-header" onclick="toggleInputHistory()">
+                    <h3>
+                        <i class="fas fa-history"></i> Historia Inputów
+                    </h3>
+                    <i class="fas fa-chevron-down chevron-icon"></i>
+                </div>
+                <div class="input-history-body">
+                    <div class="ih-filters" id="ih-filters">
+                        <button class="ih-filter-btn active" onclick="filterInputHistory(null, this)">Wszystkie</button>
+                        <button class="ih-filter-btn" onclick="filterInputHistory(0, this)">DARK</button>
+                        <button class="ih-filter-btn" onclick="filterInputHistory(1, this)">MARON FM</button>
+                        <button class="ih-filter-btn" onclick="filterInputHistory(2, this)">Radio GAMING</button>
+                    </div>
+                    <div class="ih-list" id="ih-list">
+                        <div class="ih-empty">Kliknij aby załadować historię...</div>
+                    </div>
+                    <div class="ih-load-more" id="ih-load-more" style="display:none;">
+                        <button class="btn btn-ghost" onclick="loadMoreInputHistory()" style="font-size:11px; padding:6px 16px;">
+                            <i class="fas fa-arrow-down"></i> Załaduj więcej
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Log Console -->
@@ -1972,7 +2423,14 @@
             const data = await apiCall('/status', 'GET', null, true);
             if (!data) return;
 
+            // Extract admin presence data (bundled with status to avoid extra fetch)
+            if (data._admin_presence) {
+                renderAdminPresence(data._admin_presence);
+                delete data._admin_presence;
+            }
+
             for (const [id, status] of Object.entries(data)) {
+                if (id.startsWith('_')) continue; // skip meta keys
                 updateStationUI(parseInt(id), status);
             }
         }
@@ -2489,6 +2947,240 @@
             }
             // Update button visual even if we didn't start it
             updateMicButton(id, serverMicActive);
+        }
+
+        // ─── Admin Presence Panel ──────────────────────────────────────────
+
+        function toggleAdminPresence() {
+            document.getElementById('admin-presence-section').classList.toggle('open');
+        }
+
+        function renderAdminPresence(admins) {
+            const listEl = document.getElementById('admin-list');
+            const countEl = document.getElementById('admin-online-count');
+            if (!listEl || !admins) return;
+
+            const onlineCount = admins.filter(a => a.is_online).length;
+            countEl.textContent = `${onlineCount} online`;
+
+            if (admins.length === 0) {
+                listEl.innerHTML = '<div class="ih-empty">Brak danych o adminach...</div>';
+                return;
+            }
+
+            listEl.innerHTML = admins.map(admin => {
+                const statusClass = admin.is_online ? 'online' : 'offline';
+                const statusText = admin.is_online
+                    ? `<span class="status-online">● Online</span> od ${formatTimeSince(admin.online_since)}`
+                    : `<span class="status-offline">○ Offline</span> — ostatnio ${formatTimeSince(admin.last_heartbeat)}`;
+
+                const actionsHtml = (admin.actions || []).slice().reverse().map(a => `
+                    <div class="admin-action-entry">
+                        <span class="action-time">${a.time}</span>
+                        <span class="action-text">${escapeHtml(a.action)}</span>
+                    </div>
+                `).join('');
+
+                return `
+                    <div class="admin-card ${statusClass}">
+                        <div class="admin-card-header">
+                            <div class="admin-card-avatar">
+                                <img src="${admin.avatar_url || ''}" alt="" onerror="this.style.display='none'">
+                                <div class="presence-dot ${statusClass}"></div>
+                            </div>
+                            <div class="admin-card-info">
+                                <div class="admin-card-name">${escapeHtml(admin.name)}</div>
+                                <div class="admin-card-status">${statusText}</div>
+                            </div>
+                        </div>
+                        <div class="admin-actions-log">
+                            ${actionsHtml || '<div class="admin-action-entry"><span class="action-text" style="color:var(--text-muted);">Brak aktywności</span></div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatTimeSince(ts) {
+            if (!ts) return '---';
+            const now = Date.now() / 1000;
+            const diff = now - ts;
+            if (diff < 60) return 'chwilę temu';
+            if (diff < 3600) return `${Math.floor(diff / 60)} min temu`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h temu`;
+            return `${Math.floor(diff / 86400)}d temu`;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        // ─── Input History Panel ──────────────────────────────────────────
+
+        let ihData = [];
+        let ihFilter = null; // null = all, 0/1/2 = specific station
+        let ihOffset = 0;
+        let ihLoaded = false;
+
+        function toggleInputHistory() {
+            const section = document.getElementById('input-history-section');
+            section.classList.toggle('open');
+            // Lazy load on first open
+            if (section.classList.contains('open') && !ihLoaded) {
+                loadInputHistory();
+            }
+        }
+
+        async function loadInputHistory() {
+            ihOffset = 0;
+            ihData = [];
+            const stationParam = ihFilter !== null ? `&station=${ihFilter}` : '';
+            const data = await apiCall(`/input-history?limit=50&offset=0${stationParam}`, 'GET', null, true);
+            if (data && data.history) {
+                ihData = data.history;
+                ihLoaded = true;
+                renderInputHistory();
+            }
+        }
+
+        async function loadMoreInputHistory() {
+            ihOffset += 50;
+            const stationParam = ihFilter !== null ? `&station=${ihFilter}` : '';
+            const data = await apiCall(`/input-history?limit=50&offset=${ihOffset}${stationParam}`, 'GET', null, true);
+            if (data && data.history && data.history.length > 0) {
+                ihData = ihData.concat(data.history);
+                renderInputHistory();
+            } else {
+                // No more data
+                document.getElementById('ih-load-more').style.display = 'none';
+            }
+        }
+
+        function filterInputHistory(stationId, btn) {
+            ihFilter = stationId;
+            // Update active filter button
+            document.querySelectorAll('.ih-filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            loadInputHistory();
+        }
+
+        const STATION_SHORT = { 0: 'DARK', 1: 'MARON', 2: 'RG' };
+
+        function renderInputHistory() {
+            const listEl = document.getElementById('ih-list');
+            const loadMoreEl = document.getElementById('ih-load-more');
+
+            if (ihData.length === 0) {
+                listEl.innerHTML = '<div class="ih-empty">Brak historii inputów</div>';
+                loadMoreEl.style.display = 'none';
+                return;
+            }
+
+            listEl.innerHTML = ihData.map(item => {
+                const displayName = item.custom_name || item.resolved_title || truncateUrl(item.url);
+                const stationLabel = STATION_SHORT[item.station_id] || `S${item.station_id}`;
+                const timeStr = item.created_at ? formatDate(item.created_at) : '';
+                const adminName = item.added_by_name || '?';
+                const instantBadge = item.instant ? ' <span style="color:var(--accent-orange)">⚡</span>' : '';
+
+                return `
+                    <div class="ih-item" id="ih-item-${item.id}">
+                        <span class="ih-item-station s${item.station_id}">${stationLabel}</span>
+                        <div class="ih-item-info">
+                            <div class="ih-item-name">${escapeHtml(displayName)}${instantBadge}</div>
+                            ${item.custom_name ? `<div class="ih-item-url">${escapeHtml(truncateUrl(item.url))}</div>` : ''}
+                            <div class="ih-item-meta">
+                                <span class="ih-admin"><i class="fas fa-user" style="font-size:8px"></i> ${escapeHtml(adminName)}</span>
+                                <span>${timeStr}</span>
+                            </div>
+                        </div>
+                        <div class="ih-item-actions">
+                            <button onclick="editInputName(${item.id}, this)" title="Nadaj nazwę">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button onclick="replayInput(${item.id})" title="Puść ponownie">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Show load more if we got a full page
+            loadMoreEl.style.display = ihData.length >= (ihOffset + 50) ? 'block' : 'none';
+        }
+
+        function truncateUrl(url) {
+            if (!url) return '---';
+            if (url.length > 80) return url.substring(0, 77) + '...';
+            return url;
+        }
+
+        function formatDate(isoStr) {
+            try {
+                const d = new Date(isoStr);
+                const pad = n => String(n).padStart(2, '0');
+                return `${pad(d.getDate())}.${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            } catch { return isoStr; }
+        }
+
+        function editInputName(entryId, btn) {
+            const itemEl = document.getElementById(`ih-item-${entryId}`);
+            if (!itemEl) return;
+            const nameEl = itemEl.querySelector('.ih-item-name');
+            const currentName = nameEl.textContent.replace('⚡', '').trim();
+
+            // Replace name with inline edit
+            const infoEl = itemEl.querySelector('.ih-item-info');
+            const oldHtml = infoEl.innerHTML;
+            infoEl.innerHTML = `
+                <div class="ih-name-edit">
+                    <input type="text" value="${escapeHtml(currentName)}" id="ih-edit-${entryId}"
+                        placeholder="Wpisz custom nazwę..." onkeydown="if(event.key==='Enter')saveInputName(${entryId})">
+                    <button onclick="saveInputName(${entryId})"><i class="fas fa-check"></i></button>
+                    <button onclick="cancelInputEdit(${entryId})" style="background:rgba(239,68,68,0.2);color:var(--accent-red);"><i class="fas fa-times"></i></button>
+                </div>
+            `;
+            document.getElementById(`ih-edit-${entryId}`).focus();
+
+            // Store old html for cancel
+            itemEl.dataset.oldInfoHtml = oldHtml;
+        }
+
+        function cancelInputEdit(entryId) {
+            const itemEl = document.getElementById(`ih-item-${entryId}`);
+            if (!itemEl || !itemEl.dataset.oldInfoHtml) return;
+            itemEl.querySelector('.ih-item-info').innerHTML = itemEl.dataset.oldInfoHtml;
+        }
+
+        async function saveInputName(entryId) {
+            const input = document.getElementById(`ih-edit-${entryId}`);
+            if (!input) return;
+            const name = input.value.trim();
+
+            const res = await apiCall(`/input-history/${entryId}/name`, 'POST', { custom_name: name });
+            if (res && res.success) {
+                showNotification('Nazwa zapisana ✓', 'success');
+                // Update local data
+                const item = ihData.find(i => i.id === entryId);
+                if (item) item.custom_name = name || null;
+                renderInputHistory();
+            }
+        }
+
+        async function replayInput(entryId) {
+            // Default to station 2 (Radio GAMING), could add a picker later
+            const stationId = prompt('Na którą stację puścić? (0=DARK, 1=MARON, 2=RG)', '2');
+            if (stationId === null) return;
+            const sid = parseInt(stationId);
+            if (![0,1,2].includes(sid)) { showNotification('Nieprawidłowa stacja', 'error'); return; }
+
+            const res = await apiCall(`/input-history/${entryId}/replay`, 'POST', { station_id: sid, instant: false });
+            if (res && res.success) {
+                showNotification(res.message, 'success');
+            }
         }
 
         // ─── Initialization ──────────────────────────────────────────────
