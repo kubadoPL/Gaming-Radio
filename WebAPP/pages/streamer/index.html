@@ -905,6 +905,36 @@
             background: rgba(239, 68, 68, 0.2);
         }
 
+        /* Station Option Row (inline checkboxes) */
+        .station-option-row {
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            margin-bottom: 8px;
+        }
+
+        .station-toggle-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .station-toggle-inline input[type="checkbox"] {
+            accent-color: var(--accent-orange);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .station-toggle-inline span {
+            display: flex;
+            align-items: center;
+        }
+
         /* Queue Section */
         .queue-section {
             background: rgba(0, 0, 0, 0.2);
@@ -1996,6 +2026,14 @@
                             </button>
                         </div>
 
+                        <!-- Auto-disconnect toggle -->
+                        <div class="station-option-row" id="auto-disc-row-${id}">
+                            <label class="toggle-label station-toggle-inline">
+                                <input type="checkbox" id="auto-disc-${id}" onchange="toggleAutoDisconnect(${id}, this.checked)">
+                                <span><i class="fas fa-power-off" style="font-size:10px; margin-right:4px; color:var(--accent-orange);"></i>Rozłącz po skończeniu playlisty <em style="font-size:9px; color:var(--text-muted);">(gdy loop off)</em></span>
+                            </label>
+                        </div>
+
                         <!-- Manual Injection -->
                         <div class="inject-section">
                             <label><i class="fas fa-syringe"></i> Manual Injection</label>
@@ -2211,6 +2249,10 @@
 
             await apiCall(`/loop/${id}`, 'POST', { mode: next });
             updateLoopButton(id, next);
+        }
+
+        async function toggleAutoDisconnect(id, enabled) {
+            await apiCall(`/auto-disconnect/${id}`, 'POST', { enabled });
         }
 
         function updateLoopButton(id, mode) {
@@ -2478,6 +2520,12 @@
             // Mic state sync
             if (status.mic_active !== undefined) {
                 syncMicState(id, status.mic_active);
+            }
+
+            // Auto-disconnect checkbox sync
+            const autoDiscCheckbox = document.getElementById(`auto-disc-${id}`);
+            if (autoDiscCheckbox && status.auto_disconnect_empty !== undefined) {
+                autoDiscCheckbox.checked = status.auto_disconnect_empty;
             }
 
             // Queue — paginated with cover art
