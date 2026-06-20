@@ -1061,8 +1061,9 @@ body.is-fullscreen main {
 /* Streamer hover tooltip */
 .streamer-tip {
     position: absolute;
-    bottom: calc(100% + 10px);
-    right: -10px;
+    top: 50%;
+    right: calc(100% + 12px);
+    transform: translateY(-50%) translateX(6px);
     background: rgba(10, 10, 20, 0.92);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -1077,7 +1078,6 @@ body.is-fullscreen main {
     line-height: 1.5;
     pointer-events: none;
     opacity: 0;
-    transform: translateY(6px);
     transition: opacity 0.2s ease, transform 0.2s ease;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     z-index: 20;
@@ -1086,25 +1086,41 @@ body.is-fullscreen main {
 .streamer-tip::after {
     content: '';
     position: absolute;
-    bottom: -5px;
-    right: 16px;
+    top: 50%;
+    right: -5px;
+    transform: translateY(-50%) rotate(45deg);
     width: 10px;
     height: 10px;
     background: rgba(10, 10, 20, 0.92);
     border-right: 1px solid rgba(255, 255, 255, 0.12);
     border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    transform: rotate(45deg);
 }
 
 .streamer-overlay:hover .streamer-tip {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(-50%) translateX(0);
 }
 
 .streamer-tip-queue {
     color: rgba(255, 255, 255, 0.5);
     font-weight: 500;
     font-size: 10px;
+}
+
+.live-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #ff4d4d;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ff4d4d;
+    animation: liveDotPulse 1.5s ease-in-out infinite;
+    vertical-align: middle;
+}
+
+@keyframes liveDotPulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 6px #ff4d4d; }
+    50% { opacity: 0.5; box-shadow: 0 0 14px #ff4d4d; }
 }
 
 /* Station 1 — Radio GAMING (purple) */
@@ -4857,6 +4873,8 @@ body::-webkit-scrollbar-thumb {
 .sq-thumb {
     width: 36px;
     height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     border-radius: 6px;
     object-fit: cover;
     flex-shrink: 0;
@@ -4874,8 +4892,10 @@ body::-webkit-scrollbar-thumb {
 .sq-thumb-placeholder {
     width: 36px;
     height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     flex-shrink: 0;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 14px;
@@ -4883,6 +4903,12 @@ body::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.04);
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.06);
+    box-sizing: border-box;
+}
+
+.sq-item {
+    min-height: 52px;
+    align-items: center;
 }
 
 /* Streamer Queue Modal — scrollable body with custom scrollbar */
