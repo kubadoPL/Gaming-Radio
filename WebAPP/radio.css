@@ -1042,7 +1042,6 @@ body.is-fullscreen main {
     cursor: pointer;
     border: 2px solid rgba(255, 255, 255, 0.6);
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
 }
 
 .streamer-overlay::before {
@@ -4930,7 +4929,9 @@ body::-webkit-scrollbar-thumb {
     width: 36px;
     height: 36px;
     min-width: 36px;
+    max-width: 36px;
     min-height: 36px;
+    max-height: 36px;
     border-radius: 6px;
     object-fit: cover;
     flex-shrink: 0;
@@ -4941,6 +4942,10 @@ body::-webkit-scrollbar-thumb {
 .sq-thumb-now {
     width: 52px;
     height: 52px;
+    min-width: 52px;
+    max-width: 52px;
+    min-height: 52px;
+    max-height: 52px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
@@ -4949,7 +4954,9 @@ body::-webkit-scrollbar-thumb {
     width: 36px;
     height: 36px;
     min-width: 36px;
+    max-width: 36px;
     min-height: 36px;
+    max-height: 36px;
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
@@ -4963,8 +4970,27 @@ body::-webkit-scrollbar-thumb {
 }
 
 .sq-item {
-    min-height: 52px;
-    align-items: center;
+    display: flex;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+    height: 52px;
+    padding: 8px 12px !important;
+}
+
+.sq-item > span:first-child {
+    flex-shrink: 0;
+    min-width: 20px;
+    text-align: right;
+}
+
+.sq-item > span:last-child {
+    min-width: 0 !important;
+    flex: 1 1 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
 }
 
 /* Streamer Queue Modal — scrollable body with custom scrollbar */
