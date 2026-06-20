@@ -1058,6 +1058,55 @@ body.is-fullscreen main {
     display: none;
 }
 
+/* Streamer hover tooltip */
+.streamer-tip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: -10px;
+    background: rgba(10, 10, 20, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1.5;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 20;
+}
+
+.streamer-tip::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    right: 16px;
+    width: 10px;
+    height: 10px;
+    background: rgba(10, 10, 20, 0.92);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    transform: rotate(45deg);
+}
+
+.streamer-overlay:hover .streamer-tip {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.streamer-tip-queue {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+    font-size: 10px;
+}
+
 /* Station 1 — Radio GAMING (purple) */
 .station-photo:nth-child(1) .streamer-overlay {
     background: linear-gradient(135deg, #7300ff, #a855f7);
@@ -4802,6 +4851,38 @@ body::-webkit-scrollbar-thumb {
 
 .streamer-queue-search:focus-within i {
     color: var(--active-station-color, rgba(255, 255, 255, 0.5));
+}
+
+/* Streamer Queue Thumbnails */
+.sq-thumb {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sq-thumb-now {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.sq-thumb-placeholder {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* Streamer Queue Modal — scrollable body with custom scrollbar */

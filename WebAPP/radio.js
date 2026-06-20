@@ -636,6 +636,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!audio.paused) updateStatusBadge('playing');
             else updateStatusBadge('paused');
         });
+
+        // Periodic check: fix stuck LOADING badge when audio is actually playing
+        setInterval(() => {
+            const badge = document.getElementById('stream-status-badge');
+            if (!badge) return;
+            if (badge.classList.contains('loading') && !audio.paused && audio.currentTime > 0 && !audio.ended) {
+                updateStatusBadge('playing');
+            }
+        }, 1000);
     }
 
     showNotification("Welcome to Radio GAMING!");
@@ -6931,8 +6940,14 @@ async function fetchStreamerStatus() {
         document.querySelectorAll('.streamer-overlay').forEach(overlay => {
             const sid = overlay.getAttribute('data-station-id');
             const stationData = data[sid];
+            const tipQueue = overlay.querySelector('.streamer-tip-queue');
             if (stationData && stationData.streaming) {
                 overlay.classList.remove('hidden');
+                // Update tooltip queue count
+                if (tipQueue) {
+                    const qLen = stationData.queue_length || 0;
+                    tipQueue.textContent = qLen > 0 ? `${qLen} songs in queue` : 'Queue empty';
+                }
             } else {
                 overlay.classList.add('hidden');
             }
@@ -6962,11 +6977,17 @@ function openStreamerQueueModal(stationId) {
 
     // Currently playing
     if (station.current_song) {
-        html += `<div class="sq-now-playing" style="padding:10px 14px; background:rgba(255,107,0,0.12); border-radius:10px; margin-bottom:10px; border:1px solid rgba(255,107,0,0.25);">
-            <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.5); margin-bottom:4px;">
-                <i class="fas fa-broadcast-tower" style="color:#ff6b00; margin-right:4px;"></i> Now Playing on ${station.name}
+        const nowThumb = station.current_thumbnail
+            ? `<img src="${station.current_thumbnail}" class="sq-thumb sq-thumb-now" onerror="this.style.display='none'">`
+            : '';
+        html += `<div class="sq-now-playing" style="padding:10px 14px; background:rgba(255,107,0,0.12); border-radius:10px; margin-bottom:10px; border:1px solid rgba(255,107,0,0.25); display:flex; align-items:center; gap:12px;">
+            ${nowThumb}
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.5); margin-bottom:4px;">
+                    <i class="fas fa-broadcast-tower" style="color:#ff6b00; margin-right:4px;"></i> Now Playing on ${station.name}
+                </div>
+                <div style="font-weight:600; font-size:14px; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtmlStreamer(station.current_song)}</div>
             </div>
-            <div style="font-weight:600; font-size:14px; color:white;">${escapeHtmlStreamer(station.current_song)}</div>
         </div>`;
     }
 
@@ -6975,10 +6996,16 @@ function openStreamerQueueModal(stationId) {
         html += `<div class="sq-header" style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin:12px 0 8px; padding-left:4px;">
             <i class="fas fa-list" style="margin-right:4px;"></i> Up Next (<span id="sq-visible-count">${station.queue.length}</span>/${station.queue.length})
         </div>`;
-        station.queue.forEach((title, i) => {
+        station.queue.forEach((item, i) => {
+            const title = typeof item === 'string' ? item : (item.title || '');
+            const thumb = typeof item === 'object' ? (item.thumbnail || '') : '';
+            const thumbHtml = thumb
+                ? `<img src="${thumb}" class="sq-thumb" onerror="this.outerHTML='<i class=\\'fas fa-music sq-thumb-placeholder\\'></i>'">`
+                : '<i class="fas fa-music sq-thumb-placeholder"></i>';
             html += `<div class="sq-item" data-title="${escapeHtmlStreamer(title).toLowerCase()}" style="padding:8px 12px; background:rgba(255,255,255,0.04); border-radius:8px; margin-bottom:4px; display:flex; align-items:center; gap:10px;">
                 <span style="color:rgba(255,255,255,0.3); font-size:12px; font-weight:600; min-width:20px;">${i + 1}</span>
-                <span style="font-size:13px; color:rgba(255,255,255,0.85);">${escapeHtmlStreamer(title)}</span>
+                ${thumbHtml}
+                <span style="font-size:13px; color:rgba(255,255,255,0.85); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${escapeHtmlStreamer(title)}</span>
             </div>`;
         });
     } else {
