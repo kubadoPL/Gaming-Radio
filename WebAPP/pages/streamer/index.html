@@ -2384,9 +2384,28 @@
             slice.forEach((item, i) => {
                 const title = extractTitleFromUrl(item, id);
                 const cacheKey = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+
+                // Use backend thumbnail if available (already extracted by yt-dlp)
+                if (!_coverCache[cacheKey] && window._queueThumbnails && window._queueThumbnails[id] && window._queueThumbnails[id][item]) {
+                    _coverCache[cacheKey] = window._queueThumbnails[id][item];
+                    // Update DOM immediately
+                    const el = document.getElementById(`qi-${id}-${start + i + 1}`);
+                    if (el) {
+                        const coverDiv = el.querySelector('.qi-cover');
+                        if (coverDiv && !coverDiv.tagName?.match(/^img$/i)) {
+                            const img = document.createElement('img');
+                            img.className = 'qi-cover';
+                            img.src = window._queueThumbnails[id][item];
+                            img.alt = '';
+                            img.loading = 'lazy';
+                            coverDiv.replaceWith(img);
+                        }
+                    }
+                }
+
                 if (!_coverCache[cacheKey] && !_coverCache[cacheKey + '_loading']) {
                     _coverCache[cacheKey + '_loading'] = true;
-                    fetchQueueCover(title, cacheKey, id, start + i + 1);
+                    fetchQueueCover(title, cacheKey, id, start + i + 1, item);
                 }
             });
         }
@@ -2406,8 +2425,57 @@
             refreshStatus();
         }
 
-        async function fetchQueueCover(title, cacheKey, stationId, globalIdx) {
+        function extractYouTubeVideoId(url) {
+            if (!url) return null;
+            let m = url.match(/[?&]v=([^&]+)/);
+            if (m) return m[1];
+            m = url.match(/youtu\.be\/([^?&]+)/);
+            if (m) return m[1];
+            return null;
+        }
+
+        async function fetchQueueCover(title, cacheKey, stationId, globalIdx, originalUrl) {
             try {
+                // Priority 1: Backend thumbnail (already extracted by yt-dlp during preload)
+                if (window._queueThumbnails && window._queueThumbnails[stationId] && window._queueThumbnails[stationId][originalUrl]) {
+                    const backendThumb = window._queueThumbnails[stationId][originalUrl];
+                    _coverCache[cacheKey] = backendThumb;
+                    const el = document.getElementById(`qi-${stationId}-${globalIdx}`);
+                    if (el) {
+                        const coverDiv = el.querySelector('.qi-cover');
+                        if (coverDiv) {
+                            const img = document.createElement('img');
+                            img.className = 'qi-cover';
+                            img.src = backendThumb;
+                            img.alt = '';
+                            img.loading = 'lazy';
+                            coverDiv.replaceWith(img);
+                        }
+                    }
+                    return;
+                }
+
+                // Priority 2: YouTube thumbnail from video ID (instant, no API call)
+                const videoId = extractYouTubeVideoId(originalUrl);
+                if (videoId) {
+                    const ytThumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                    _coverCache[cacheKey] = ytThumb;
+                    const el = document.getElementById(`qi-${stationId}-${globalIdx}`);
+                    if (el) {
+                        const coverDiv = el.querySelector('.qi-cover');
+                        if (coverDiv) {
+                            const img = document.createElement('img');
+                            img.className = 'qi-cover';
+                            img.src = ytThumb;
+                            img.alt = '';
+                            img.loading = 'lazy';
+                            coverDiv.replaceWith(img);
+                        }
+                    }
+                    return;
+                }
+
+                // Priority 3: K5ApiManager cover search (Spotify/iTunes) for non-YouTube
                 const query = title.replace(/YouTube:\s*/i, '').replace(/[^\w\s]/g, ' ').trim();
                 if (!query) return;
                 const res = await fetch(`https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/music/cover?q=${encodeURIComponent(query)}`);
@@ -2415,8 +2483,6 @@
                 const data = await res.json();
                 if (data.url) {
                     _coverCache[cacheKey] = data.url;
-
-                    // Update the cover element if still visible
                     const el = document.getElementById(`qi-${stationId}-${globalIdx}`);
                     if (el) {
                         const coverDiv = el.querySelector('.qi-cover');
@@ -2446,6 +2512,39 @@
                 return;
             }
 
+            // Try backend thumbnails first (from yt-dlp preload)
+            if (window._queueThumbnails) {
+                for (const [sid, thumbMap] of Object.entries(window._queueThumbnails)) {
+                    for (const [url, thumbUrl] of Object.entries(thumbMap)) {
+                        const t = extractTitleFromUrl(url, parseInt(sid));
+                        if (t === songTitle) {
+                            _coverCache[cacheKey] = thumbUrl;
+                            coverEl.innerHTML = `<img src="${thumbUrl}" alt="">`;
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Try YouTube thumbnail from queue URL data
+            if (window._queueData) {
+                for (const [sid, urls] of Object.entries(window._queueData)) {
+                    for (const url of urls) {
+                        const t = extractTitleFromUrl(url, parseInt(sid));
+                        if (t === songTitle) {
+                            const videoId = extractYouTubeVideoId(url);
+                            if (videoId) {
+                                const ytThumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                                _coverCache[cacheKey] = ytThumb;
+                                coverEl.innerHTML = `<img src="${ytThumb}" alt="">`;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Fallback: K5ApiManager cover search
             try {
                 const query = songTitle.replace(/[^\w\s]/g, ' ').trim();
                 if (!query) return;
@@ -2541,6 +2640,12 @@
                 if (!window._queueTitles) window._queueTitles = {};
                 if (status.queue_titles) {
                     window._queueTitles[id] = status.queue_titles;
+                }
+
+                // Store queue thumbnails from backend (extracted by yt-dlp during preload)
+                if (!window._queueThumbnails) window._queueThumbnails = {};
+                if (status.queue_thumbnails) {
+                    window._queueThumbnails[id] = status.queue_thumbnails;
                 }
 
                 renderQueuePage(id);
