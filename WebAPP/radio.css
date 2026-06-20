@@ -1027,6 +1027,79 @@ body.is-fullscreen main {
     box-shadow: 0 0 30px var(--active-station-glow);
 }
 
+/* Streamer overlay icon on station photo */
+.streamer-overlay {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.streamer-overlay i {
+    font-size: 13px;
+    color: white;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+}
+
+.streamer-overlay:hover {
+    transform: scale(1.15);
+}
+
+.streamer-overlay.hidden {
+    display: none;
+}
+
+/* Station 1 — Radio GAMING (purple) */
+.station-photo:nth-child(1) .streamer-overlay {
+    background: linear-gradient(135deg, #7300ff, #a855f7);
+    box-shadow: 0 0 12px rgba(115, 0, 255, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+    animation: streamerPulseS1 2s infinite;
+}
+.station-photo:nth-child(1) .streamer-overlay:hover {
+    box-shadow: 0 0 20px rgba(115, 0, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+@keyframes streamerPulseS1 {
+    0%, 100% { box-shadow: 0 0 10px rgba(115, 0, 255, 0.4), 0 2px 8px rgba(0, 0, 0, 0.4); }
+    50% { box-shadow: 0 0 18px rgba(115, 0, 255, 0.8), 0 2px 8px rgba(0, 0, 0, 0.4); }
+}
+
+/* Station 2 — Radio GAMING DARK (blue) */
+.station-photo:nth-child(2) .streamer-overlay {
+    background: linear-gradient(135deg, #293cca, #3e5aff);
+    box-shadow: 0 0 12px rgba(41, 60, 202, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+    animation: streamerPulseS2 2s infinite;
+}
+.station-photo:nth-child(2) .streamer-overlay:hover {
+    box-shadow: 0 0 20px rgba(41, 60, 202, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+@keyframes streamerPulseS2 {
+    0%, 100% { box-shadow: 0 0 10px rgba(41, 60, 202, 0.4), 0 2px 8px rgba(0, 0, 0, 0.4); }
+    50% { box-shadow: 0 0 18px rgba(41, 60, 202, 0.8), 0 2px 8px rgba(0, 0, 0, 0.4); }
+}
+
+/* Station 3 — Radio GAMING MARON FM (dark violet) */
+.station-photo:nth-child(3) .streamer-overlay {
+    background: linear-gradient(135deg, #272956, #4a4e8a);
+    box-shadow: 0 0 12px rgba(39, 41, 86, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+    animation: streamerPulseS3 2s infinite;
+}
+.station-photo:nth-child(3) .streamer-overlay:hover {
+    box-shadow: 0 0 20px rgba(39, 41, 86, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+@keyframes streamerPulseS3 {
+    0%, 100% { box-shadow: 0 0 10px rgba(74, 78, 138, 0.4), 0 2px 8px rgba(0, 0, 0, 0.4); }
+    50% { box-shadow: 0 0 18px rgba(74, 78, 138, 0.8), 0 2px 8px rgba(0, 0, 0, 0.4); }
+}
+
 /* Responsive adjustments */
 @media (max-width: 900px) {
     .header-content {
@@ -1142,6 +1215,17 @@ body.is-fullscreen main {
     .station-photo {
         width: 80px;
         height: 80px;
+    }
+
+    .streamer-overlay {
+        width: 22px;
+        height: 22px;
+        bottom: 2px;
+        right: 2px;
+    }
+
+    .streamer-overlay i {
+        font-size: 9px;
     }
 
     .footer-content {
@@ -4673,6 +4757,78 @@ body::-webkit-scrollbar-thumb {
 
 .share-modal-body {
     padding: 16px 24px 24px;
+}
+
+/* Streamer Queue Search */
+.streamer-queue-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 24px 4px;
+    position: relative;
+}
+
+.streamer-queue-search i {
+    position: absolute;
+    left: 36px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.streamer-queue-search input {
+    width: 100%;
+    padding: 8px 12px 8px 32px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.streamer-queue-search input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.streamer-queue-search input:focus {
+    border-color: var(--active-station-color, rgba(255, 255, 255, 0.25));
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 12px rgba(var(--active-station-glow-rgb, 115,0,255), 0.15);
+}
+
+.streamer-queue-search:focus-within i {
+    color: var(--active-station-color, rgba(255, 255, 255, 0.5));
+}
+
+/* Streamer Queue Modal — scrollable body with custom scrollbar */
+#streamer-queue-modal-overlay .share-modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 107, 0, 0.4) rgba(255, 255, 255, 0.05);
+}
+
+#streamer-queue-modal-overlay .share-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+#streamer-queue-modal-overlay .share-modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+#streamer-queue-modal-overlay .share-modal-body::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(255, 107, 0, 0.5), rgba(255, 61, 0, 0.5));
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+#streamer-queue-modal-overlay .share-modal-body::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(255, 107, 0, 0.8), rgba(255, 61, 0, 0.8));
 }
 
 .share-section {

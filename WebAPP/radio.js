@@ -6916,3 +6916,115 @@ window.importUserData = function (event) {
     reader.readAsText(file);
     event.target.value = ''; // Reset input
 };
+
+// ─── Streamer Status & Queue ─────────────────────────────────────────────────
+const STREAMER_API_BASE = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/StreamerApi';
+let _streamerStatusCache = null;
+
+async function fetchStreamerStatus() {
+    try {
+        const r = await fetch(`${STREAMER_API_BASE}/public/status`, { cache: 'no-store' });
+        const data = await r.json();
+        _streamerStatusCache = data;
+
+        // Update overlay icons on station photos
+        document.querySelectorAll('.streamer-overlay').forEach(overlay => {
+            const sid = overlay.getAttribute('data-station-id');
+            const stationData = data[sid];
+            if (stationData && stationData.streaming) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        });
+    } catch (e) {
+        console.error('[Streamer] Status fetch error:', e);
+    }
+}
+
+function openStreamerQueueModal(stationId) {
+    const overlay = document.getElementById('streamer-queue-modal-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('hidden');
+
+    // Clear search
+    const searchInput = document.getElementById('streamer-queue-search-input');
+    if (searchInput) searchInput.value = '';
+
+    const listEl = document.getElementById('streamer-queue-list');
+    if (!_streamerStatusCache || !_streamerStatusCache[String(stationId)]) {
+        listEl.innerHTML = '<p style="opacity:0.5; text-align:center;">No data available.</p>';
+        return;
+    }
+
+    const station = _streamerStatusCache[String(stationId)];
+    let html = '';
+
+    // Currently playing
+    if (station.current_song) {
+        html += `<div class="sq-now-playing" style="padding:10px 14px; background:rgba(255,107,0,0.12); border-radius:10px; margin-bottom:10px; border:1px solid rgba(255,107,0,0.25);">
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.5); margin-bottom:4px;">
+                <i class="fas fa-broadcast-tower" style="color:#ff6b00; margin-right:4px;"></i> Now Playing on ${station.name}
+            </div>
+            <div style="font-weight:600; font-size:14px; color:white;">${escapeHtmlStreamer(station.current_song)}</div>
+        </div>`;
+    }
+
+    // Queue
+    if (station.queue && station.queue.length > 0) {
+        html += `<div class="sq-header" style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin:12px 0 8px; padding-left:4px;">
+            <i class="fas fa-list" style="margin-right:4px;"></i> Up Next (<span id="sq-visible-count">${station.queue.length}</span>/${station.queue.length})
+        </div>`;
+        station.queue.forEach((title, i) => {
+            html += `<div class="sq-item" data-title="${escapeHtmlStreamer(title).toLowerCase()}" style="padding:8px 12px; background:rgba(255,255,255,0.04); border-radius:8px; margin-bottom:4px; display:flex; align-items:center; gap:10px;">
+                <span style="color:rgba(255,255,255,0.3); font-size:12px; font-weight:600; min-width:20px;">${i + 1}</span>
+                <span style="font-size:13px; color:rgba(255,255,255,0.85);">${escapeHtmlStreamer(title)}</span>
+            </div>`;
+        });
+    } else {
+        html += '<p style="opacity:0.4; text-align:center; margin-top:16px;">Queue is empty</p>';
+    }
+
+    if (station.loop_mode && station.loop_mode !== 'off') {
+        html += `<div style="margin-top:10px; font-size:11px; color:rgba(255,255,255,0.4); text-align:center;">
+            <i class="fas fa-redo" style="margin-right:4px;"></i> Loop: ${station.loop_mode}
+        </div>`;
+    }
+
+    listEl.innerHTML = html;
+}
+
+function filterStreamerQueue(query) {
+    const items = document.querySelectorAll('#streamer-queue-list .sq-item');
+    const q = query.toLowerCase().trim();
+    let visible = 0;
+
+    items.forEach(item => {
+        const title = item.getAttribute('data-title') || '';
+        if (!q || title.includes(q)) {
+            item.style.display = '';
+            visible++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    const countEl = document.getElementById('sq-visible-count');
+    if (countEl) countEl.textContent = visible;
+}
+
+function closeStreamerQueueModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = document.getElementById('streamer-queue-modal-overlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
+function escapeHtmlStreamer(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Start polling
+fetchStreamerStatus();
+setInterval(fetchStreamerStatus, 15000);

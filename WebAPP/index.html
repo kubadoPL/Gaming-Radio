@@ -111,6 +111,10 @@
                 <div class="station-photo active"
                     onclick="changeStation('https://stream.zeno.fm/es4ngpu7ud6tv', 'Radio GAMING', 'https://api.zeno.fm/mounts/metadata/subscribe/es4ngpu7ud6tv')">
                     <img src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Logo.webp" alt="Radio GAMING">
+                    <div class="streamer-overlay hidden" data-station-id="2"
+                        onclick="event.stopPropagation(); openStreamerQueueModal(2)" title="LIVE DJ - CLICK FOR QUEUE">
+                        <i class="fas fa-broadcast-tower"></i>
+                    </div>
                     <div class="tooltip">
                         <img src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
                             alt="Album Cover" class="tooltip-cover" />
@@ -123,6 +127,10 @@
                     onclick="changeStation('https://stream.zeno.fm/pfg9eajshnjtv', 'Radio GAMING DARK', 'https://api.zeno.fm/mounts/metadata/subscribe/pfg9eajshnjtv')">
                     <img src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-dark-logo.webp"
                         alt="Radio GAMING DARK">
+                    <div class="streamer-overlay hidden" data-station-id="0"
+                        onclick="event.stopPropagation(); openStreamerQueueModal(0)" title="LIVE DJ - CLICK FOR QUEUE">
+                        <i class="fas fa-broadcast-tower"></i>
+                    </div>
                     <div class="tooltip">
                         <img src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
                             alt="Album Cover" class="tooltip-cover" />
@@ -134,6 +142,10 @@
                     onclick="changeStation('https://stream.zeno.fm/5nhy0myl4jpuv', 'Radio GAMING MARON FM', 'https://api.zeno.fm/mounts/metadata/subscribe/5nhy0myl4jpuv')">
                     <img src="https://radio-gaming.stream/Images/Logos/Radio-Gaming-Maron-fm-logo.webp"
                         alt="Radio GAMING MARON FM">
+                    <div class="streamer-overlay hidden" data-station-id="1"
+                        onclick="event.stopPropagation(); openStreamerQueueModal(1)" title="LIVE DJ - CLICK FOR QUEUE">
+                        <i class="fas fa-broadcast-tower"></i>
+                    </div>
                     <div class="tooltip">
                         <img src="https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png"
                             alt="Album Cover" class="tooltip-cover" />
@@ -628,6 +640,29 @@
         <div class="zoom-content" onclick="event.stopPropagation()">
             <button class="zoom-close" onclick="closeImageZoom()">&times;</button>
             <img id="zoomed-image" src="" alt="Zoomed view">
+        </div>
+    </div>
+
+    <!-- Streamer Queue Modal -->
+    <div id="streamer-queue-modal-overlay" class="share-modal-overlay hidden" onclick="closeStreamerQueueModal(event)">
+        <div class="share-modal" onclick="event.stopPropagation()" style="max-width: 500px;">
+            <div class="share-modal-header">
+                <i class="fas fa-broadcast-tower"></i>
+                <h3>Streamer Queue</h3>
+                <button class="share-modal-close" onclick="closeStreamerQueueModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="streamer-queue-search">
+                <i class="fas fa-search"></i>
+                <input type="text" id="streamer-queue-search-input" placeholder="Search queue..." autocomplete="off"
+                    oninput="filterStreamerQueue(this.value)">
+            </div>
+            <div class="share-modal-body">
+                <div id="streamer-queue-list" class="share-guild-list">
+                    <p style="opacity: 0.5; text-align: center;">Loading queue...</p>
+                </div>
+            </div>
         </div>
     </div>
 
