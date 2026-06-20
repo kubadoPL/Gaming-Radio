@@ -1040,18 +1040,44 @@ body.is-fullscreen main {
     justify-content: center;
     z-index: 10;
     cursor: pointer;
-    border: 2px solid rgba(255, 255, 255, 0.9);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.streamer-overlay::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        rgba(255, 255, 255, 0.6),
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.6),
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.6)
+    );
+    z-index: -1;
+    animation: streamerOverlaySpin 3s linear infinite;
 }
 
 .streamer-overlay i {
     font-size: 13px;
     color: white;
     filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+    position: relative;
+    z-index: 1;
 }
 
 .streamer-overlay:hover {
-    transform: scale(1.15);
+    transform: scale(1.15) translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes streamerOverlaySpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .streamer-overlay.hidden {
@@ -1129,6 +1155,16 @@ body.is-fullscreen main {
     box-shadow: 0 0 12px rgba(115, 0, 255, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
     animation: streamerPulseS1 2s infinite;
 }
+.station-photo:nth-child(1) .streamer-overlay::before {
+    background: conic-gradient(
+        from 0deg,
+        rgba(115, 0, 255, 0.7),
+        rgba(168, 85, 247, 0.15),
+        rgba(115, 0, 255, 0.7),
+        rgba(168, 85, 247, 0.15),
+        rgba(115, 0, 255, 0.7)
+    );
+}
 .station-photo:nth-child(1) .streamer-overlay:hover {
     box-shadow: 0 0 20px rgba(115, 0, 255, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
 }
@@ -1143,6 +1179,16 @@ body.is-fullscreen main {
     box-shadow: 0 0 12px rgba(41, 60, 202, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
     animation: streamerPulseS2 2s infinite;
 }
+.station-photo:nth-child(2) .streamer-overlay::before {
+    background: conic-gradient(
+        from 0deg,
+        rgba(41, 60, 202, 0.7),
+        rgba(62, 90, 255, 0.15),
+        rgba(41, 60, 202, 0.7),
+        rgba(62, 90, 255, 0.15),
+        rgba(41, 60, 202, 0.7)
+    );
+}
 .station-photo:nth-child(2) .streamer-overlay:hover {
     box-shadow: 0 0 20px rgba(41, 60, 202, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
 }
@@ -1156,6 +1202,16 @@ body.is-fullscreen main {
     background: linear-gradient(135deg, #272956, #4a4e8a);
     box-shadow: 0 0 12px rgba(39, 41, 86, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
     animation: streamerPulseS3 2s infinite;
+}
+.station-photo:nth-child(3) .streamer-overlay::before {
+    background: conic-gradient(
+        from 0deg,
+        rgba(74, 78, 138, 0.7),
+        rgba(39, 41, 86, 0.15),
+        rgba(74, 78, 138, 0.7),
+        rgba(39, 41, 86, 0.15),
+        rgba(74, 78, 138, 0.7)
+    );
 }
 .station-photo:nth-child(3) .streamer-overlay:hover {
     box-shadow: 0 0 20px rgba(39, 41, 86, 0.8), 0 4px 12px rgba(0, 0, 0, 0.5);
