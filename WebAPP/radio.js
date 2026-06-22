@@ -1137,6 +1137,24 @@ async function fetchBestCover(query) {
     const coverElem = document.getElementById('albumCover');
 
     try {
+        // Check if LIVE DJ streamer already has a thumbnail for this song (skip all API calls)
+        if (_streamerStatusCache) {
+            for (const sid of Object.keys(_streamerStatusCache)) {
+                const st = _streamerStatusCache[sid];
+                if (st && st.streaming && st.current_thumbnail && st.current_song) {
+                    // Compare cleaned titles
+                    const streamerTitle = cleanTitle(st.current_song);
+                    if (streamerTitle === query || getSimilarityScore(query, streamerTitle) >= 0.85) {
+                        console.log(`[Cover Search] "${query}" | Using LIVE DJ thumbnail (station ${st.name || sid})`);
+                        if (coverElem) coverElem.src = st.current_thumbnail;
+                        updateMediaSessionMetadata(query, st.current_thumbnail);
+                        addToSongHistory(query, st.current_thumbnail);
+                        return;
+                    }
+                }
+            }
+        }
+
         let manualData = findBestManualMatch(query);
         let spotifyData = null;
         let itunesData = null;
