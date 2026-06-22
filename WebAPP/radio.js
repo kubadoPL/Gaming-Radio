@@ -6929,6 +6929,7 @@ window.importUserData = function (event) {
 // ─── Streamer Status & Queue ─────────────────────────────────────────────────
 const STREAMER_API_BASE = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/StreamerApi';
 let _streamerStatusCache = null;
+let _currentQueueStationId = null;
 
 async function fetchStreamerStatus() {
     try {
@@ -6958,6 +6959,7 @@ async function fetchStreamerStatus() {
 }
 
 function openStreamerQueueModal(stationId) {
+    _currentQueueStationId = stationId;
     const overlay = document.getElementById('streamer-queue-modal-overlay');
     if (!overlay) return;
     overlay.classList.remove('hidden');
@@ -6980,6 +6982,7 @@ function openStreamerQueueModal(stationId) {
         const nowThumb = station.current_thumbnail
             ? `<img src="${station.current_thumbnail}" class="sq-thumb sq-thumb-now" onerror="this.style.display='none'">`
             : '';
+        const showSkip = discordUser && isUserAdmin(discordUser.id);
         html += `<div class="sq-now-playing" style="padding:10px 14px; background:rgba(255,107,0,0.12); border-radius:10px; margin-bottom:10px; border:1px solid rgba(255,107,0,0.25); display:flex; align-items:center; gap:12px;">
             ${nowThumb}
             <div style="flex:1; min-width:0;">
@@ -6988,6 +6991,7 @@ function openStreamerQueueModal(stationId) {
                 </div>
                 <div style="font-weight:600; font-size:14px; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtmlStreamer(station.current_song)}</div>
             </div>
+            ${showSkip ? `<button onclick="skipFromQueue()" title="Skip current song" style="flex-shrink:0; background:rgba(255,107,0,0.25); border:1px solid rgba(255,107,0,0.4); color:#ff6b00; border-radius:8px; padding:6px 12px; cursor:pointer; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:5px; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,107,0,0.4)'" onmouseout="this.style.background='rgba(255,107,0,0.25)'"><i class='fas fa-forward'></i> Skip</button>` : ''}
         </div>`;
     }
 
@@ -7044,6 +7048,31 @@ function closeStreamerQueueModal(event) {
     if (event && event.target !== event.currentTarget) return;
     const overlay = document.getElementById('streamer-queue-modal-overlay');
     if (overlay) overlay.classList.add('hidden');
+}
+
+async function skipFromQueue() {
+    if (_currentQueueStationId === null) return;
+    try {
+        const res = await fetch(`${STREAMER_API_BASE}/skip/${_currentQueueStationId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${discordAuthToken}`,
+                'Content-Type': 'application/json',
+            },
+        });
+        if (res.ok) {
+            showNotification('Song will be skipped soon!', 'fas fa-forward');
+            // Close the queue modal immediately
+            closeStreamerQueueModal();
+            // Refresh streamer status in the background
+            setTimeout(() => fetchStreamerStatus(), 1500);
+        } else {
+            const data = await res.json().catch(() => ({}));
+            showNotification(data.error || 'Failed to skip', 'fas fa-exclamation-circle');
+        }
+    } catch (e) {
+        showNotification('Network error: ' + e.message, 'fas fa-exclamation-circle');
+    }
 }
 
 function escapeHtmlStreamer(str) {

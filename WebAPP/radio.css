@@ -1148,6 +1148,10 @@ body.is-fullscreen main {
     50% { opacity: 0.5; box-shadow: 0 0 14px #ff4d4d; }
 }
 
+/* z-index stacking: hovered station always on top so LIVE DJ overlays & tooltips are never covered */
+.station-photo { z-index: 1; }
+.station-photo:hover { z-index: 10; }
+
 /* Station 1 — Radio GAMING (purple) */
 .station-photo:nth-child(1) .streamer-overlay {
     background: linear-gradient(135deg, #7300ff, #a855f7);
