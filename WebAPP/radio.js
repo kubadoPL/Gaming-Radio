@@ -6999,20 +6999,30 @@ const STREAMER_API_BASE = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.c
 let _streamerStatusCache = null;
 let _currentQueueStationId = null;
 
+// Station color map: station_id → color theme
+const _stationColors = {
+    '0': { color: '#293cca', name: 'Radio GAMING DARK' },
+    '1': { color: '#272956', name: 'Radio GAMING MARON FM' },
+    '2': { color: '#7300ff', name: 'Radio GAMING' }
+};
+let _prevStreamerStreaming = {}; // Track previous streaming state for notifications
+
 async function fetchStreamerStatus() {
     try {
         const r = await fetch(`${STREAMER_API_BASE}/public/status`, { cache: 'no-store' });
         const data = await r.json();
         _streamerStatusCache = data;
 
-        // Update overlay icons on station photos
+        // Update overlay icons on station photos + detect Live DJ status changes
         document.querySelectorAll('.streamer-overlay').forEach(overlay => {
             const sid = overlay.getAttribute('data-station-id');
             const stationData = data[sid];
             const tipQueue = overlay.querySelector('.streamer-tip-queue');
-            if (stationData && stationData.streaming) {
+            const isNowStreaming = !!(stationData && stationData.streaming);
+            const wasStreaming = !!_prevStreamerStreaming[sid];
+
+            if (isNowStreaming) {
                 overlay.classList.remove('hidden');
-                // Update tooltip queue count
                 if (tipQueue) {
                     const qLen = stationData.queue_length || 0;
                     tipQueue.textContent = qLen > 0 ? `${qLen} songs in queue` : 'Queue empty';
@@ -7020,6 +7030,17 @@ async function fetchStreamerStatus() {
             } else {
                 overlay.classList.add('hidden');
             }
+
+            // Show notification on status change
+            if (isNowStreaming && !wasStreaming) {
+                const stName = (_stationColors[sid] && _stationColors[sid].name) || (stationData && stationData.name) || 'Station';
+                showNotification(`🎧 Live DJ is now on ${stName}!`, 'fas fa-broadcast-tower');
+            } else if (!isNowStreaming && wasStreaming) {
+                const stName = (_stationColors[sid] && _stationColors[sid].name) || 'Station';
+                showNotification(`Auto DJ resumed on ${stName}`, 'fas fa-robot');
+            }
+
+            _prevStreamerStreaming[sid] = isNowStreaming;
         });
     } catch (e) {
         console.error('[Streamer] Status fetch error:', e);
@@ -7045,30 +7066,42 @@ function openStreamerQueueModal(stationId) {
     const station = _streamerStatusCache[String(stationId)];
     let html = '';
 
+    // Get station accent color
+    const sc = _stationColors[String(stationId)] || { color: '#7300ff' };
+    const accentColor = sc.color;
+    // Parse hex to RGB for rgba() usage
+    const hexToRgbLocal = (hex) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `${r},${g},${b}`;
+    };
+    const accentRgb = hexToRgbLocal(accentColor);
+
     // Currently playing
     if (station.current_song) {
         const nowThumb = station.current_thumbnail
             ? `<img src="${station.current_thumbnail}" class="sq-thumb sq-thumb-now" onerror="this.style.display='none'">`
             : '';
         const showSkip = discordUser && isUserAdmin(discordUser.id);
-        html += `<div class="sq-now-playing" style="padding:10px 14px; background:rgba(255,107,0,0.12); border-radius:10px; margin-bottom:10px; border:1px solid rgba(255,107,0,0.25); display:flex; align-items:center; gap:12px;">
+        html += `<div class="sq-now-playing" style="padding:10px 14px; background:rgba(${accentRgb},0.12); border-radius:10px; margin-bottom:10px; border:1px solid rgba(${accentRgb},0.25); display:flex; align-items:center; gap:12px;">
             ${nowThumb}
             <div style="flex:1; min-width:0;">
                 <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.5); margin-bottom:4px;">
-                    <i class="fas fa-broadcast-tower" style="color:#ff6b00; margin-right:4px;"></i> Now Playing on ${station.name}
+                    <i class="fas fa-broadcast-tower" style="color:${accentColor}; margin-right:4px;"></i> Now Playing on ${station.name}
                 </div>
                 <div style="font-weight:600; font-size:14px; color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtmlStreamer(station.current_song)}</div>
             </div>
-            ${showSkip ? `<button onclick="skipFromQueue()" title="Skip current song" style="flex-shrink:0; background:rgba(255,107,0,0.25); border:1px solid rgba(255,107,0,0.4); color:#ff6b00; border-radius:8px; padding:6px 12px; cursor:pointer; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:5px; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,107,0,0.4)'" onmouseout="this.style.background='rgba(255,107,0,0.25)'"><i class='fas fa-forward'></i> Skip</button>` : ''}
+            ${showSkip ? `<button onclick="skipFromQueue()" title="Skip current song" style="flex-shrink:0; background:rgba(${accentRgb},0.25); border:1px solid rgba(${accentRgb},0.4); color:${accentColor}; border-radius:8px; padding:6px 12px; cursor:pointer; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:5px; transition:all 0.2s;" onmouseover="this.style.background='rgba(${accentRgb},0.4)'" onmouseout="this.style.background='rgba(${accentRgb},0.25)'"><i class='fas fa-forward'></i> Skip</button>` : ''}
         </div>`;
     }
 
     // Admin-only: compact enqueue input
     if (discordUser && isUserAdmin(discordUser.id)) {
         html += `<div style="margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:5px; align-items:center;">
-                <input id="sq-enqueue-input" type="text" placeholder="URL or search..." style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 10px; color:white; font-size:12px; font-family:'Inter',sans-serif; outline:none;" onfocus="this.style.borderColor='rgba(255,107,0,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onkeydown="if(event.key==='Enter'){enqueueFromQueue(false);event.preventDefault();}">
+                <input id="sq-enqueue-input" type="text" placeholder="URL or search..." style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 10px; color:white; font-size:12px; font-family:'Inter',sans-serif; outline:none;" onfocus="this.style.borderColor='rgba(${accentRgb},0.4)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onkeydown="if(event.key==='Enter'){enqueueFromQueue(false);event.preventDefault();}">
                 <button onclick="enqueueFromQueue(false)" title="Queue next" style="flex-shrink:0; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.8); border-radius:6px; padding:5px 8px; cursor:pointer; font-size:11px; font-weight:600; font-family:'Inter',sans-serif;" onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'"><i class='fas fa-plus' style='font-size:10px'></i></button>
-                <button onclick="enqueueFromQueue(true)" title="Play instant" style="flex-shrink:0; background:rgba(255,107,0,0.18); border:1px solid rgba(255,107,0,0.3); color:#ff6b00; border-radius:6px; padding:5px 8px; cursor:pointer; font-size:11px; font-weight:600; font-family:'Inter',sans-serif;" onmouseover="this.style.background='rgba(255,107,0,0.3)'" onmouseout="this.style.background='rgba(255,107,0,0.18)'"><i class='fas fa-bolt' style='font-size:10px'></i></button>
+                <button onclick="enqueueFromQueue(true)" title="Play instant" style="flex-shrink:0; background:rgba(${accentRgb},0.18); border:1px solid rgba(${accentRgb},0.3); color:${accentColor}; border-radius:6px; padding:5px 8px; cursor:pointer; font-size:11px; font-weight:600; font-family:'Inter',sans-serif;" onmouseover="this.style.background='rgba(${accentRgb},0.3)'" onmouseout="this.style.background='rgba(${accentRgb},0.18)'"><i class='fas fa-bolt' style='font-size:10px'></i></button>
             </div>`;
     }
 
@@ -7077,7 +7110,7 @@ function openStreamerQueueModal(stationId) {
         const showShuffle = discordUser && isUserAdmin(discordUser.id) && station.queue.length > 1;
         html += `<div class="sq-header" style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin:12px 0 8px; padding-left:4px; display:flex; align-items:center; gap:8px;">
             <span><i class="fas fa-list" style="margin-right:4px;"></i> Up Next (<span id="sq-visible-count">${station.queue.length}</span>/${station.queue.length})</span>
-            ${showShuffle ? `<button onclick="shuffleFromQueue()" title="Shuffle queue" style="background:none; border:none; color:rgba(255,255,255,0.35); cursor:pointer; font-size:12px; padding:2px 4px; transition:color 0.2s;" onmouseover="this.style.color='#ff6b00'" onmouseout="this.style.color='rgba(255,255,255,0.35)'"><i class='fas fa-random'></i></button>` : ''}
+            ${showShuffle ? `<button onclick="shuffleFromQueue()" title="Shuffle queue" style="background:none; border:none; color:rgba(255,255,255,0.35); cursor:pointer; font-size:12px; padding:2px 4px; transition:color 0.2s;" onmouseover="this.style.color='${accentColor}'" onmouseout="this.style.color='rgba(255,255,255,0.35)'"><i class='fas fa-random'></i></button>` : ''}
         </div>`;
         station.queue.forEach((item, i) => {
             const title = typeof item === 'string' ? item : (item.title || '');
@@ -7097,7 +7130,7 @@ function openStreamerQueueModal(stationId) {
 
     if (station.loop_mode && station.loop_mode !== 'off') {
         html += `<div style="margin-top:10px; font-size:11px; color:rgba(255,255,255,0.4); text-align:center;">
-            <i class="fas fa-redo" style="margin-right:4px;"></i> Loop: ${station.loop_mode}
+            <i class="fas fa-redo" style="color:${accentColor}; margin-right:4px;"></i> Loop: ${station.loop_mode}
         </div>`;
     }
 
