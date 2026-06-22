@@ -7048,6 +7048,20 @@ function openStreamerQueueModal(stationId) {
         </div>`;
     }
 
+    // Admin-only: enqueue input (at top, after Now Playing)
+    if (discordUser && isUserAdmin(discordUser.id)) {
+        html += `<div style="margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin-bottom:8px; padding-left:4px;">
+                <i class="fas fa-plus" style="margin-right:4px;"></i> Add to Queue
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <input id="sq-enqueue-input" type="text" placeholder="YouTube URL or search..." style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:8px 12px; color:white; font-size:13px; font-family:'Inter',sans-serif; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(255,107,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'" onkeydown="if(event.key==='Enter'){enqueueFromQueue(false);event.preventDefault();}">
+                <button onclick="enqueueFromQueue(false)" title="Add to end of queue" style="flex-shrink:0; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.85); border-radius:8px; padding:7px 12px; cursor:pointer; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:5px; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'"><i class='fas fa-list'></i> Next</button>
+                <button onclick="enqueueFromQueue(true)" title="Play immediately after current song" style="flex-shrink:0; background:rgba(255,107,0,0.2); border:1px solid rgba(255,107,0,0.35); color:#ff6b00; border-radius:8px; padding:7px 12px; cursor:pointer; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:5px; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,107,0,0.35)'" onmouseout="this.style.background='rgba(255,107,0,0.2)'"><i class='fas fa-bolt'></i> Instant</button>
+            </div>
+        </div>`;
+    }
+
     // Queue
     if (station.queue && station.queue.length > 0) {
         html += `<div class="sq-header" style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin:12px 0 8px; padding-left:4px;">
@@ -7074,6 +7088,7 @@ function openStreamerQueueModal(stationId) {
             <i class="fas fa-redo" style="margin-right:4px;"></i> Loop: ${station.loop_mode}
         </div>`;
     }
+
 
     listEl.innerHTML = html;
 }
@@ -7122,6 +7137,41 @@ async function skipFromQueue() {
         } else {
             const data = await res.json().catch(() => ({}));
             showNotification(data.error || 'Failed to skip', 'fas fa-exclamation-circle');
+        }
+    } catch (e) {
+        showNotification('Network error: ' + e.message, 'fas fa-exclamation-circle');
+    }
+}
+
+async function enqueueFromQueue(instant = false) {
+    if (_currentQueueStationId === null) return;
+    const input = document.getElementById('sq-enqueue-input');
+    if (!input) return;
+    const url = input.value.trim();
+    if (!url) {
+        showNotification('Enter a URL or search query', 'fas fa-exclamation-circle');
+        return;
+    }
+    try {
+        const res = await fetch(`${STREAMER_API_BASE}/enqueue/${_currentQueueStationId}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${discordAuthToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: url, instant: instant }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+            showNotification(data.message || 'Added to queue!', 'fas fa-check');
+            input.value = '';
+            // Refresh queue after short delay
+            setTimeout(async () => {
+                await fetchStreamerStatus();
+                if (_currentQueueStationId !== null) openStreamerQueueModal(_currentQueueStationId);
+            }, 2000);
+        } else {
+            showNotification(data.error || 'Failed to enqueue', 'fas fa-exclamation-circle');
         }
     } catch (e) {
         showNotification('Network error: ' + e.message, 'fas fa-exclamation-circle');
