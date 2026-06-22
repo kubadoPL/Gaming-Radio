@@ -1811,6 +1811,18 @@
         </div>
     </div>
 
+    <!-- Station Picker Modal -->
+    <div id="station-picker-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); z-index:9999; justify-content:center; align-items:center;" onclick="if(event.target===this)closeStationPicker()">
+        <div style="background:linear-gradient(145deg, rgba(20,22,36,0.98), rgba(12,14,24,0.98)); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:28px; max-width:420px; width:90%; box-shadow:0 24px 64px rgba(0,0,0,0.5);">
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="font-size:18px; font-weight:700; color:white; margin-bottom:4px;">Wybierz stację</div>
+                <div id="station-picker-subtitle" style="font-size:12px; color:rgba(255,255,255,0.4);"></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;" id="station-picker-options"></div>
+            <button onclick="closeStationPicker()" style="width:100%; margin-top:14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); border-radius:10px; padding:10px; cursor:pointer; font-size:13px; font-family:'Inter',sans-serif; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">Anuluj</button>
+        </div>
+    </div>
+
     <script>
         // ─── Configuration ──────────────────────────────────────────────────
         const API_BASE = 'https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/StreamerApi';
@@ -3323,17 +3335,55 @@
             }
         }
 
-        async function replayInput(entryId) {
-            // Default to station 2 (Radio GAMING), could add a picker later
-            const stationId = prompt('Na którą stację puścić? (0=DARK, 1=MARON, 2=RG)', '2');
-            if (stationId === null) return;
-            const sid = parseInt(stationId);
-            if (![0,1,2].includes(sid)) { showNotification('Nieprawidłowa stacja', 'error'); return; }
+        let _pendingReplayEntryId = null;
 
-            const res = await apiCall(`/input-history/${entryId}/replay`, 'POST', { station_id: sid, instant: false });
+        function showStationPicker(entryId) {
+            _pendingReplayEntryId = entryId;
+            const overlay = document.getElementById('station-picker-overlay');
+            const optionsEl = document.getElementById('station-picker-options');
+            const subtitle = document.getElementById('station-picker-subtitle');
+
+            // Find entry name for subtitle
+            const entry = ihData.find(i => i.id === entryId);
+            const entryName = entry ? (entry.custom_name || entry.url || '').substring(0, 60) : '';
+            subtitle.textContent = entryName ? `"${entryName}"` : '';
+
+            let html = '';
+            for (const [id, meta] of Object.entries(STATION_META)) {
+                html += `<button onclick="confirmStationPick(${id}, false)" style="display:flex; align-items:center; gap:14px; width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 16px; cursor:pointer; transition:all 0.2s; text-align:left;" onmouseover="this.style.background='${meta.color}22';this.style.borderColor='${meta.color}66'" onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.08)'">
+                    <img src="${meta.logo}" style="width:36px; height:36px; border-radius:8px; object-fit:cover; flex-shrink:0;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:14px; font-weight:600; color:white;">${meta.name}</div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.35);">Station ${id}</div>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-shrink:0;">
+                        <span onclick="event.stopPropagation();confirmStationPick(${id}, false)" title="Dodaj do kolejki" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); border-radius:6px; padding:4px 10px; font-size:11px; font-weight:600; font-family:'Inter',sans-serif; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'"><i class='fas fa-list' style='margin-right:3px'></i>Queue</span>
+                        <span onclick="event.stopPropagation();confirmStationPick(${id}, true)" title="Puść natychmiast" style="background:${meta.color}33; border:1px solid ${meta.color}66; color:${meta.color}; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:600; font-family:'Inter',sans-serif; cursor:pointer; transition:all 0.15s; filter:brightness(1.3);" onmouseover="this.style.background='${meta.color}55'" onmouseout="this.style.background='${meta.color}33'"><i class='fas fa-bolt' style='margin-right:3px'></i>Instant</span>
+                    </div>
+                </button>`;
+            }
+            optionsEl.innerHTML = html;
+            overlay.style.display = 'flex';
+        }
+
+        function closeStationPicker() {
+            document.getElementById('station-picker-overlay').style.display = 'none';
+            _pendingReplayEntryId = null;
+        }
+
+        async function confirmStationPick(stationId, instant) {
+            const entryId = _pendingReplayEntryId;
+            closeStationPicker();
+            if (entryId === null) return;
+
+            const res = await apiCall(`/input-history/${entryId}/replay`, 'POST', { station_id: stationId, instant: instant });
             if (res && res.success) {
                 showNotification(res.message, 'success');
             }
+        }
+
+        async function replayInput(entryId) {
+            showStationPicker(entryId);
         }
 
         // ─── Initialization ──────────────────────────────────────────────

@@ -7048,24 +7048,21 @@ function openStreamerQueueModal(stationId) {
         </div>`;
     }
 
-    // Admin-only: enqueue input (at top, after Now Playing)
+    // Admin-only: compact enqueue input
     if (discordUser && isUserAdmin(discordUser.id)) {
-        html += `<div style="margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08);">
-            <div style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin-bottom:8px; padding-left:4px;">
-                <i class="fas fa-plus" style="margin-right:4px;"></i> Add to Queue
-            </div>
-            <div style="display:flex; gap:6px; align-items:center;">
-                <input id="sq-enqueue-input" type="text" placeholder="YouTube URL or search..." style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:8px 12px; color:white; font-size:13px; font-family:'Inter',sans-serif; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='rgba(255,107,0,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'" onkeydown="if(event.key==='Enter'){enqueueFromQueue(false);event.preventDefault();}">
-                <button onclick="enqueueFromQueue(false)" title="Add to end of queue" style="flex-shrink:0; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.85); border-radius:8px; padding:7px 12px; cursor:pointer; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:5px; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'"><i class='fas fa-list'></i> Next</button>
-                <button onclick="enqueueFromQueue(true)" title="Play immediately after current song" style="flex-shrink:0; background:rgba(255,107,0,0.2); border:1px solid rgba(255,107,0,0.35); color:#ff6b00; border-radius:8px; padding:7px 12px; cursor:pointer; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:5px; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,107,0,0.35)'" onmouseout="this.style.background='rgba(255,107,0,0.2)'"><i class='fas fa-bolt'></i> Instant</button>
-            </div>
-        </div>`;
+        html += `<div style="margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:5px; align-items:center;">
+                <input id="sq-enqueue-input" type="text" placeholder="URL or search..." style="flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 10px; color:white; font-size:12px; font-family:'Inter',sans-serif; outline:none;" onfocus="this.style.borderColor='rgba(255,107,0,0.4)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'" onkeydown="if(event.key==='Enter'){enqueueFromQueue(false);event.preventDefault();}">
+                <button onclick="enqueueFromQueue(false)" title="Queue next" style="flex-shrink:0; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.8); border-radius:6px; padding:5px 8px; cursor:pointer; font-size:11px; font-weight:600; font-family:'Inter',sans-serif;" onmouseover="this.style.background='rgba(255,255,255,0.14)'" onmouseout="this.style.background='rgba(255,255,255,0.07)'"><i class='fas fa-plus' style='font-size:10px'></i></button>
+                <button onclick="enqueueFromQueue(true)" title="Play instant" style="flex-shrink:0; background:rgba(255,107,0,0.18); border:1px solid rgba(255,107,0,0.3); color:#ff6b00; border-radius:6px; padding:5px 8px; cursor:pointer; font-size:11px; font-weight:600; font-family:'Inter',sans-serif;" onmouseover="this.style.background='rgba(255,107,0,0.3)'" onmouseout="this.style.background='rgba(255,107,0,0.18)'"><i class='fas fa-bolt' style='font-size:10px'></i></button>
+            </div>`;
     }
 
     // Queue
     if (station.queue && station.queue.length > 0) {
-        html += `<div class="sq-header" style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin:12px 0 8px; padding-left:4px;">
-            <i class="fas fa-list" style="margin-right:4px;"></i> Up Next (<span id="sq-visible-count">${station.queue.length}</span>/${station.queue.length})
+        const showShuffle = discordUser && isUserAdmin(discordUser.id) && station.queue.length > 1;
+        html += `<div class="sq-header" style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin:12px 0 8px; padding-left:4px; display:flex; align-items:center; gap:8px;">
+            <span><i class="fas fa-list" style="margin-right:4px;"></i> Up Next (<span id="sq-visible-count">${station.queue.length}</span>/${station.queue.length})</span>
+            ${showShuffle ? `<button onclick="shuffleFromQueue()" title="Shuffle queue" style="background:none; border:none; color:rgba(255,255,255,0.35); cursor:pointer; font-size:12px; padding:2px 4px; transition:color 0.2s;" onmouseover="this.style.color='#ff6b00'" onmouseout="this.style.color='rgba(255,255,255,0.35)'"><i class='fas fa-random'></i></button>` : ''}
         </div>`;
         station.queue.forEach((item, i) => {
             const title = typeof item === 'string' ? item : (item.title || '');
@@ -7172,6 +7169,31 @@ async function enqueueFromQueue(instant = false) {
             }, 2000);
         } else {
             showNotification(data.error || 'Failed to enqueue', 'fas fa-exclamation-circle');
+        }
+    } catch (e) {
+        showNotification('Network error: ' + e.message, 'fas fa-exclamation-circle');
+    }
+}
+
+async function shuffleFromQueue() {
+    if (_currentQueueStationId === null) return;
+    try {
+        const res = await fetch(`${STREAMER_API_BASE}/queue/${_currentQueueStationId}/shuffle`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${discordAuthToken}`,
+                'Content-Type': 'application/json',
+            },
+        });
+        if (res.ok) {
+            showNotification('Queue shuffled!', 'fas fa-random');
+            setTimeout(async () => {
+                await fetchStreamerStatus();
+                if (_currentQueueStationId !== null) openStreamerQueueModal(_currentQueueStationId);
+            }, 500);
+        } else {
+            const data = await res.json().catch(() => ({}));
+            showNotification(data.error || 'Failed to shuffle', 'fas fa-exclamation-circle');
         }
     } catch (e) {
         showNotification('Network error: ' + e.message, 'fas fa-exclamation-circle');
