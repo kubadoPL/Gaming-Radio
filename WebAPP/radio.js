@@ -270,6 +270,22 @@ function syncUserDataToCloud() {
     }, 5000);
 }
 
+// Force-send all accumulated data on page close for logged-in users
+window.addEventListener('beforeunload', () => {
+    if (!discordAuthToken) return;
+    const payload = JSON.stringify({
+        _token: discordAuthToken,
+        songHistory: songHistory,
+        songFavorites: songFavorites,
+        listeningStats: listeningStats,
+        savedWebhooks: getSavedWebhooks()
+    });
+    navigator.sendBeacon(
+        CHAT_API_BASE + '/user/data',
+        new Blob([payload], { type: 'application/json' })
+    );
+});
+
 window.toggleVisualizations = function () {
     isVisualizerEnabled = !isVisualizerEnabled;
     localStorage.setItem('RadioGaming-visualizerEnabled', isVisualizerEnabled);
@@ -598,6 +614,25 @@ document.addEventListener('DOMContentLoaded', () => {
     sendAnonHeartbeat(); // send immediately (skipped if auth token present)
     window.sendAnonHeartbeat = sendAnonHeartbeat; // expose globally for station change
     window._anonHeartbeatInterval = setInterval(sendAnonHeartbeat, 30000); // then every 30s
+
+    // Force-send all accumulated data on page close via sendBeacon (reliable even when tab is closing)
+    window.addEventListener('beforeunload', () => {
+        if (discordUser || discordAuthToken) return;
+        const station = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING')
+            .trim().replace(/\s+/g, '').toUpperCase();
+        const currentSong = document.getElementById('SongTitle')?.textContent?.trim() || '';
+        const currentCover = document.getElementById('albumCover')?.src || '';
+        const payload = JSON.stringify({
+            anon_id: anonListenerId,
+            station: station,
+            current_song: currentSong,
+            cover: currentCover,
+            listeningStats: listeningStats,
+            songFavorites: songFavorites,
+            songHistory: songHistory
+        });
+        navigator.sendBeacon(CHAT_API_BASE + '/chat/heartbeat', new Blob([payload], { type: 'application/json' }));
+    });
 
     // Audio time update listener
     const currentTimeElement = document.getElementById('currentTime');
