@@ -196,7 +196,8 @@ async function syncUserDataFromCloud() {
                             local.listeningTime = cloudSong.listeningTime;
                             updated = true;
                         }
-                        if (cloudSong.cover && !local.cover) local.cover = cloudSong.cover;
+                        // if (cloudSong.cover && !local.cover) local.cover = cloudSong.cover;
+                         if (cloudSong.cover) local.cover = cloudSong.cover;
                     }
                 }
             }
@@ -1230,7 +1231,19 @@ async function fetchBestCover(query) {
                         console.log(`[Cover Search] "${query}" | DJ queue override applied`);
                         if (coverElem) coverElem.src = djThumb;
                         updateMediaSessionMetadata(query, djThumb);
-                        addToSongHistory(query, djThumb);
+                        // addToSongHistory(query, djThumb);
+                         // Directly update cover in stats & history (addToSongHistory would be blocked by title guard)
+                        if (listeningStats.songs[query]) {
+                            listeningStats.songs[query].cover = djThumb;
+                            localStorage.setItem('RadioGaming-listeningStats', JSON.stringify(listeningStats));
+                        }
+                        const histEntry = songHistory.find(s => s.title === query);
+                        if (histEntry) {
+                            histEntry.cover = djThumb;
+                            localStorage.setItem('RadioGaming-songHistory', JSON.stringify(songHistory));
+                            renderHistoryList();
+                        }
+                        syncUserDataToCloud();
                         return;
                     }
                     const anyStreaming = _streamerStatusCache && Object.values(_streamerStatusCache).some(s => s && s.streaming);
