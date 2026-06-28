@@ -7113,8 +7113,15 @@ function openStreamerQueueModal(stationId) {
             ${showShuffle ? `<button onclick="shuffleFromQueue()" title="Shuffle queue" style="background:none; border:none; color:rgba(255,255,255,0.35); cursor:pointer; font-size:12px; padding:2px 4px; transition:color 0.2s;" onmouseover="this.style.color='${accentColor}'" onmouseout="this.style.color='rgba(255,255,255,0.35)'"><i class='fas fa-random'></i></button>` : ''}
         </div>`;
         station.queue.forEach((item, i) => {
-            const title = typeof item === 'string' ? item : (item.title || '');
-            const thumb = typeof item === 'object' ? (item.thumbnail || '') : '';
+            // public/status returns objects {title, thumbnail}; fallback for raw strings
+            let title = typeof item === 'object' ? (item.title || '') : item;
+            let thumb = typeof item === 'object' ? (item.thumbnail || '') : '';
+
+            // Strip ytsearch prefix for cleaner display
+            if (title.startsWith('ytsearch')) {
+                title = title.replace(/^ytsearch\d*:/, '');
+            }
+
             const thumbHtml = thumb
                 ? `<img src="${thumb}" class="sq-thumb" onerror="this.outerHTML='<i class=\\'fas fa-music sq-thumb-placeholder\\'></i>'">`
                 : '<i class="fas fa-music sq-thumb-placeholder"></i>';
