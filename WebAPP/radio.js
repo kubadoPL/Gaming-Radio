@@ -1132,26 +1132,60 @@ async function fetchAlbumCovers() {
 
 fetchAlbumCovers();
 
+async function _checkDjQueueThumb(query) {
+    // Returns thumbnail URL if found in DJ streamer cache, null otherwise
+    if (!_streamerStatusCache) return null;
+    for (const sid of Object.keys(_streamerStatusCache)) {
+        const st = _streamerStatusCache[sid];
+        if (!st || !st.streaming) continue;
+
+        // Check currently playing song
+        if (st.current_thumbnail && st.current_song) {
+            const streamerTitle = cleanTitle(st.current_song);
+            if (streamerTitle === query || getSimilarityScore(query, streamerTitle) >= 0.85) {
+                console.log(`[Cover Search] "${query}" | Using LIVE DJ thumbnail (station ${st.name || sid})`);
+                return st.current_thumbnail;
+            }
+        }
+
+        // Check queue items for matching thumbnails
+        if (st.queue && Array.isArray(st.queue)) {
+            for (const item of st.queue) {
+                if (typeof item !== 'object' || !item.thumbnail) continue;
+                let qTitle = cleanTitle(item.title || '');
+                if (qTitle && (qTitle === query || getSimilarityScore(query, qTitle) >= 0.85)) {
+                    console.log(`[Cover Search] "${query}" | Using DJ queue thumbnail (station ${st.name || sid})`);
+                    return item.thumbnail;
+                }
+            }
+        }
+    }
+    return null;
+}
+
 async function fetchBestCover(query) {
     const fallbackCover = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
     const coverElem = document.getElementById('albumCover');
 
     try {
-        // Check if LIVE DJ streamer already has a thumbnail for this song (skip all API calls)
-        if (_streamerStatusCache) {
-            for (const sid of Object.keys(_streamerStatusCache)) {
-                const st = _streamerStatusCache[sid];
-                if (st && st.streaming && st.current_thumbnail && st.current_song) {
-                    // Compare cleaned titles
-                    const streamerTitle = cleanTitle(st.current_song);
-                    if (streamerTitle === query || getSimilarityScore(query, streamerTitle) >= 0.85) {
-                        console.log(`[Cover Search] "${query}" | Using LIVE DJ thumbnail (station ${st.name || sid})`);
-                        if (coverElem) coverElem.src = st.current_thumbnail;
-                        updateMediaSessionMetadata(query, st.current_thumbnail);
-                        addToSongHistory(query, st.current_thumbnail);
-                        return;
-                    }
-                }
+        // Check DJ queue thumbnails — retry up to 3 times (thumbnails may still be resolving)
+        for (let attempt = 0; attempt < 3; attempt++) {
+            if (attempt > 0) {
+                await fetchStreamerStatus(); // Refresh cache before retry
+            }
+            const djThumb = await _checkDjQueueThumb(query);
+            if (djThumb) {
+                if (coverElem) coverElem.src = djThumb;
+                updateMediaSessionMetadata(query, djThumb);
+                addToSongHistory(query, djThumb);
+                return;
+            }
+            // If any station is streaming, wait 2s and retry (thumbnail may not be resolved yet)
+            const anyStreaming = _streamerStatusCache && Object.values(_streamerStatusCache).some(s => s && s.streaming);
+            if (!anyStreaming) break; // No DJ active, skip retries
+            if (attempt < 2) {
+                console.log(`[Cover Search] "${query}" | DJ queue miss, retrying in 2s (attempt ${attempt + 1}/3)...`);
+                await new Promise(r => setTimeout(r, 2000));
             }
         }
 
@@ -1875,19 +1909,12 @@ async function fetchSpotifyCovertooltip(query, tooltipElement) {
     const img = tooltipElement.querySelector('.tooltip-cover');
 
     try {
-        // Check if LIVE DJ streamer already has a thumbnail for this song (skip all API calls)
-        if (_streamerStatusCache) {
-            for (const sid of Object.keys(_streamerStatusCache)) {
-                const st = _streamerStatusCache[sid];
-                if (st && st.streaming && st.current_thumbnail && st.current_song) {
-                    const streamerTitle = cleanTitle(st.current_song);
-                    if (streamerTitle === query || getSimilarityScore(query, streamerTitle) >= 0.85) {
-                        console.log(`[Tooltip Search] "${query}" | Using LIVE DJ thumbnail (station ${st.name || sid})`);
-                        if (img) img.src = st.current_thumbnail;
-                        return;
-                    }
-                }
-            }
+        // Check DJ queue for thumbnail
+        const djThumb = await _checkDjQueueThumb(query);
+        if (djThumb) {
+            console.log(`[Tooltip Search] "${query}" | Using DJ thumbnail`);
+            if (img) img.src = djThumb;
+            return;
         }
 
         let manualData = findBestManualMatch(query);
