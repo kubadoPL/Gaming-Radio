@@ -7002,7 +7002,7 @@ let _currentQueueStationId = null;
 // Station color map: station_id → color theme
 const _stationColors = {
     '0': { color: '#293cca', name: 'Radio GAMING DARK' },
-    '1': { color: '#272956', name: 'Radio GAMING MARON FM' },
+    '1': { color: '#3d70a6ff', name: 'Radio GAMING MARON FM' },
     '2': { color: '#7300ff', name: 'Radio GAMING' }
 };
 let _prevStreamerStreaming = {}; // Track previous streaming state for notifications
