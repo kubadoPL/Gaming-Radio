@@ -1168,28 +1168,7 @@ async function fetchBestCover(query) {
     const coverElem = document.getElementById('albumCover');
 
     try {
-        // Check DJ queue thumbnails — retry up to 3 times (thumbnails may still be resolving)
-        for (let attempt = 0; attempt < 3; attempt++) {
-            // Always refresh cache (on first attempt if null, on retries to get updated data)
-            if (attempt > 0 || !_streamerStatusCache) {
-                await fetchStreamerStatus(); // Refresh cache
-            }
-            const djThumb = await _checkDjQueueThumb(query);
-            if (djThumb) {
-                if (coverElem) coverElem.src = djThumb;
-                updateMediaSessionMetadata(query, djThumb);
-                addToSongHistory(query, djThumb);
-                return;
-            }
-            // Only retry if a DJ is actively streaming (thumbnail may not be resolved yet)
-            const anyStreaming = _streamerStatusCache && Object.values(_streamerStatusCache).some(s => s && s.streaming);
-            if (_streamerStatusCache && !anyStreaming) break; // Cache loaded, no DJ active
-            if (attempt < 2) {
-                console.log(`[Cover Search] "${query}" | DJ queue miss, retrying in 2s (attempt ${attempt + 1}/3)...`);
-                await new Promise(r => setTimeout(r, 2000));
-            }
-        }
-
+        // Normal cover fetch first, DJ queue overrides in background afterwards
         let manualData = findBestManualMatch(query);
         let spotifyData = null;
         let itunesData = null;
@@ -1237,6 +1216,29 @@ async function fetchBestCover(query) {
         if (coverElem) coverElem.src = bestChoice.url;
         updateMediaSessionMetadata(query, bestChoice.url);
         addToSongHistory(query, bestChoice.url);
+
+        // Background: check DJ queue with retries — overrides if found
+        (async () => {
+            try {
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    await fetchStreamerStatus();
+                    const djThumb = await _checkDjQueueThumb(query);
+                    if (djThumb) {
+                        // Verify song hasn't changed while we were waiting
+                        const currentTitle = document.getElementById('streamTitle');
+                        if (currentTitle && cleanTitle(currentTitle.textContent) !== query) return;
+                        console.log(`[Cover Search] "${query}" | DJ queue override applied`);
+                        if (coverElem) coverElem.src = djThumb;
+                        updateMediaSessionMetadata(query, djThumb);
+                        addToSongHistory(query, djThumb);
+                        return;
+                    }
+                    const anyStreaming = _streamerStatusCache && Object.values(_streamerStatusCache).some(s => s && s.streaming);
+                    if (_streamerStatusCache && !anyStreaming) return; // No DJ active
+                    if (attempt < 2) await new Promise(r => setTimeout(r, 2000));
+                }
+            } catch { /* silent */ }
+        })();
     } catch (error) {
         console.error('Error fetching best cover:', error);
         if (coverElem) coverElem.src = fallbackCover;
