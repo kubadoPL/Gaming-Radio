@@ -2513,12 +2513,20 @@
 
         const _npCoverCache = {};  // stationId -> lastSong
 
-        async function fetchNowPlayingCover(stationId, songTitle) {
+        async function fetchNowPlayingCover(stationId, songTitle, serverThumb) {
             const coverEl = document.getElementById(`np-cover-${stationId}`);
             if (!coverEl) return;
 
             // Check queue cover cache first
             const cacheKey = songTitle.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+
+            // Highest priority: current_thumbnail from server (set at playback start)
+            if (serverThumb) {
+                _coverCache[cacheKey] = serverThumb;
+                coverEl.innerHTML = `<img src="${serverThumb}" alt="">`;
+                return;
+            }
+
             if (_coverCache[cacheKey]) {
                 coverEl.innerHTML = `<img src="${_coverCache[cacheKey]}" alt="">`;
                 return;
@@ -2619,7 +2627,7 @@
 
             // Fetch cover art when song changes
             if (newSong !== oldSong && newSong !== 'Waiting for stream...' && newSong !== 'None') {
-                fetchNowPlayingCover(id, newSong);
+                fetchNowPlayingCover(id, newSong, status.current_thumbnail || '');
             }
 
             // Loop mode

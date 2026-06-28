@@ -1170,8 +1170,9 @@ async function fetchBestCover(query) {
     try {
         // Check DJ queue thumbnails — retry up to 3 times (thumbnails may still be resolving)
         for (let attempt = 0; attempt < 3; attempt++) {
-            if (attempt > 0) {
-                await fetchStreamerStatus(); // Refresh cache before retry
+            // Always refresh cache (on first attempt if null, on retries to get updated data)
+            if (attempt > 0 || !_streamerStatusCache) {
+                await fetchStreamerStatus(); // Refresh cache
             }
             const djThumb = await _checkDjQueueThumb(query);
             if (djThumb) {
@@ -1180,9 +1181,9 @@ async function fetchBestCover(query) {
                 addToSongHistory(query, djThumb);
                 return;
             }
-            // If any station is streaming, wait 2s and retry (thumbnail may not be resolved yet)
+            // Only retry if a DJ is actively streaming (thumbnail may not be resolved yet)
             const anyStreaming = _streamerStatusCache && Object.values(_streamerStatusCache).some(s => s && s.streaming);
-            if (!anyStreaming) break; // No DJ active, skip retries
+            if (_streamerStatusCache && !anyStreaming) break; // Cache loaded, no DJ active
             if (attempt < 2) {
                 console.log(`[Cover Search] "${query}" | DJ queue miss, retrying in 2s (attempt ${attempt + 1}/3)...`);
                 await new Promise(r => setTimeout(r, 2000));
