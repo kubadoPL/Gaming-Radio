@@ -7125,10 +7125,15 @@ function openStreamerQueueModal(stationId) {
             const thumbHtml = thumb
                 ? `<img src="${thumb}" class="sq-thumb" onerror="this.outerHTML='<i class=\\'fas fa-music sq-thumb-placeholder\\'></i>'">`
                 : '<i class="fas fa-music sq-thumb-placeholder"></i>';
+            const isAdmin = discordUser && isUserAdmin(discordUser.id);
+            const removeBtn = isAdmin
+                ? `<button onclick="removeFromQueue(${i})" title="Remove from queue" style="flex-shrink:0; background:none; border:none; color:rgba(255,255,255,0.2); cursor:pointer; font-size:13px; padding:4px 6px; transition:all 0.2s; border-radius:4px;" onmouseover="this.style.color='#ff4466'; this.style.background='rgba(255,68,102,0.12)'" onmouseout="this.style.color='rgba(255,255,255,0.2)'; this.style.background='none'"><i class='fas fa-times'></i></button>`
+                : '';
             html += `<div class="sq-item" data-title="${escapeHtmlStreamer(title).toLowerCase()}" style="padding:8px 12px; background:rgba(255,255,255,0.04); border-radius:8px; margin-bottom:4px; display:flex; align-items:center; gap:10px;">
                 <span style="color:rgba(255,255,255,0.3); font-size:12px; font-weight:600; min-width:20px;">${i + 1}</span>
                 ${thumbHtml}
                 <span style="font-size:13px; color:rgba(255,255,255,0.85); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${escapeHtmlStreamer(title)}</span>
+                ${removeBtn}
             </div>`;
         });
     } else {
@@ -7249,6 +7254,32 @@ async function shuffleFromQueue() {
         } else {
             const data = await res.json().catch(() => ({}));
             showNotification(data.error || 'Failed to shuffle', 'fas fa-exclamation-circle');
+        }
+    } catch (e) {
+        showNotification('Network error: ' + e.message, 'fas fa-exclamation-circle');
+    }
+}
+
+async function removeFromQueue(index) {
+    if (_currentQueueStationId === null) return;
+    try {
+        const res = await fetch(`${STREAMER_API_BASE}/queue/${_currentQueueStationId}/remove`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${discordAuthToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ index }),
+        });
+        if (res.ok) {
+            showNotification('Removed from queue', 'fas fa-trash');
+            setTimeout(async () => {
+                await fetchStreamerStatus();
+                if (_currentQueueStationId !== null) openStreamerQueueModal(_currentQueueStationId);
+            }, 300);
+        } else {
+            const data = await res.json().catch(() => ({}));
+            showNotification(data.error || 'Failed to remove', 'fas fa-exclamation-circle');
         }
     } catch (e) {
         showNotification('Network error: ' + e.message, 'fas fa-exclamation-circle');
