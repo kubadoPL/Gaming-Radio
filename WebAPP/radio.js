@@ -196,8 +196,8 @@ async function syncUserDataFromCloud() {
                             local.listeningTime = cloudSong.listeningTime;
                             updated = true;
                         }
-                        // if (cloudSong.cover && !local.cover) local.cover = cloudSong.cover;
-                         if (cloudSong.cover) local.cover = cloudSong.cover;
+                         if (cloudSong.cover && !local.cover) local.cover = cloudSong.cover;
+                       //  if (cloudSong.cover) local.cover = cloudSong.cover;
                     }
                 }
             }
