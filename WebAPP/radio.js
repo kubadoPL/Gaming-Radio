@@ -6575,6 +6575,21 @@ function _renderAnonStatsHTML(view, data) {
                             <span class="stat-value" style="font-size: 11px;">${lastSeen}</span>
                         </div>
                     </div>
+                    ${listener.user_agent || listener.accept_language || listener.referer ? `
+                    <div style="margin-bottom: 10px; padding: 6px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; font-size: 10px; color: rgba(255,255,255,0.5); word-break: break-all; line-height: 1.6;">
+                        ${listener.user_agent ? `<div>
+                            <i class="fas fa-${/bot|crawl|spider|python|curl|wget|headless|phantom|selenium/i.test(listener.user_agent) ? 'robot' : 'globe'}" style="margin-right: 4px; color: ${/bot|crawl|spider|python|curl|wget|headless|phantom|selenium/i.test(listener.user_agent) ? '#ef4444' : '#4ade80'};"></i>
+                            <strong>UA:</strong> ${listener.user_agent.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                        </div>` : ''}
+                        <div>
+                            <i class="fas fa-language" style="margin-right: 4px; color: ${listener.accept_language ? '#4ade80' : '#ef4444'};"></i>
+                            <strong>Lang:</strong> ${listener.accept_language ? listener.accept_language.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '<span style="color:#ef4444;">brak (podejrzane)</span>'}
+                        </div>
+                        <div>
+                            <i class="fas fa-link" style="margin-right: 4px; color: ${listener.referer ? '#4ade80' : '#f59e0b'};"></i>
+                            <strong>Referer:</strong> ${listener.referer ? listener.referer.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '<span style="color:#f59e0b;">brak (direct/unknown)</span>'}
+                        </div>
+                    </div>` : ''}
         `;
 
         // Station breakdown
