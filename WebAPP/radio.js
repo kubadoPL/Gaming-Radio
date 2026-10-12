@@ -927,9 +927,14 @@ function fetchFooterUsers() {
         if (cached && cached.users) {
             cached.users.forEach(u => {
                 const existing = userMap.get(u.id);
-                // Prefer online version over offline
+                // Prefer online version over offline; among offline entries keep
+                // the one with the most recent last_seen (lists are per station)
                 if (!existing || (u.is_online && !existing.is_online)) {
                     userMap.set(u.id, u);
+                } else if (!u.is_online && !existing.is_online) {
+                    const tNew = u.last_seen ? new Date(u.last_seen).getTime() : 0;
+                    const tOld = existing.last_seen ? new Date(existing.last_seen).getTime() : 0;
+                    if (tNew > tOld) userMap.set(u.id, u);
                 }
             });
         }
