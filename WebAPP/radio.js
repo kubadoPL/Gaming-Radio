@@ -7167,7 +7167,7 @@ function openStreamerQueueModal(stationId) {
     if (station.queue && station.queue.length > 0) {
         const showShuffle = discordUser && isUserAdmin(discordUser.id) && station.queue.length > 1;
         html += `<div class="sq-header" style="font-size:11px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.4); margin:12px 0 8px; padding-left:4px; display:flex; align-items:center; gap:8px;">
-            <span><i class="fas fa-list" style="margin-right:4px;"></i> Up Next (<span id="sq-visible-count">${station.queue.length}</span>/${station.queue.length})</span>
+            <span><i class="fas fa-list" style="margin-right:4px;"></i> Up Next (<span id="sq-visible-count">${station.queue.length}</span>/${station.queue_length || station.queue.length})</span>
             ${showShuffle ? `<button onclick="shuffleFromQueue()" title="Shuffle queue" style="background:none; border:none; color:rgba(255,255,255,0.35); cursor:pointer; font-size:12px; padding:2px 4px; transition:color 0.2s;" onmouseover="this.style.color='${accentColor}'" onmouseout="this.style.color='rgba(255,255,255,0.35)'"><i class='fas fa-random'></i></button>` : ''}
         </div>`;
         station.queue.forEach((item, i) => {

@@ -2337,13 +2337,40 @@
             } catch { return url.substring(0, 50); }
         }
 
+        // /status only ships the first ~60 queue items (keeps the 3s poll small).
+        // Pages beyond that are fetched on demand and merged into _queueData.
+        const _queuePageLoading = {};
+        async function fetchQueuePage(id, start) {
+            const key = `${id}:${start}`;
+            if (_queuePageLoading[key]) return;
+            _queuePageLoading[key] = true;
+            try {
+                const data = await apiCall(`/queue/${id}?offset=${start}&limit=${QUEUE_PAGE_SIZE}`, 'GET', null, true);
+                if (!data || !Array.isArray(data.queue)) return;
+                if (!window._queueData) window._queueData = {};
+                const arr = window._queueData[id] || [];
+                data.queue.forEach((url, i) => { arr[start + i] = url; });
+                window._queueData[id] = arr;
+                if (!window._queueTotal) window._queueTotal = {};
+                window._queueTotal[id] = data.total;
+                if (!window._queueTitles) window._queueTitles = {};
+                window._queueTitles[id] = Object.assign(window._queueTitles[id] || {}, data.titles || {});
+                if (!window._queueThumbnails) window._queueThumbnails = {};
+                window._queueThumbnails[id] = Object.assign(window._queueThumbnails[id] || {}, data.thumbnails || {});
+                renderQueuePage(id);
+            } finally {
+                delete _queuePageLoading[key];
+            }
+        }
+
         function renderQueuePage(id) {
             const queueList = document.getElementById(`queue-list-${id}`);
             const pagination = document.getElementById(`queue-pagination-${id}`);
             const pageInfo = document.getElementById(`queue-page-info-${id}`);
             const queue = (window._queueData && window._queueData[id]) || [];
+            const total = (window._queueTotal && window._queueTotal[id]) || queue.length;
             const page = (window._queuePages && window._queuePages[id]) || 0;
-            const totalPages = Math.ceil(queue.length / QUEUE_PAGE_SIZE) || 1;
+            const totalPages = Math.ceil(total / QUEUE_PAGE_SIZE) || 1;
 
             // Clamp page
             if (page >= totalPages) {
@@ -2352,6 +2379,14 @@
             const currentPage = window._queuePages[id] || 0;
             const start = currentPage * QUEUE_PAGE_SIZE;
             const slice = queue.slice(start, start + QUEUE_PAGE_SIZE);
+
+            // Page not loaded yet (beyond the status preview) — fetch it
+            const expected = Math.min(QUEUE_PAGE_SIZE, total - start);
+            if (expected > 0 && (slice.length < expected || slice.some(x => x === undefined))) {
+                queueList.innerHTML = '<div class="queue-empty"><i class="fas fa-spinner fa-spin"></i> Loading page…</div>';
+                fetchQueuePage(id, start);
+                return;
+            }
 
             if (slice.length === 0) {
                 queueList.innerHTML = '<div class="queue-empty">Queue is empty</div>';
@@ -2425,7 +2460,8 @@
         function changeQueuePage(id, delta) {
             if (!window._queuePages) window._queuePages = {};
             const queue = (window._queueData && window._queueData[id]) || [];
-            const totalPages = Math.ceil(queue.length / QUEUE_PAGE_SIZE) || 1;
+            const total = (window._queueTotal && window._queueTotal[id]) || queue.length;
+            const totalPages = Math.ceil(total / QUEUE_PAGE_SIZE) || 1;
             let page = (window._queuePages[id] || 0) + delta;
             page = Math.max(0, Math.min(page, totalPages - 1));
             window._queuePages[id] = page;
@@ -2650,9 +2686,12 @@
             // Queue — paginated with cover art
             queueCount.textContent = status.queue_length || 0;
             if (status.queue && status.queue.length > 0) {
-                // Store full queue data per station
+                // Store queue preview (first ~60 items) per station; deeper pages
+                // are fetched lazily by renderQueuePage via /queue/<id>?offset=
                 if (!window._queueData) window._queueData = {};
-                window._queueData[id] = status.queue;
+                window._queueData[id] = status.queue.slice();
+                if (!window._queueTotal) window._queueTotal = {};
+                window._queueTotal[id] = status.queue_length || status.queue.length;
                 if (!window._queuePages) window._queuePages = {};
                 if (window._queuePages[id] === undefined) window._queuePages[id] = 0;
 
