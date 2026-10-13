@@ -3070,7 +3070,10 @@ window.closeDiscordProfileModal = function (event) {
 
 let _userProfileCache = {}; // userId -> {data, timestamp}
 let _lastProfileData = null; // Last rendered profile data (for re-render after role change)
-const USER_PROFILE_CACHE_TTL = 120000; // 2 minutes
+const USER_PROFILE_CACHE_TTL = 15000; // show cached instantly, refetch in background after 15 s
+const USER_PROFILE_REFRESH_MS = 15000; // auto-refresh while the modal stays open
+let _profileRefreshTimer = null;
+let _profileOpenUserId = null;
 const ANON_PROFILE_CACHE_TTL = 10000; // anonymous listeners: 10 s (stats arrive with each heartbeat)
 
 function _applyProfileBanner(bannerEl, bannerUrl, accentColor) {
@@ -3145,39 +3148,63 @@ window.openUserProfileModal = async function (userId, userName, globalName, avat
     }
 
     // Check cache — still update banner/avatar from cached server data
-    // Anonymous stats change with every 30s heartbeat, so cache them only briefly;
-    // otherwise a click right after the listener joined keeps showing empty stats.
+    // Cached copy (any age) is shown at once; a fresh one is fetched in the
+    // background when the copy is older than the TTL (anonymous: 10 s).
     const cacheTtl = isAnonProfile ? ANON_PROFILE_CACHE_TTL : USER_PROFILE_CACHE_TTL;
     const cached = _userProfileCache[userId];
-    if (cached && (Date.now() - cached.timestamp < cacheTtl)) {
+    if (cached) {
         _applyProfileUserData(cached.data);
         renderUserProfileStats(cached.data);
-        return;
     }
+    _profileOpenUserId = userId;
+    _startProfileAutoRefresh(userId);
+    if (cached && (Date.now() - cached.timestamp < cacheTtl)) return;
 
-    // Fetch full profile from API
+    await _fetchAndRenderProfile(userId, !cached);
+};
+
+// Loads a profile and re-renders the modal only if something changed.
+async function _fetchAndRenderProfile(userId, showErrors) {
+    const statsContainer = document.getElementById('user-profile-stats');
+    const isAnonProfile = userId.startsWith('anon-');
     try {
         const endpoint = isAnonProfile ? `/user/anon-profile/${encodeURIComponent(userId)}` : `/user/profile/${userId}`;
-        const response = await fetch(`${CHAT_API_BASE}${endpoint}`);
+        const response = await fetch(`${CHAT_API_BASE}${endpoint}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-
         if (!data.success) throw new Error(data.error || 'Unknown error');
 
-        // Update banner/avatar/name from server data
+        const prev = _userProfileCache[userId];
+        const json = JSON.stringify(data);
+        _userProfileCache[userId] = { data, timestamp: Date.now(), json };
+        // Modal moved on to someone else (or closed) while we were fetching
+        if (_profileOpenUserId !== userId) return;
+        if (prev && prev.json === json) return; // nothing new -> no flicker
+
         _applyProfileUserData(data);
-
-        // Cache the data
-        _userProfileCache[userId] = { data, timestamp: Date.now() };
-
         renderUserProfileStats(data);
     } catch (error) {
         console.error('[UserProfile] Error fetching profile:', error);
-        if (statsContainer) {
+        if (showErrors && statsContainer && _profileOpenUserId === userId) {
             statsContainer.innerHTML = '<div class="user-profile-no-stats"><i class="fas fa-exclamation-triangle"></i><span>Failed to load profile data.</span></div>';
         }
     }
-};
+}
+
+// While the modal is open, keep stats / recent listens / online status live.
+function _startProfileAutoRefresh(userId) {
+    _stopProfileAutoRefresh();
+    _profileRefreshTimer = setInterval(() => {
+        const overlay = document.getElementById('user-profile-modal-overlay');
+        if (!overlay || overlay.classList.contains('hidden') || _profileOpenUserId !== userId) { _stopProfileAutoRefresh(); return; }
+        if (document.hidden) return;
+        _fetchAndRenderProfile(userId, false);
+    }, USER_PROFILE_REFRESH_MS);
+}
+
+function _stopProfileAutoRefresh() {
+    if (_profileRefreshTimer) { clearInterval(_profileRefreshTimer); _profileRefreshTimer = null; }
+}
 
 async function renderUserProfileStats(data) {
     _lastProfileData = data; // Save for re-render after role changes
@@ -3462,6 +3489,8 @@ window.closeUserProfileModal = function (event) {
     if (event && event.target !== event.currentTarget) return;
     const overlay = document.getElementById('user-profile-modal-overlay');
     if (overlay) overlay.classList.add('hidden');
+    _profileOpenUserId = null;
+    _stopProfileAutoRefresh();
 };
 
 window.initiateDiscordLogin = async function () {
@@ -3992,6 +4021,7 @@ let lastMessageTimestamp = null;
 const CHAT_STATION_KEYS = ['RADIOGAMING', 'RADIOGAMINGDARK', 'RADIOGAMINGMARONFM'];
 const _chatUnread = { mentions: 0, messages: 0, stations: {} };
 let _chatReadAt = {}; // station key -> epoch ms of last look at that chat
+let _chatNewSince = {}; // station key -> epoch ms: where the "NEW" divider goes on the next history load
 
 function _chatReadAtKey() {
     return discordUser ? `RadioGaming-chatReadAt-${discordUser.id}` : null;
@@ -4024,10 +4054,49 @@ function _saveChatReadAt() {
 function markChatStationRead(stationKey) {
     if (!discordUser || !stationKey) return;
     if (!Object.keys(_chatReadAt).length) loadChatReadAt();
+    const prev = _chatReadAt[stationKey];
+    // Opening the chat may call this twice within a moment (section + station);
+    // keep the first, older value so the divider lands where reading stopped.
+    if (typeof prev === 'number' && Date.now() - prev > 3000) _chatNewSince[stationKey] = prev;
     _chatReadAt[stationKey] = Date.now();
     _saveChatReadAt();
     _chatUnread.stations[stationKey] = { messages: 0, mentions: 0 };
     _recomputeChatUnread();
+}
+
+// Discord-style unread markers on history load: a red "NEW" line before the
+// first message the user has not seen and a sticky banner with the count.
+function _insertChatNewDivider(container) {
+    const d = document.createElement('div');
+    d.className = 'chat-new-divider';
+    d.innerHTML = '<span>NEW</span>';
+    container.appendChild(d);
+    return d;
+}
+
+function _insertChatNewBanner(container, count, sinceMs) {
+    const since = new Date(sinceMs);
+    const today = new Date();
+    let when = since.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (since.toDateString() !== today.toDateString()) {
+        when += ', ' + since.toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
+    }
+    const label = count > 99 ? '99+ new messages' : `${count} new message${count === 1 ? '' : 's'}`;
+    const banner = document.createElement('div');
+    banner.className = 'chat-new-banner';
+    banner.innerHTML = `<span class="chat-new-banner-text"><i class="fas fa-envelope" style="margin-right:6px;"></i>${label} since ${when}</span>
+        <button type="button" class="chat-new-banner-btn">Mark as read <i class="fas fa-check-double"></i></button>`;
+    banner.querySelector('.chat-new-banner-text').onclick = () => {
+        const divider = container.querySelector('.chat-new-divider');
+        if (divider) container.scrollTop = Math.max(0, divider.offsetTop - 60);
+    };
+    banner.querySelector('.chat-new-banner-btn').onclick = (e) => {
+        e.stopPropagation();
+        container.querySelectorAll('.chat-new-divider').forEach(el => el.remove());
+        banner.remove();
+    };
+    container.prepend(banner);
+    return banner;
 }
 
 function _recomputeChatUnread() {
@@ -4243,13 +4312,37 @@ async function loadChatHistory() {
 
                 // Clear welcome message or loading indicator
                 messagesContainer.innerHTML = '';
-                // Set showNotify to true for mentions catch-up in current channel
-                data.messages.forEach(message => appendChatMessage(message, false, true));
 
-                // Scroll to bottom after the section transition and DOM update
+                // Unread markers (logged-in users): everything after the last look at this station
+                const newSince = discordUser ? _chatNewSince[currentChatStation] : null;
+                delete _chatNewSince[currentChatStation];
+                let unreadCount = 0;
+                let dividerPlaced = false;
+                // Set showNotify to true for mentions catch-up in current channel
+                data.messages.forEach(message => {
+                    if (newSince && message.user && message.user.id !== discordUser.id) {
+                        const t = new Date(message.timestamp).getTime();
+                        if (t > newSince) {
+                            if (!dividerPlaced) { _insertChatNewDivider(messagesContainer); dividerPlaced = true; }
+                            unreadCount++;
+                        }
+                    }
+                    appendChatMessage(message, false, true);
+                });
+                if (unreadCount > 0) _insertChatNewBanner(messagesContainer, unreadCount, newSince);
+
+                // Scroll after the section transition and DOM update: to the bottom,
+                // or to the "NEW" line when the unread messages start above the fold
                 setTimeout(() => {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    isChatAtBottom = true;
+                    const divider = messagesContainer.querySelector('.chat-new-divider');
+                    const maxScroll = messagesContainer.scrollHeight - messagesContainer.clientHeight;
+                    if (divider && divider.offsetTop - 60 < maxScroll) {
+                        messagesContainer.scrollTop = Math.max(0, divider.offsetTop - 60);
+                        isChatAtBottom = messagesContainer.scrollTop >= maxScroll - 2;
+                    } else {
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        isChatAtBottom = true;
+                    }
                 }, 300);
             } else if (messagesContainer.querySelector('.chat-loading')) {
                 // No messages and we were loading - show welcome message
