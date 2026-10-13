@@ -3071,6 +3071,7 @@ window.closeDiscordProfileModal = function (event) {
 let _userProfileCache = {}; // userId -> {data, timestamp}
 let _lastProfileData = null; // Last rendered profile data (for re-render after role change)
 const USER_PROFILE_CACHE_TTL = 120000; // 2 minutes
+const ANON_PROFILE_CACHE_TTL = 10000; // anonymous listeners: 10 s (stats arrive with each heartbeat)
 
 function _applyProfileBanner(bannerEl, bannerUrl, accentColor) {
     if (!bannerEl) return;
@@ -3144,8 +3145,11 @@ window.openUserProfileModal = async function (userId, userName, globalName, avat
     }
 
     // Check cache — still update banner/avatar from cached server data
+    // Anonymous stats change with every 30s heartbeat, so cache them only briefly;
+    // otherwise a click right after the listener joined keeps showing empty stats.
+    const cacheTtl = isAnonProfile ? ANON_PROFILE_CACHE_TTL : USER_PROFILE_CACHE_TTL;
     const cached = _userProfileCache[userId];
-    if (cached && (Date.now() - cached.timestamp < USER_PROFILE_CACHE_TTL)) {
+    if (cached && (Date.now() - cached.timestamp < cacheTtl)) {
         _applyProfileUserData(cached.data);
         renderUserProfileStats(cached.data);
         return;
@@ -3308,7 +3312,10 @@ async function renderUserProfileStats(data) {
             html += `</div>`;
         }
     } else {
-        html += `<div class="user-profile-no-stats"><i class="fas fa-chart-line"></i><span>No listening stats synced yet.</span></div>`;
+        const noStatsMsg = data.is_anonymous
+            ? 'No listening stats yet &mdash; anonymous stats sync every 30 s, check back in a moment.'
+            : 'No listening stats synced yet.';
+        html += `<div class="user-profile-no-stats"><i class="fas fa-chart-line"></i><span>${noStatsMsg}</span></div>`;
     }
 
     // Favorites
