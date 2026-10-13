@@ -682,6 +682,62 @@ nav ul li a i {
     font-size: 16px;
 }
 
+/* Unread counters on the CHAT link: mentions (station colour) + all messages */
+#nav-chat-link {
+    position: relative;
+}
+
+.nav-badges {
+    position: absolute;
+    top: -5px;
+    right: -6px;
+    display: flex;
+    gap: 3px;
+    pointer-events: none;
+}
+
+.nav-badges[hidden],
+.nav-badge[hidden] {
+    display: none;
+}
+
+.nav-badge {
+    min-width: 17px;
+    height: 17px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 17px;
+    letter-spacing: 0;
+    text-align: center;
+    color: #fff;
+    text-transform: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+    animation: nav-badge-pop 0.25s ease;
+}
+
+.nav-badge-mentions {
+    background: var(--chat-badge-color, #7300ff);
+}
+
+.nav-badge-mentions::before {
+    content: '@';
+    font-weight: 800;
+    opacity: 0.85;
+}
+
+.nav-badge-msgs {
+    background: rgba(28, 30, 44, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+@keyframes nav-badge-pop {
+    from { transform: scale(0.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
 nav ul li a:hover {
     color: white;
     background: rgba(255, 255, 255, 0.05);
@@ -1282,6 +1338,21 @@ body.is-fullscreen main {
 
     nav ul li a i {
         font-size: 11px;
+    }
+
+    .nav-badges {
+        top: -7px;
+        right: -8px;
+        gap: 2px;
+    }
+
+    .nav-badge {
+        min-width: 14px;
+        height: 14px;
+        padding: 0 3px;
+        font-size: 9px;
+        line-height: 14px;
+        border-radius: 7px;
     }
 
     .header-right {
@@ -2897,6 +2968,35 @@ body::-webkit-scrollbar-thumb {
 .channel-option .chat-online-badge {
     margin-left: auto;
     pointer-events: none;
+}
+
+/* Unread counter per station in the channel dropdown */
+.channel-option .chat-unread-badge {
+    margin-left: auto;
+    min-width: 18px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    pointer-events: none;
+}
+
+.channel-option .chat-unread-badge[hidden] {
+    display: none;
+}
+
+.channel-option .chat-unread-badge + .chat-online-badge {
+    margin-left: 6px;
+}
+
+.channel-option .chat-unread-badge.has-mention {
+    color: #fff;
+    background: var(--chat-badge-color, #7300ff);
+    border-color: transparent;
 }
 
 .channel-option::before {

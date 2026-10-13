@@ -3502,6 +3502,7 @@ window.logoutDiscord = async function () {
     }
     discordAuthToken = null;
     discordUser = null;
+    clearChatUnread();
 
     stopChatPolling();
 
@@ -3982,6 +3983,122 @@ function renderSavedWebhooks() {
 // Chat Polling System (no WebSockets needed)
 let chatPollingInterval = null;
 let lastMessageTimestamp = null;
+
+// ── Unread counters shown on the CHAT nav link (logged-in users only) ──
+// The server counts them in /radio/tick from the live message lists, since the
+// moment the user last looked at each station's chat (kept per station in
+// localStorage). Summed over ALL stations; deleted messages drop out by
+// themselves because they are gone from the server's lists.
+const CHAT_STATION_KEYS = ['RADIOGAMING', 'RADIOGAMINGDARK', 'RADIOGAMINGMARONFM'];
+const _chatUnread = { mentions: 0, messages: 0, stations: {} };
+let _chatReadAt = {}; // station key -> epoch ms of last look at that chat
+
+function _chatReadAtKey() {
+    return discordUser ? `RadioGaming-chatReadAt-${discordUser.id}` : null;
+}
+
+function loadChatReadAt() {
+    const key = _chatReadAtKey();
+    _chatReadAt = {};
+    if (!key) return;
+    try {
+        const saved = JSON.parse(localStorage.getItem(key) || '{}');
+        if (saved && typeof saved === 'object') _chatReadAt = saved;
+    } catch (_) { _chatReadAt = {}; }
+    // A station never looked at starts counting from now (not from the whole history)
+    const now = Date.now();
+    let changed = false;
+    for (const st of CHAT_STATION_KEYS) {
+        if (typeof _chatReadAt[st] !== 'number') { _chatReadAt[st] = now; changed = true; }
+    }
+    if (changed) _saveChatReadAt();
+}
+
+function _saveChatReadAt() {
+    const key = _chatReadAtKey();
+    if (!key) return;
+    try { localStorage.setItem(key, JSON.stringify(_chatReadAt)); } catch (_) { }
+}
+
+// The user is looking at `stationKey`'s chat right now: everything up to now is read.
+function markChatStationRead(stationKey) {
+    if (!discordUser || !stationKey) return;
+    if (!Object.keys(_chatReadAt).length) loadChatReadAt();
+    _chatReadAt[stationKey] = Date.now();
+    _saveChatReadAt();
+    _chatUnread.stations[stationKey] = { messages: 0, mentions: 0 };
+    _recomputeChatUnread();
+}
+
+function _recomputeChatUnread() {
+    let m = 0, a = 0;
+    for (const st of Object.values(_chatUnread.stations)) { m += st.messages || 0; a += st.mentions || 0; }
+    _chatUnread.messages = m;
+    _chatUnread.mentions = a;
+    updateChatBadges();
+}
+
+// `unread` section of /radio/tick
+function applyChatUnread(unread) {
+    if (!unread || !discordUser) return;
+    _chatUnread.stations = {};
+    for (const [st, v] of Object.entries(unread.stations || {})) {
+        _chatUnread.stations[st] = { messages: v.messages || 0, mentions: v.mentions || 0 };
+    }
+    // The chat on screen is being read as it arrives
+    if (isChatVisible && currentChatStation) _chatUnread.stations[currentChatStation] = { messages: 0, mentions: 0 };
+    _recomputeChatUnread();
+}
+
+function clearChatUnread() {
+    _chatUnread.stations = {};
+    _chatReadAt = {};
+    _recomputeChatUnread();
+}
+
+function _currentStationColor() {
+    const name = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim().toLowerCase();
+    for (const sc of Object.values(_stationColors)) {
+        if (sc.name.toLowerCase() === name) return sc.color;
+    }
+    return '#7300ff';
+}
+
+function updateChatBadges() {
+    const wrap = document.getElementById('chat-nav-badges');
+    const mEl = document.getElementById('chat-badge-mentions');
+    const nEl = document.getElementById('chat-badge-msgs');
+    if (!wrap || !mEl || !nEl) return;
+    const fmt = n => (n > 99 ? '99+' : String(n));
+    const showMentions = _chatUnread.mentions > 0;
+    const showMsgs = !!discordUser && _chatUnread.messages > 0;
+    mEl.hidden = !showMentions;
+    nEl.hidden = !showMsgs;
+    if (showMentions) mEl.textContent = fmt(_chatUnread.mentions);
+    if (showMsgs) nEl.textContent = fmt(_chatUnread.messages);
+    wrap.hidden = !(showMentions || showMsgs);
+    document.documentElement.style.setProperty('--chat-badge-color', _currentStationColor());
+    updateChannelUnreadBadges();
+}
+
+// Per-station unread counters in the chat's channel dropdown
+function updateChannelUnreadBadges() {
+    const nameByKey = { RADIOGAMING: 'Radio GAMING', RADIOGAMINGDARK: 'Radio GAMING DARK', RADIOGAMINGMARONFM: 'Radio GAMING MARON FM' };
+    for (const [key, name] of Object.entries(nameByKey)) {
+        const el = document.querySelector(`.channel-option[data-station="${name}"] .chat-unread-badge`);
+        if (!el) continue;
+        const st = (discordUser && _chatUnread.stations[key]) || { messages: 0, mentions: 0 };
+        const show = st.messages > 0 || st.mentions > 0;
+        el.hidden = !show;
+        if (!show) continue;
+        const fmt = n => (n > 99 ? '99+' : String(n));
+        el.classList.toggle('has-mention', st.mentions > 0);
+        el.textContent = st.mentions > 0 ? `@${fmt(st.mentions)} \u00b7 ${fmt(st.messages)}` : fmt(st.messages);
+        el.title = st.mentions > 0 ? `${st.mentions} mention(s), ${st.messages} unread` : `${st.messages} unread`;
+    }
+}
+
+
 let lastUserFetchTime = 0; // Track when we last fetched the full user list
 let isChatVisible = false;
 let isChatAtBottom = true; // Global flag to track if we should auto-scroll
@@ -4007,6 +4124,7 @@ async function switchChatChannel(stationName) {
 
     if (oldStation !== currentChatStation) {
         lastMessageTimestamp = null;
+        if (isChatVisible) markChatStationRead(currentChatStation);
         const messagesContainer = document.getElementById('chat-messages');
         if (messagesContainer) {
             messagesContainer.innerHTML = '<div class="chat-loading">Loading channel...</div>';
@@ -4084,6 +4202,7 @@ function updateCurrentStation() {
     if (currentChatStation !== newStationId) {
         currentChatStation = newStationId;
         lastMessageTimestamp = null;
+        if (isChatVisible) markChatStationRead(newStationId);
 
         // Clear messages and show loading if we're switching
         const messagesContainer = document.getElementById('chat-messages');
@@ -5816,6 +5935,7 @@ window.switchSection = function (sectionId) {
 
     if (isChatVisible) {
         updateCurrentStation();
+        markChatStationRead(currentChatStation);
         // Wait for section transition to complete before loading history and scrolling
         setTimeout(() => {
             loadChatHistory();
@@ -7541,6 +7661,15 @@ async function radioTick() {
         const fullUsers = chatActive && isChatVisible && (now - lastUserFetchTime > 60000);
         if (fullUsers) lastUserFetchTime = now;
 
+        let readAt = null;
+        if (discordUser && discordAuthToken) {
+            if (!Object.keys(_chatReadAt).length) loadChatReadAt();
+            // Looking at the chat right now -> that station is read up to this moment
+            if (isChatVisible && currentChatStation) { _chatReadAt[currentChatStation] = now; _saveChatReadAt(); }
+            readAt = _chatReadAt;
+            want.push('unread');
+        }
+
         const body = {
             token: discordAuthToken || null,
             playing,
@@ -7549,6 +7678,7 @@ async function radioTick() {
             full_users: fullUsers,
             want,
             etags: _tick.etags,
+            read_at: readAt,
         };
         const r = await fetch(RADIO_TICK_URL, {
             method: 'POST',
@@ -7564,6 +7694,8 @@ async function radioTick() {
             if (!data.chat.server_time) data.chat.server_time = data.server_time;
             await processChatPollData(data.chat);
         }
+        if (data.unread) applyChatUnread(data.unread);
+        updateChatBadges(); // keeps the mention badge in the current station's colour
         if (data.online) {
             _pollAllCache = { ts: Date.now(), data: data.online, inflight: null };
             updateAllOnlineUsers();

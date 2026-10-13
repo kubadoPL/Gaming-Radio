@@ -58,8 +58,12 @@
                     <li><a href="javascript:void(0)" onclick="switchSection('home')" class="active-nav-link"><i
                                 class="fas fa-home"></i>
                             <span>Home</span></a></li>
-                    <li><a href="javascript:void(0)" onclick="switchSection('chat')"><i class="fas fa-comments"></i>
-                            <span>Chat</span></a></li>
+                    <li><a href="javascript:void(0)" onclick="switchSection('chat')" id="nav-chat-link"><i class="fas fa-comments"></i>
+                            <span>Chat</span>
+                            <span class="nav-badges" id="chat-nav-badges" hidden>
+                                <span class="nav-badge nav-badge-mentions" id="chat-badge-mentions" hidden title="Unread mentions">0</span>
+                                <span class="nav-badge nav-badge-msgs" id="chat-badge-msgs" hidden title="Unread messages">0</span>
+                            </span></a></li>
                     <li><a href="javascript:void(0)" onclick="switchSection('download')"><i class="fas fa-download"></i>
                             <span>Download</span></a></li>
                     <li><a href="javascript:void(0)" onclick="switchSection('info')"><i class="fas fa-info-circle"></i>
@@ -236,12 +240,15 @@
                         <div id="channel-dropdown" class="channel-dropdown hidden">
                             <div class="channel-option" data-station="Radio GAMING"
                                 onclick="switchChatChannel('Radio GAMING')">Radio GAMING <span
+                                    class="chat-unread-badge" hidden></span><span
                                     class="chat-online-badge">...</span></div>
                             <div class="channel-option" data-station="Radio GAMING DARK"
                                 onclick="switchChatChannel('Radio GAMING DARK')">Radio GAMING DARK <span
+                                    class="chat-unread-badge" hidden></span><span
                                     class="chat-online-badge">...</span></div>
                             <div class="channel-option" data-station="Radio GAMING MARON FM"
                                 onclick="switchChatChannel('Radio GAMING MARON FM')">MARON FM <span
+                                    class="chat-unread-badge" hidden></span><span
                                     class="chat-online-badge">...</span></div>
                         </div>
                     </div>
