@@ -2617,13 +2617,20 @@
         // ─── Status Polling ──────────────────────────────────────────────
 
         async function refreshStatus() {
-            const data = await apiCall('/status', 'GET', null, true);
+            // Logs ride along with status (one request instead of 1 + 3 per cycle)
+            const logsSince = [0, 1, 2].map(id => logCounts[id] || 0).join(',');
+            const data = await apiCall(`/status?logs_since=${logsSince}`, 'GET', null, true);
             if (!data) return;
 
             // Extract admin presence data (bundled with status to avoid extra fetch)
             if (data._admin_presence) {
                 renderAdminPresence(data._admin_presence);
                 delete data._admin_presence;
+            }
+
+            if (data._logs) {
+                applyBundledLogs(data._logs);
+                delete data._logs;
             }
 
             for (const [id, status] of Object.entries(data)) {
@@ -2717,6 +2724,20 @@
 
         // ─── Log Polling ──────────────────────────────────────────────────
 
+        function applyBundledLogs(bundle) {
+            for (const [idStr, entry] of Object.entries(bundle)) {
+                const id = parseInt(idStr);
+                if (!entry || !STATION_META[id]) continue;
+                if (entry.logs && entry.logs.length > 0) {
+                    for (const line of entry.logs) {
+                        addLog(line.message, getLogType(line.message), STATION_META[id].name);
+                    }
+                }
+                if (typeof entry.total === 'number') logCounts[id] = entry.total;
+            }
+        }
+
+        // Legacy per-station log poll — no longer scheduled (logs come with /status)
         async function pollLogs() {
             for (const id of [0, 1, 2]) {
                 try {
@@ -2745,7 +2766,6 @@
             stopPolling();
             refreshStatus();
             statusPollInterval = setInterval(refreshStatus, 5000);
-            setInterval(pollLogs, 3000);
         }
 
         function stopPolling() {

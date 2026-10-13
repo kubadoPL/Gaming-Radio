@@ -76,6 +76,30 @@ let lastPercentage = 0;
 let statusQueue = [];
 let isProcessingQueue = false;
 let lastActiveListenerCount = -1;
+
+// setInterval that slows down while the tab is hidden and runs the callback
+// immediately when the tab becomes visible again. Keeps background tabs from
+// hammering the API (chat poll, online counts, streamer status).
+function setAdaptiveInterval(fn, visibleMs, hiddenMs) {
+    let handle = null;
+    const schedule = () => {
+        if (handle) clearInterval(handle);
+        handle = setInterval(fn, document.hidden ? hiddenMs : visibleMs);
+    };
+    const onVisibility = () => {
+        schedule();
+        if (!document.hidden) { try { fn(); } catch (e) { console.warn(e); } }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    schedule();
+    return {
+        stop() {
+            if (handle) clearInterval(handle);
+            handle = null;
+            document.removeEventListener('visibilitychange', onVisibility);
+        }
+    };
+}
 let lastListenerNotifyTime = 0;
 
 // Audio Visualizer Variables
@@ -588,7 +612,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(function () {
         console.log("Updating all online users 6 sec after page load");
         updateAllOnlineUsers();
-        setInterval(updateAllOnlineUsers, 10000); // Poll every 10 seconds for faster Chat API updates
+        // 10s in foreground, 30s when the tab is hidden (still < 60s online threshold)
+        setAdaptiveInterval(updateAllOnlineUsers, 10000, 30000);
     }, 6000);
 
     // Anonymous listener heartbeat (only when NOT logged in via Discord)
@@ -2075,7 +2100,7 @@ async function updateOnlineUsersTooltip(tooltipElement, sName, metadataUrl) {
         let usersListeningToStation = 0;
 
         try {
-            const chatData = await fetch(`${CHAT_API_BASE}/chat/poll/${stationId}?since=${Date.now()}&full_users=1`, { headers }).then(r => r.json());
+            const chatData = await getPollAllStation(stationId);
             chatRoomCount = chatData.online_count !== undefined ? chatData.online_count : 0;
 
             if (chatData.online_users && Array.isArray(chatData.online_users)) {
@@ -2171,6 +2196,30 @@ function updateTooltip(tooltipElement, zenoCount, finalCount, sName, isError = f
             }
         }
     }
+}
+
+// ── One /chat/poll-all request shared by all station tooltips ──
+// (used to be three /chat/poll/<station> requests every 10s)
+let _pollAllCache = { ts: 0, data: null, inflight: null };
+async function getPollAllStation(stationId) {
+    const now = Date.now();
+    if (_pollAllCache.data && now - _pollAllCache.ts < 2000) {
+        return _pollAllCache.data[stationId] || {};
+    }
+    if (!_pollAllCache.inflight) {
+        const currentPlayingName = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
+        const currentPlayingId = getStationId(currentPlayingName);
+        // Mark the user active only on the station they listen to / chat in
+        const track = [currentPlayingId, currentChatStation].filter(Boolean).join(',');
+        const headers = { 'X-Playing-Station': currentPlayingName };
+        if (discordAuthToken) headers['Authorization'] = `Bearer ${discordAuthToken}`;
+        _pollAllCache.inflight = fetch(`${CHAT_API_BASE}/chat/poll-all?since=${now}&full_users=1&track=${encodeURIComponent(track)}`, { headers })
+            .then(r => r.json())
+            .then(data => { _pollAllCache = { ts: Date.now(), data, inflight: null }; return data; })
+            .catch(err => { _pollAllCache.inflight = null; throw err; });
+    }
+    const data = await _pollAllCache.inflight;
+    return (data && data[stationId]) || {};
 }
 
 function updateAllOnlineUsers() {
@@ -3928,8 +3977,8 @@ function initializeChatPolling() {
     fetchCustomEmojis(); // Load custom emojis
     loadChatHistory();
 
-    // Poll for new messages every 3 seconds
-    chatPollingInterval = setInterval(pollNewMessages, 3000);
+    // Poll for new messages every 3 seconds (20s while the tab is hidden)
+    chatPollingInterval = setAdaptiveInterval(pollNewMessages, 3000, 20000);
 }
 
 // Background preloader to catch missed mentions on all stations at startup
@@ -3966,7 +4015,7 @@ async function preloadAllChatMentions() {
 
 function stopChatPolling() {
     if (chatPollingInterval) {
-        clearInterval(chatPollingInterval);
+        if (chatPollingInterval.stop) chatPollingInterval.stop(); else clearInterval(chatPollingInterval);
         chatPollingInterval = null;
     }
 }
@@ -7357,4 +7406,4 @@ function escapeHtmlStreamer(str) {
 
 // Start polling
 fetchStreamerStatus();
-setInterval(fetchStreamerStatus, 15000);
+setAdaptiveInterval(fetchStreamerStatus, 15000, 60000);
