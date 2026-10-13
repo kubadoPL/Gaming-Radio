@@ -799,6 +799,23 @@ document.addEventListener('DOMContentLoaded', () => {
 let _footerStatsLastFetch = 0;
 const FOOTER_STATS_COOLDOWN = 2000; // 2s cooldown between fetches
 
+// Last good values survive reloads so the footer never flashes 0 while the
+// server is still loading its stats after a restart.
+const FOOTER_STATS_CACHE_KEY = 'RadioGaming-footerStats';
+let _footerStatsRetryTimer = null;
+function _applyFooterStats(registered, anon) {
+    const regEl = document.getElementById('footer-stat-registered');
+    const anonEl = document.getElementById('footer-stat-anon');
+    if (regEl) regEl.textContent = registered;
+    if (anonEl) anonEl.textContent = anon;
+}
+(function restoreFooterStatsFromCache() {
+    try {
+        const cached = JSON.parse(localStorage.getItem(FOOTER_STATS_CACHE_KEY) || 'null');
+        if (cached && (cached.registered || cached.anon)) _applyFooterStats(cached.registered || 0, cached.anon || 0);
+    } catch (e) { /* ignore */ }
+})();
+
 async function fetchFooterUserStats() {
     const now = Date.now();
     if (now - _footerStatsLastFetch < FOOTER_STATS_COOLDOWN) return;
@@ -808,10 +825,30 @@ async function fetchFooterUserStats() {
         if (!response.ok) return;
         const data = await response.json();
         if (!data.success) return;
-        const regEl = document.getElementById('footer-stat-registered');
-        const anonEl = document.getElementById('footer-stat-anon');
-        if (regEl) regEl.textContent = data.total_users || 0;
-        if (anonEl) anonEl.textContent = data.total_unique_anonymous_users || 0;
+        const registered = data.total_users || 0;
+        const anon = data.total_unique_anonymous_users || 0;
+
+        // Server still loading after a restart (or numbers suspiciously 0 while
+        // we remember real ones): keep what is shown and retry soon instead of
+        // waiting for the 5-minute refresh.
+        let cached = null;
+        try { cached = JSON.parse(localStorage.getItem(FOOTER_STATS_CACHE_KEY) || 'null'); } catch (e) { /* ignore */ }
+        const serverLoading = data.stats_ready === false;
+        const looksStale = (anon === 0 && cached && cached.anon > 0) || (registered === 0 && cached && cached.registered > 0);
+        if (serverLoading || looksStale) {
+            if (!_footerStatsRetryTimer) {
+                _footerStatsRetryTimer = setTimeout(() => {
+                    _footerStatsRetryTimer = null;
+                    _footerStatsLastFetch = 0;
+                    fetchFooterUserStats();
+                }, 10000);
+            }
+            if (!cached) _applyFooterStats(registered, anon); // nothing better to show
+            return;
+        }
+
+        _applyFooterStats(registered, anon);
+        try { localStorage.setItem(FOOTER_STATS_CACHE_KEY, JSON.stringify({ registered, anon, ts: now })); } catch (e) { /* ignore */ }
         // Also update global favorites count for history view
         if (data.favorites_count) {
             window._globalFavoritesCount = data.favorites_count;
