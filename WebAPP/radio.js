@@ -7742,7 +7742,16 @@ async function radioTick() {
     const now = Date.now();
     const want = [];
     try {
-        const chatActive = !!chatPollingInterval && !!currentChatStation && chatPollShouldRun();
+        let chatActive = !!chatPollingInterval && !!currentChatStation && chatPollShouldRun();
+        // No "since" yet (page load, station switch): with the chat on screen the
+        // history request is already on its way, so skip this tick's chat section;
+        // with the chat hidden ask only for "new from now" instead of the whole
+        // history (200 KB with images) that nobody would look at.
+        let chatSince = lastMessageTimestamp || '';
+        if (chatActive && !chatSince) {
+            if (isChatVisible) chatActive = false;
+            else chatSince = String(now);
+        }
         if (chatActive) want.push('chat');
         for (const k of Object.keys(TICK_EVERY)) {
             if (now - _tick.last[k] >= TICK_EVERY[k]) { want.push(k); _tick.last[k] = now; }
@@ -7767,7 +7776,7 @@ async function radioTick() {
             token: discordAuthToken || null,
             playing,
             chat_station: currentChatStation || '',
-            since: lastMessageTimestamp || '',
+            since: chatSince,
             full_users: fullUsers,
             want,
             etags: _tick.etags,
