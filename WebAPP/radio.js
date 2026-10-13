@@ -612,8 +612,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(function () {
         console.log("Updating all online users 6 sec after page load");
         updateAllOnlineUsers();
-        // 10s in foreground, 30s when the tab is hidden (still < 60s online threshold)
-        setAdaptiveInterval(updateAllOnlineUsers, 10000, 30000);
+        // Afterwards the unified radioTick() refreshes online counts every 10s
+        // (30s when the tab is hidden, still < 60s online threshold)
     }, 6000);
 
     // Anonymous listener heartbeat (only when NOT logged in via Discord)
@@ -754,15 +754,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- Bot Uptime Display ---
+let _uptimeStartedAt = null; // ms; refreshed by the unified radioTick() every 60s
 (async function initUptime() {
     try {
         const response = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/api/uptime');
         if (!response.ok) throw new Error('Uptime API error');
         const data = await response.json();
-        let startedAt = data.started_at * 1000; // convert to ms
+        _uptimeStartedAt = data.started_at * 1000; // convert to ms
 
         function updateUptimeDisplay() {
-            const diff = Date.now() - startedAt;
+            if (!_uptimeStartedAt) return;
+            const diff = Date.now() - _uptimeStartedAt;
             const totalSec = Math.floor(diff / 1000);
             const d = Math.floor(totalSec / 86400);
             const h = Math.floor((totalSec % 86400) / 3600);
@@ -777,17 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateUptimeDisplay();
         setInterval(updateUptimeDisplay, 1000);
-
-        // Re-fetch startedAt every 60s to stay in sync (handles server restarts)
-        setInterval(async () => {
-            try {
-                const r = await fetch('https://bot-launcher-discord-017f7d5f49d9.herokuapp.com/K5ApiManager/api/uptime', { cache: 'no-store' });
-                if (r.ok) {
-                    const d = await r.json();
-                    startedAt = d.started_at * 1000;
-                }
-            } catch (e) { /* silently fail */ }
-        }, 60000);
+        // started_at is re-synced by radioTick() every 60s (handles server restarts)
     } catch (e) {
         console.error('[Uptime] Failed to fetch uptime:', e);
         const el = document.getElementById('footer-uptime');
@@ -2345,7 +2337,15 @@ async function fetchRoles() {
     try {
         const resp = await fetch(`${CHAT_API_BASE}/user/roles`);
         if (!resp.ok) return;
-        const data = await resp.json();
+        applyRoles(await resp.json());
+    } catch (err) {
+        console.warn('[ROLES] Failed to fetch roles:', err);
+    }
+}
+
+// Applies a /user/roles payload (also fed by the unified /radio/tick)
+function applyRoles(data) {
+    try {
         if (data.admins) {
             const serverAdmins = new Set(data.admins.map(String));
             
@@ -2388,13 +2388,11 @@ async function fetchRoles() {
         }
         console.log('[ROLES] Roles synced. Dynamic admins:', [...dynamicAdminIds]);
     } catch (err) {
-        console.warn('[ROLES] Failed to fetch roles:', err);
+        console.warn('[ROLES] Failed to apply roles:', err);
     }
 }
-// Fetch roles early
+// Fetch roles early; afterwards the unified radioTick() refreshes them every 30s
 fetchRoles();
-// Re-check roles every 30s so promoted/demoted users see changes
-setInterval(fetchRoles, 30000);
 
 // Update admin-only UI elements (streamer button, anon stats tab)
 function updateAdminUI() {
@@ -4014,8 +4012,9 @@ function initializeChatPolling() {
     fetchCustomEmojis(); // Load custom emojis
     loadChatHistory();
 
-    // Poll for new messages every 3 seconds (20s while the tab is hidden)
-    chatPollingInterval = setAdaptiveInterval(pollNewMessages, 3000, 20000);
+    // Chat is now polled by the unified radioTick() (3s, 20s when hidden);
+    // this marker just tells the tick that the "chat" section is wanted.
+    chatPollingInterval = { stop() { } };
 }
 
 // Background preloader to catch missed mentions on all stations at startup
@@ -4136,18 +4135,12 @@ async function loadChatHistory() {
 }
 
 let pollCount = 0;
+// Legacy standalone chat poll. No longer scheduled: the unified radioTick()
+// requests the "chat" section instead. Kept for manual/explicit refreshes.
 async function pollNewMessages() {
-    const isFirstPoll = !lastMessageTimestamp;
-
     // If chat is not visible, only poll every ~9s (3 ticks * 3s) for background pings
     // UNLESS the user is logged in, then we keep at 3s to get mentions promptly
-    if (!isChatVisible && !discordAuthToken) {
-        if (pollCount % 3 !== 0) {
-            pollCount++;
-            return;
-        }
-    }
-    pollCount++;
+    if (!chatPollShouldRun()) return;
 
     try {
         const since = lastMessageTimestamp ? `?since=${encodeURIComponent(lastMessageTimestamp)}` : '';
@@ -4167,7 +4160,27 @@ async function pollNewMessages() {
 
         const response = await fetch(`${CHAT_API_BASE}/chat/poll/${currentChatStation}${since}${since ? userParam : '?' + userParam.substring(1)}`, { headers });
         const data = await response.json();
+        await processChatPollData(data);
+    } catch (error) {
+        if (isChatVisible) console.error('[CHAT] Polling error:', error);
+    }
+}
 
+// Decides whether this tick should poll chat (hidden chat + anonymous user -> every 3rd tick)
+function chatPollShouldRun() {
+    if (!isChatVisible && !discordAuthToken) {
+        if (pollCount % 3 !== 0) {
+            pollCount++;
+            return false;
+        }
+    }
+    pollCount++;
+    return true;
+}
+
+// Applies a /chat/poll payload (also used by the unified /radio/tick)
+async function processChatPollData(data) {
+    try {
         // Always update online count and users list
         if (data.online_count !== undefined) {
             updateOnlineCountUI(data.online_count, data.online_users);
@@ -7160,6 +7173,15 @@ async function fetchStreamerStatus() {
     try {
         const r = await fetch(`${STREAMER_API_BASE}/public/status`, { cache: 'no-store' });
         const data = await r.json();
+        applyStreamerStatus(data);
+    } catch (e) {
+        console.error('[Streamer] Status fetch error:', e);
+    }
+}
+
+// Applies a /public/status payload (also fed by the unified /radio/tick)
+function applyStreamerStatus(data) {
+    try {
         _streamerStatusCache = data;
 
         // Update overlay icons on station photos + detect Live DJ status changes
@@ -7192,7 +7214,7 @@ async function fetchStreamerStatus() {
             _prevStreamerStreaming[sid] = isNowStreaming;
         });
     } catch (e) {
-        console.error('[Streamer] Status fetch error:', e);
+        console.error('[Streamer] Status apply error:', e);
     }
 }
 
@@ -7441,6 +7463,75 @@ function escapeHtmlStreamer(str) {
     return div.innerHTML;
 }
 
-// Start polling
-fetchStreamerStatus();
-setAdaptiveInterval(fetchStreamerStatus, 15000, 60000);
+// ========================
+// UNIFIED RADIO TICK
+// ========================
+// One POST every 3s (20s when the tab is hidden) replaces the separate chat,
+// online-count, streamer-status, roles and uptime pollers. Sent as a CORS
+// "simple request" (text/plain, no custom headers) so there is no OPTIONS
+// preflight. Each section keeps its old cadence via TICK_EVERY, and sections
+// whose content hash (etag) did not change are skipped by the server.
+const RADIO_TICK_URL = `${CHAT_API_BASE}/radio/tick`;
+const TICK_EVERY = { online: 10000, streamer: 15000, roles: 30000, uptime: 60000 };
+const _tick = { etags: {}, last: { online: 0, streamer: 0, roles: 0, uptime: 0 }, inflight: false, failures: 0 };
+
+async function radioTick() {
+    if (_tick.inflight) return;
+    _tick.inflight = true;
+    const now = Date.now();
+    const want = [];
+    try {
+        const chatActive = !!chatPollingInterval && !!currentChatStation && chatPollShouldRun();
+        if (chatActive) want.push('chat');
+        for (const k of Object.keys(TICK_EVERY)) {
+            if (now - _tick.last[k] >= TICK_EVERY[k]) { want.push(k); _tick.last[k] = now; }
+        }
+        if (want.length === 0) return;
+
+        const playing = (document.getElementById('StationNameInh1')?.textContent || 'Radio GAMING').trim();
+        // Full chat user list at most once per minute while the chat is open (old rule)
+        const fullUsers = chatActive && isChatVisible && (now - lastUserFetchTime > 60000);
+        if (fullUsers) lastUserFetchTime = now;
+
+        const body = {
+            token: discordAuthToken || null,
+            playing,
+            chat_station: currentChatStation || '',
+            since: lastMessageTimestamp || '',
+            full_users: fullUsers,
+            want,
+            etags: _tick.etags,
+        };
+        const r = await fetch(RADIO_TICK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' }, // simple request -> no preflight
+            body: JSON.stringify(body),
+        });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        _tick.failures = 0;
+        if (data.etags) Object.assign(_tick.etags, data.etags);
+
+        if (data.chat) {
+            if (!data.chat.server_time) data.chat.server_time = data.server_time;
+            await processChatPollData(data.chat);
+        }
+        if (data.online) {
+            _pollAllCache = { ts: Date.now(), data: data.online, inflight: null };
+            updateAllOnlineUsers();
+        }
+        if (data.streamer) applyStreamerStatus(data.streamer);
+        if (data.roles) applyRoles(data.roles);
+        if (data.uptime && data.uptime.started_at) _uptimeStartedAt = data.uptime.started_at * 1000;
+    } catch (e) {
+        // Re-arm the sections we asked for so they are retried on the next tick
+        for (const k of want) if (k in _tick.last) _tick.last[k] = 0;
+        _tick.failures++;
+        if (_tick.failures <= 3 || _tick.failures % 20 === 0) console.warn('[TICK] failed:', e);
+    } finally {
+        _tick.inflight = false;
+    }
+}
+
+radioTick();
+setAdaptiveInterval(radioTick, 3000, 20000);
