@@ -926,9 +926,11 @@ function updateFooterUsersList(onlineUsers) {
         const dotColor = isOn ? '#10b981' : '#555';
         const nameOpacity = isOn ? (isAnon ? '0.4' : '0.7') : '0.35';
         const ago = !isOn ? `<span style="font-size:8px;opacity:0.35;white-space:nowrap;flex-shrink:0;">${timeAgo(u.last_seen)}</span>` : '';
-        const clickAttr = isAnon ? '' : `class="footer-user-item clickable" onclick="openUserProfileModal('${u.id}', '${(u.username || '').replace(/'/g, "\\'")  }', '${(u.global_name || u.username || '').replace(/'/g, "\\'")}', '${u.avatar_url || ''}')" style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;cursor:pointer;"`;
-        const noClickAttr = `style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;"`;
-        html += `<div ${isAnon ? noClickAttr : clickAttr}>
+        // Anonymous listeners are clickable too: the modal shows their public listening profile
+        const clickAttr = isAnon
+            ? `class="footer-user-item clickable" onclick="openUserProfileModal('${u.id}', 'anon', 'Anonymous Listener', '')" title="View anonymous listener profile" style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;cursor:pointer;"`
+            : `class="footer-user-item clickable" onclick="openUserProfileModal('${u.id}', '${(u.username || '').replace(/'/g, "\'")  }', '${(u.global_name || u.username || '').replace(/'/g, "\'")}', '${u.avatar_url || ''}')" style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;cursor:pointer;"`;
+        html += `<div ${clickAttr}>
             ${avatar}
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:${nameOpacity};display:flex;align-items:center;gap:4px;">${name} ${footerAdminBadge}</span>
             ${ago}
@@ -3101,11 +3103,21 @@ function _applyProfileUserData(data) {
     }
 }
 
+const ANON_AVATAR_URL = 'https://radio-gaming.stream/Images/Logos/Radio%20Gaming%20Logo%20with%20miodzix%20planet.png';
+
 window.openUserProfileModal = async function (userId, userName, globalName, avatarUrl, bannerUrl, accentColor) {
-    if (!userId || userId.startsWith('anon-')) return; // Don't open for anonymous users
+    if (!userId) return;
+    // Anonymous listeners get the same modal, fed by the public anon-profile endpoint
+    const isAnonProfile = userId.startsWith('anon-');
+    if (isAnonProfile) {
+        userName = userId.substring(0, 12);
+        globalName = 'Anonymous Listener';
+        avatarUrl = avatarUrl || ANON_AVATAR_URL;
+        accentColor = accentColor || '#7300ff';
+    }
 
     // If clicking on own profile, open the Discord profile modal instead
-    if (discordUser && userId === discordUser.id) {
+    if (!isAnonProfile && discordUser && userId === discordUser.id) {
         openDiscordProfileModal();
         return;
     }
@@ -3141,7 +3153,8 @@ window.openUserProfileModal = async function (userId, userName, globalName, avat
 
     // Fetch full profile from API
     try {
-        const response = await fetch(`${CHAT_API_BASE}/user/profile/${userId}`);
+        const endpoint = isAnonProfile ? `/user/anon-profile/${encodeURIComponent(userId)}` : `/user/profile/${userId}`;
+        const response = await fetch(`${CHAT_API_BASE}${endpoint}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
 
@@ -3197,8 +3210,8 @@ async function renderUserProfileStats(data) {
         </div>`;
     }
 
-    // Owner-only: Promote/Demote buttons (only if viewer is owner and target is not owner)
-    if (discordUser && isUserOwner(discordUser.id) && data.user && data.user.id !== discordUser.id && !isUserOwner(data.user.id)) {
+    // Owner-only: Promote/Demote buttons (only if viewer is owner and target is not owner / not anonymous)
+    if (!data.is_anonymous && discordUser && isUserOwner(discordUser.id) && data.user && data.user.id !== discordUser.id && !isUserOwner(data.user.id)) {
         const targetRole = data.role || getUserRole(data.user.id);
         const targetIsAdmin = targetRole === 'admin';
         html += `<div class="user-profile-role-actions" id="profile-role-actions" data-user-id="${data.user.id}">`;
@@ -3338,8 +3351,8 @@ async function renderUserProfileStats(data) {
         html += `</div>`;
     }
 
-    // Guild memberships (loaded async from frontend)
-    if (typeof SHARE_GUILDS !== 'undefined' && SHARE_GUILDS.length > 0 && data.user && data.user.id) {
+    // Guild memberships (loaded async from frontend; not applicable to anonymous listeners)
+    if (!data.is_anonymous && typeof SHARE_GUILDS !== 'undefined' && SHARE_GUILDS.length > 0 && data.user && data.user.id) {
         // If viewer is not logged in, show a simple "not in official server" message
         // to avoid leaking server names to strangers
         if (!discordUser) {
@@ -3365,8 +3378,8 @@ async function renderUserProfileStats(data) {
 
     statsContainer.innerHTML = html;
 
-    // Async guild checks (non-blocking, per-guild) - only for logged-in viewers
-    if (discordUser && typeof SHARE_GUILDS !== 'undefined' && SHARE_GUILDS.length > 0 && data.user && data.user.id) {
+    // Async guild checks (non-blocking, per-guild) - only for logged-in viewers, never for anonymous profiles
+    if (!data.is_anonymous && discordUser && typeof SHARE_GUILDS !== 'undefined' && SHARE_GUILDS.length > 0 && data.user && data.user.id) {
         const guildContainer = document.getElementById('user-profile-guilds');
         if (guildContainer) {
             const userId = data.user.id;
@@ -6627,11 +6640,14 @@ function _renderAnonStatsHTML(view, data) {
                     <span class="stat-value">${data.total_anonymous_listeners}</span>
                 </div>
             </div>
-            <h4 class="stats-subtitle"><i class="fas fa-user-secret"></i> Anonymous Listeners</h4>
-            <div class="anon-listeners-list">
     `;
 
-    data.listeners.forEach((listener, idx) => {
+    // Leaderboard rank (position in the totalTime-sorted list) is shown in every section
+    const rankOf = new Map(data.listeners.map((l, i) => [l.anon_id, i]));
+
+    const renderCard = (listener) => {
+        const idx = rankOf.get(listener.anon_id) || 0;
+        let html = '';
         const timeStr = formatListeningTimeFull(listener.totalTime);
         const stationDisplay = stationNames[listener.station] || listener.station;
         const favStation = stationNames[listener.favoriteStation] || listener.favoriteStation || 'N/A';
@@ -6641,7 +6657,7 @@ function _renderAnonStatsHTML(view, data) {
         const lastSeen = listener.last_seen ? new Date(listener.last_seen).toLocaleString() : 'N/A';
 
         html += `
-            <div class="anon-listener-card ${isOnline ? 'online' : ''}" style="animation-delay: ${idx * 0.04}s">
+            <div class="anon-listener-card ${isOnline ? 'online' : ''}" style="animation-delay: ${Math.min(idx, 15) * 0.04}s">
                 <div class="anon-listener-header" onclick="this.parentElement.classList.toggle('expanded')">
                     <div class="anon-listener-avatar">
                         <i class="fas fa-user-secret"></i>
@@ -6778,9 +6794,34 @@ function _renderAnonStatsHTML(view, data) {
         }
 
         html += `</div></div>`;
-    });
+        return html;
+    };
 
-    html += `</div></div>`;
+    const section = (icon, title, list, emptyText) => {
+        let out = `<h4 class="stats-subtitle"><i class="fas ${icon}"></i> ${title}</h4>`;
+        if (!list.length) {
+            out += `<div style="font-size: 11px; color: rgba(255,255,255,0.35); padding: 4px 0 10px;">${emptyText || 'Nothing here yet.'}</div>`;
+            return out;
+        }
+        out += `<div class="anon-listeners-list">${list.map(renderCard).join('')}</div>`;
+        return out;
+    };
+
+    // Online now — so admins do not have to scroll through hundreds of entries
+    const onlineNow = data.listeners.filter(l => l.is_online);
+    html += section('fa-circle" style="color:#4ade80;font-size:9px', `Online now (${onlineNow.length})`, onlineNow, 'No anonymous listeners online right now.');
+
+    // Recently active — last 20 by last_seen
+    const recent = data.listeners
+        .filter(l => l.last_seen)
+        .sort((a, b) => new Date(b.last_seen) - new Date(a.last_seen))
+        .slice(0, 20);
+    html += section('fa-clock', 'Recently active (last 20)', recent);
+
+    // Full leaderboard (sorted by total listening time, as before)
+    html += section('fa-trophy', `Leaderboard (${data.listeners.length})`, data.listeners);
+
+    html += `</div>`;
     view.innerHTML = html;
 }
 
